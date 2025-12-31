@@ -16,7 +16,6 @@ interface GameBoardProps {
 
 export default function GameBoard({ onNewGame }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
-  const { connected } = useWebSocketStore();
   const { roomCode } = useRoomStore();
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
   const maxThinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);

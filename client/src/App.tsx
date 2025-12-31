@@ -14,7 +14,6 @@ type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' |
 
 function App() {
   const { gameState, startRound, error, clearError, loading, gameId, setGameState } = useGameStore();
-  const { room, connect } = useWebSocketStore();
   const { room: roomState } = useRoomStore();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
@@ -28,13 +27,13 @@ function App() {
 
   // Connect WebSocket when entering multiplayer mode
   useEffect(() => {
-    if (gameMode && ['createRoom', 'joinRoom', 'matchmaking'].includes(gameMode)) {
+    if (multiplayerMode) {
       const wsStore = useWebSocketStore.getState();
       if (!wsStore.socket || !wsStore.connected) {
         wsStore.connect();
       }
     }
-  }, [gameMode]);
+  }, [multiplayerMode]);
 
   // Listen for game state updates from WebSocket
   useEffect(() => {
@@ -105,7 +104,7 @@ function App() {
     return (
       <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
         <div className="container mx-auto">
-          <TitleScreen onSelectMode={handleSelectMode} />
+          <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
       </div>
     );
@@ -128,7 +127,7 @@ function App() {
       <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
         <div className="container mx-auto">
           <RoomCodeInput 
-            onJoin={(code) => {
+            onJoin={(_code) => {
               // Room joined, will show lobby via useEffect
             }}
             onCancel={() => setMultiplayerMode(null)}
@@ -169,7 +168,7 @@ function App() {
       <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
         <div className="container mx-auto">
           <GameSettings 
-            mode={gameMode} 
+            mode={gameMode === 'single' ? 'single' : 'local'} 
             onStart={handleGameStart}
             onBack={() => setGameMode(null)}
           />

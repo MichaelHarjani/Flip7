@@ -26,7 +26,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
   // Setup WebSocket listeners
   const setupListeners = () => {
-    const { socket, on, off } = wsStore;
+    const { socket, on } = wsStore;
 
     if (!socket) return;
 
@@ -78,7 +78,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     });
 
     // Matchmaking queued
-    on('matchmaking:queued', (data: { message: string }) => {
+    on('matchmaking:queued', () => {
       set({ loading: true, error: null });
     });
 

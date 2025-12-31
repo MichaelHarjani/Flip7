@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
-import type { GameState, GameRoom } from '@shared/types/index';
 
 interface WebSocketStore {
   socket: Socket | null;
