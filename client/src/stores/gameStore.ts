@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { GameState, Player } from '@shared/types/index';
 import { getActivePlayers, calculateScore } from '../utils/gameLogic';
+import { useWebSocketStore } from './websocketStore';
+import { useRoomStore } from './roomStore';
 
 interface GameStore {
   gameId: string | null;
@@ -94,7 +96,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to start game');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to start game' }));
+        console.error('Start game error:', errorData);
+        throw new Error(errorData.details || errorData.error || 'Failed to start game');
       }
       
       const data = await response.json();
@@ -152,6 +156,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   hit: async (playerId: string) => {
     const { gameId } = get();
+    const roomStore = useRoomStore.getState();
+    const wsStore = useWebSocketStore.getState();
+    
+    // Check if we're in multiplayer mode
+    if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
+      set({ loading: true, error: null });
+      wsStore.emit('game:hit', { playerId });
+      // Game state will be updated via WebSocket listener
+      return;
+    }
+    
+    // Fallback to REST API for single/local mode
     if (!gameId) return;
     
     set({ loading: true, error: null });
@@ -176,6 +192,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   stay: async (playerId: string) => {
     const { gameId } = get();
+    const roomStore = useRoomStore.getState();
+    const wsStore = useWebSocketStore.getState();
+    
+    // Check if we're in multiplayer mode
+    if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
+      set({ loading: true, error: null });
+      wsStore.emit('game:stay', { playerId });
+      // Game state will be updated via WebSocket listener
+      return;
+    }
+    
+    // Fallback to REST API for single/local mode
     if (!gameId) return;
     
     set({ loading: true, error: null });
@@ -200,6 +228,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   playActionCard: async (playerId: string, cardId: string, targetPlayerId?: string) => {
     const { gameId } = get();
+    const roomStore = useRoomStore.getState();
+    const wsStore = useWebSocketStore.getState();
+    
+    // Check if we're in multiplayer mode
+    if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
+      set({ loading: true, error: null });
+      wsStore.emit('game:playActionCard', { playerId, cardId, targetPlayerId });
+      // Game state will be updated via WebSocket listener
+      return;
+    }
+    
+    // Fallback to REST API for single/local mode
     if (!gameId) return;
     
     set({ loading: true, error: null });
@@ -224,6 +264,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   startNextRound: async () => {
     const { gameId } = get();
+    const roomStore = useRoomStore.getState();
+    const wsStore = useWebSocketStore.getState();
+    
+    // Check if we're in multiplayer mode
+    if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
+      set({ loading: true, error: null });
+      wsStore.emit('game:nextRound');
+      // Game state will be updated via WebSocket listener
+      return;
+    }
+    
+    // Fallback to REST API for single/local mode
     if (!gameId) return;
     
     set({ loading: true, error: null });

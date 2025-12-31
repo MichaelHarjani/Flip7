@@ -1,21 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from './stores/gameStore';
+import { useRoomStore } from './stores/roomStore';
+import { useWebSocketStore } from './stores/websocketStore';
 import TitleScreen from './components/TitleScreen';
 import GameSettings from './components/GameSettings';
 import GameBoard from './components/GameBoard';
+import RoomLobby from './components/RoomLobby';
+import RoomCodeInput from './components/RoomCodeInput';
+import MatchmakingQueue from './components/MatchmakingQueue';
+import CreateRoomForm from './components/CreateRoomForm';
 
-type GameMode = 'single' | 'local' | null;
+type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' | null;
 
 function App() {
-  const { gameState, startRound, error, clearError, loading, gameId } = useGameStore();
+  const { gameState, startRound, error, clearError, loading, gameId, setGameState } = useGameStore();
+  const { room, connect } = useWebSocketStore();
+  const { room: roomState } = useRoomStore();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [roundStarted, setRoundStarted] = useState(false);
+  const [multiplayerMode, setMultiplayerMode] = useState<'lobby' | 'create' | 'join' | 'matchmaking' | null>(null);
 
   // Always apply dark mode class to document
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
+
+  // Connect WebSocket when entering multiplayer mode
+  useEffect(() => {
+    if (gameMode && ['createRoom', 'joinRoom', 'matchmaking'].includes(gameMode)) {
+      const wsStore = useWebSocketStore.getState();
+      if (!wsStore.socket || !wsStore.connected) {
+        wsStore.connect();
+      }
+    }
+  }, [gameMode]);
+
+  // Listen for game state updates from WebSocket
+  useEffect(() => {
+    const wsStore = useWebSocketStore.getState();
+    if (wsStore.socket) {
+      const handleGameState = (data: { gameState: any }) => {
+        setGameState(data.gameState);
+        if (data.gameState && data.gameState.gameStatus === 'playing') {
+          setGameStarted(true);
+        }
+      };
+
+      wsStore.on('game:state', handleGameState);
+
+      return () => {
+        wsStore.off('game:state', handleGameState);
+      };
+    }
+  }, [setGameState]);
 
   // Automatically start the first round when gameId becomes available and game is in 'waiting' status
   useEffect(() => {
@@ -37,21 +75,96 @@ function App() {
     setGameStarted(false);
     setGameMode(null);
     setRoundStarted(false);
+    setMultiplayerMode(null);
+    useRoomStore.getState().reset();
   };
+
+  const handleSelectMode = (mode: GameMode) => {
+    if (mode === 'createRoom') {
+      setMultiplayerMode('create');
+    } else if (mode === 'joinRoom') {
+      setMultiplayerMode('join');
+    } else if (mode === 'matchmaking') {
+      setMultiplayerMode('matchmaking');
+    } else {
+      setGameMode(mode);
+    }
+  };
+
+  // Show room lobby when room is created/joined
+  useEffect(() => {
+    if (roomState && !gameStarted) {
+      setMultiplayerMode('lobby');
+    }
+  }, [roomState, gameStarted]);
 
   const bgGradient = 'bg-gradient-to-br from-gray-900 via-gray-800 to-purple-900';
 
-  if (!gameStarted && !gameMode) {
+  // Show title screen
+  if (!gameStarted && !gameMode && !multiplayerMode) {
     return (
       <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
         <div className="container mx-auto">
-          <TitleScreen onSelectMode={(mode) => setGameMode(mode)} />
+          <TitleScreen onSelectMode={handleSelectMode} />
         </div>
       </div>
     );
   }
 
-  if (!gameStarted && gameMode) {
+  // Show multiplayer room creation
+  if (multiplayerMode === 'create') {
+    return (
+      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
+        <div className="container mx-auto">
+          <CreateRoomForm onBack={() => setMultiplayerMode(null)} />
+        </div>
+      </div>
+    );
+  }
+
+  // Show join room input
+  if (multiplayerMode === 'join') {
+    return (
+      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
+        <div className="container mx-auto">
+          <RoomCodeInput 
+            onJoin={(code) => {
+              // Room joined, will show lobby via useEffect
+            }}
+            onCancel={() => setMultiplayerMode(null)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show matchmaking queue
+  if (multiplayerMode === 'matchmaking') {
+    return (
+      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
+        <div className="container mx-auto">
+          <MatchmakingQueue onCancel={() => setMultiplayerMode(null)} />
+        </div>
+      </div>
+    );
+  }
+
+  // Show room lobby
+  if (multiplayerMode === 'lobby' && roomState) {
+    return (
+      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
+        <div className="container mx-auto">
+          <RoomLobby onBack={() => {
+            setMultiplayerMode(null);
+            useRoomStore.getState().reset();
+          }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Show game settings for single/local
+  if (!gameStarted && gameMode && ['single', 'local'].includes(gameMode)) {
     return (
       <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
         <div className="container mx-auto">

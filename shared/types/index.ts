@@ -68,3 +68,30 @@ export type GameAction =
   | { type: 'STAY' }
   | { type: 'PLAY_ACTION'; cardId: string; targetPlayerId?: string };
 
+// Multiplayer types
+export interface PlayerSession {
+  sessionId: string;
+  playerId: string;
+  name: string;
+  isHost: boolean;
+  connected: boolean;
+  lastSeen: Date;
+}
+
+export interface GameRoom {
+  roomCode: string;
+  gameId: string | null;
+  hostId: string;
+  players: PlayerSession[];
+  maxPlayers: number;
+  status: 'waiting' | 'starting' | 'playing' | 'ended';
+  createdAt: Date;
+}
+
+export interface MatchmakingQueueEntry {
+  sessionId: string;
+  playerName: string;
+  maxPlayers: number;
+  joinedAt: Date;
+}
+

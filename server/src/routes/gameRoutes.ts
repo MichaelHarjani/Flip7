@@ -1,6 +1,8 @@
 import express from 'express';
 import { GameService } from '../services/gameService';
 import { makeAIDecision } from '../ai/aiPlayer';
+import { roomService } from '../services/roomService';
+import { matchmakingService } from '../services/matchmakingService';
 
 const router = express.Router();
 
@@ -175,6 +177,141 @@ router.post('/:gameId/ai/decision', (req, res) => {
     res.json({ decision });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to get AI decision' });
+  }
+});
+
+/**
+ * Room management endpoints
+ */
+
+/**
+ * Create a new room
+ */
+router.post('/rooms/create', (req, res) => {
+  try {
+    const { playerName, maxPlayers } = req.body;
+    
+    if (!playerName || typeof playerName !== 'string') {
+      return res.status(400).json({ error: 'Invalid player name' });
+    }
+
+    const { room, sessionId, playerId } = roomService.createRoom(
+      playerName,
+      maxPlayers || 4
+    );
+
+    res.json({ room, sessionId, playerId });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to create room' });
+  }
+});
+
+/**
+ * Join a room by code
+ */
+router.post('/rooms/join', (req, res) => {
+  try {
+    const { roomCode, playerName } = req.body;
+    
+    if (!roomCode || typeof roomCode !== 'string') {
+      return res.status(400).json({ error: 'Invalid room code' });
+    }
+
+    if (!playerName || typeof playerName !== 'string') {
+      return res.status(400).json({ error: 'Invalid player name' });
+    }
+
+    const result = roomService.joinRoom(roomCode, playerName);
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to join room' });
+  }
+});
+
+/**
+ * Leave a room
+ */
+router.post('/rooms/:roomCode/leave', (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID required' });
+    }
+
+    roomService.leaveRoom(roomCode, sessionId);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to leave room' });
+  }
+});
+
+/**
+ * Get room info
+ */
+router.get('/rooms/:roomCode', (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    const room = roomService.getRoom(roomCode);
+    
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+
+    res.json({ room });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to get room' });
+  }
+});
+
+/**
+ * Matchmaking endpoints
+ */
+
+/**
+ * Join matchmaking queue
+ */
+router.post('/matchmaking/join', (req, res) => {
+  try {
+    const { playerName, maxPlayers } = req.body;
+    
+    if (!playerName || typeof playerName !== 'string') {
+      return res.status(400).json({ error: 'Invalid player name' });
+    }
+
+    const result = matchmakingService.addToQueue(playerName, maxPlayers || 4);
+    
+    if (result) {
+      res.json(result);
+    } else {
+      res.json({ queued: true, message: 'Added to matchmaking queue' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to join matchmaking' });
+  }
+});
+
+/**
+ * Leave matchmaking queue
+ */
+router.post('/matchmaking/leave', (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID required' });
+    }
+
+    matchmakingService.removeFromQueue(sessionId);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to leave matchmaking' });
   }
 });
 

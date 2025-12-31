@@ -1,5 +1,5 @@
 interface TitleScreenProps {
-  onSelectMode: (mode: 'single' | 'local') => void;
+  onSelectMode: (mode: 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking') => void;
 }
 
 export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
@@ -23,6 +23,29 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
           className="px-8 py-6 rounded-lg font-bold text-xl shadow-2xl border-4 transition-all transform hover:scale-105 bg-purple-600 hover:bg-purple-500 border-purple-400 text-white"
         >
           Local
+        </button>
+
+        <div className="border-t-2 border-gray-600 my-2"></div>
+
+        <button
+          onClick={() => onSelectMode('createRoom')}
+          className="px-8 py-6 rounded-lg font-bold text-xl shadow-2xl border-4 transition-all transform hover:scale-105 bg-green-600 hover:bg-green-500 border-green-400 text-white"
+        >
+          Create Room
+        </button>
+
+        <button
+          onClick={() => onSelectMode('joinRoom')}
+          className="px-8 py-6 rounded-lg font-bold text-xl shadow-2xl border-4 transition-all transform hover:scale-105 bg-orange-600 hover:bg-orange-500 border-orange-400 text-white"
+        >
+          Join Room
+        </button>
+
+        <button
+          onClick={() => onSelectMode('matchmaking')}
+          className="px-8 py-6 rounded-lg font-bold text-xl shadow-2xl border-4 transition-all transform hover:scale-105 bg-pink-600 hover:bg-pink-500 border-pink-400 text-white"
+        >
+          Find Match
         </button>
       </div>
     </div>

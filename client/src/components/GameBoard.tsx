@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../stores/gameStore';
+import { useWebSocketStore } from '../stores/websocketStore';
+import { useRoomStore } from '../stores/roomStore';
 import PlayerArea from './PlayerArea';
 import ActionButtons from './ActionButtons';
 import ActionCardButtons from './ActionCardButtons';
@@ -13,7 +15,9 @@ interface GameBoardProps {
 }
 
 export default function GameBoard({ onNewGame }: GameBoardProps) {
-  const { gameState, makeAIDecision, startNextRound, startRound, loading, error } = useGameStore();
+  const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
+  const { connected } = useWebSocketStore();
+  const { roomCode } = useRoomStore();
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
   const maxThinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const aiDecisionTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -30,6 +34,22 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   const humanPlayer = gameState?.players?.find(p => !p.isAI);
   const currentHumanPlayer = currentPlayer && !currentPlayer.isAI ? currentPlayer : null;
   const isRoundEnd = gameState?.gameStatus === 'roundEnd';
+
+  // Listen for WebSocket game state updates in multiplayer mode
+  useEffect(() => {
+    if (roomCode) {
+      const wsStore = useWebSocketStore.getState();
+      const handleGameState = (data: { gameState: any }) => {
+        setGameState(data.gameState);
+      };
+      
+      wsStore.on('game:state', handleGameState);
+      
+      return () => {
+        wsStore.off('game:state', handleGameState);
+      };
+    }
+  }, [roomCode, setGameState]);
 
   // Handle AI turns - MUST be called before any early returns (Rules of Hooks)
   useEffect(() => {
