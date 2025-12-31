@@ -26,7 +26,13 @@ export default async function handler(
     res.json({ gameId, gameState });
   } catch (error) {
     console.error('Error starting game:', error);
-    res.status(500).json({ error: 'Failed to start game' });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error details:', { errorMessage, errorStack });
+    res.status(500).json({ 
+      error: 'Failed to start game',
+      details: errorMessage 
+    });
   }
 }
 
