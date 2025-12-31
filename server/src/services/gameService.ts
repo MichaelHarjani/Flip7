@@ -211,7 +211,12 @@ export class GameService {
         }
       } else if (card.actionType === 'secondChance') {
         // Second Chance: Handle it, then add to hand (it stays as a card)
-        this.handleActionCard(player, card, isInitialDeal);
+        // If player already has one, it will be given away or discarded
+        const cardConsumed = this.handleActionCard(player, card, isInitialDeal);
+        if (cardConsumed) {
+          // Card was given away or discarded, don't add it to player's hand
+          return;
+        }
         // Continue to add card to hand below
       }
     }
@@ -319,14 +324,15 @@ export class GameService {
 
   /**
    * Handle action card effects
+   * @returns true if the card was consumed (given away or discarded) and should not be added to player's hand
    */
   private handleActionCard(
     player: Player,
     card: Card,
     isInitialDeal: boolean,
     frozenByPlayerId?: string
-  ): void {
-    if (!this.gameState) return;
+  ): boolean {
+    if (!this.gameState) return false;
 
     switch (card.actionType) {
       case 'freeze':
@@ -338,29 +344,53 @@ export class GameService {
         if (frozenByPlayerId) {
           player.frozenBy = frozenByPlayerId;
         }
-        break;
+        return false; // Card should be added to hand (it stays visible on the frozen player)
 
       case 'secondChance':
         // Player gets a Second Chance card
         console.log(`[Second Chance] Dealing Second Chance to ${player.name}, current hasSecondChance=${player.hasSecondChance}`);
-        if (player.hasSecondChance) {
-          // Already has one, give to another active player or discard
+        
+        // Check if player already has a Second Chance card (either via flag or by having the card)
+        const hasSecondChanceCard = player.hasSecondChance || 
+          player.actionCards.some(c => c.type === 'action' && c.actionType === 'secondChance');
+        
+        if (hasSecondChanceCard) {
+          // Already has one - must give to another active player who doesn't have one
           const otherActivePlayers = getActivePlayers(this.gameState.players).filter(
-            p => p.id !== player.id && !p.hasSecondChance
+            p => {
+              if (p.id === player.id) return false;
+              // Check if they already have a Second Chance card
+              const pHasSecondChance = p.hasSecondChance || 
+                p.actionCards.some(c => c.type === 'action' && c.actionType === 'secondChance');
+              return !pHasSecondChance;
+            }
           );
+          
           if (otherActivePlayers.length > 0) {
+            // Give to first available active player
             otherActivePlayers[0].hasSecondChance = true;
+            // Add the card to that player's hand
+            otherActivePlayers[0].cards.push(card);
+            const reorganized = organizePlayerCards(otherActivePlayers[0].cards);
+            otherActivePlayers[0].actionCards = reorganized.actionCards;
+            otherActivePlayers[0].numberCards = reorganized.numberCards;
+            otherActivePlayers[0].modifierCards = reorganized.modifierCards;
             console.log(`[Second Chance] ${player.name} already has one, giving to ${otherActivePlayers[0].name}`);
+          } else {
+            // No other active players without Second Chance - discard the card
+            this.gameState.discardPile.push(card);
+            console.log(`[Second Chance] ${player.name} already has one, no other active players can take it, discarding`);
           }
-          // Remove this card from player
-          player.cards = player.cards.filter(c => c.id !== card.id);
-          const reorganized = organizePlayerCards(player.cards);
-          player.actionCards = reorganized.actionCards;
+          
+          // Card was given away or discarded, so don't add it to original player's hand
+          return true;
         } else {
           player.hasSecondChance = true;
           console.log(`[Second Chance] ${player.name} now has Second Chance protection`);
+          return false; // Card should be added to player's hand
         }
-        break;
+
+      case 'flipThree':
 
       case 'flipThree':
         // Player must accept next 3 cards immediately
@@ -385,8 +415,10 @@ export class GameService {
             break;
           }
         }
-        break;
+        return false; // Flip Three card is discarded after use, but handled in playActionCard
     }
+    
+    return false; // Default: card should be added to hand
   }
 
   /**
@@ -400,6 +432,12 @@ export class GameService {
     const player = this.gameState.players.find(p => p.id === playerId);
     if (!player || !player.isActive || player.hasBusted) {
       throw new Error('Player not active');
+    }
+
+    // CRITICAL: Check if there's a pending action card that must be resolved first
+    // Action cards like Freeze must be resolved immediately when picked up
+    if (this.gameState.pendingActionCard && this.gameState.pendingActionCard.playerId === playerId) {
+      throw new Error('You must resolve the pending action card before taking another action');
     }
 
     // Check if player has Flip Three active (from a previous pickup)
@@ -459,6 +497,12 @@ export class GameService {
     const player = this.gameState.players.find(p => p.id === playerId);
     if (!player || !player.isActive || player.hasBusted) {
       throw new Error('Player not active');
+    }
+
+    // CRITICAL: Check if there's a pending action card that must be resolved first
+    // Action cards like Freeze must be resolved immediately when picked up
+    if (this.gameState.pendingActionCard && this.gameState.pendingActionCard.playerId === playerId) {
+      throw new Error('You must resolve the pending action card before taking another action');
     }
 
     // Calculate and bank score
@@ -595,6 +639,34 @@ export class GameService {
 
     // NOTE: Cards are NOT discarded here - they remain visible until the next round starts
     // This allows players to see the final state of the round
+    
+    // Discard all Second Chance cards at the end of the round (per rules)
+    this.gameState.players.forEach(player => {
+      if (!this.gameState) return;
+      
+      // Find all Second Chance cards
+      const secondChanceCards = player.actionCards.filter(
+        c => c.type === 'action' && c.actionType === 'secondChance'
+      );
+      
+      // Move them to discard pile
+      if (secondChanceCards.length > 0) {
+        secondChanceCards.forEach(card => {
+          this.gameState!.discardPile.push(card);
+          player.cards = player.cards.filter(c => c.id !== card.id);
+        });
+        
+        // Reorganize cards
+        const reorganized = organizePlayerCards(player.cards);
+        player.actionCards = reorganized.actionCards;
+        player.numberCards = reorganized.numberCards;
+        player.modifierCards = reorganized.modifierCards;
+        
+        // Reset Second Chance flag
+        player.hasSecondChance = false;
+        player.secondChanceUsedBy = undefined;
+      }
+    });
 
     // Check for game end (200 points)
     const winner = this.gameState.players.find(p => p.score >= 200);

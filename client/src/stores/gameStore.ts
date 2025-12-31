@@ -20,7 +20,8 @@ interface GameStore {
   clearError: () => void;
 }
 
-const API_BASE = '/api/game';
+// Use environment variable for API base URL, fallback to relative path for development
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/game';
 
 /**
  * Select a target for an action card (Freeze or Flip Three)
