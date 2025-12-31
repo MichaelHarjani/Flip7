@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getGameService } from '../../_gameState.js';
-import { makeAIDecision } from '../../../server/src/ai/aiPlayer.js';
+import { makeAIDecision } from '../../../../server/src/ai/aiPlayer.js';
 
 export default async function handler(
   req: VercelRequest,

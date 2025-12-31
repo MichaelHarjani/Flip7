@@ -2,8 +2,8 @@
 // Note: This uses in-memory storage. Games will reset on cold starts.
 // For production, consider using a database (Redis, MongoDB, etc.)
 
-import { GameService } from '../../../server/src/services/gameService.js';
-import type { GameState } from '../../../shared/types/index.js';
+import { GameService } from '../../server/src/services/gameService.js';
+import type { GameState } from '../../shared/types/index.js';
 
 // Store game instances in memory
 // In a production environment, this should be replaced with a database

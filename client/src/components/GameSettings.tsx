@@ -44,18 +44,24 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
   }, [playerCount, mode]);
 
   const handleStart = async () => {
-    if (mode === 'single') {
-      // Use default 'moderate' difficulty for all AI players
-      const difficulties: Array<'conservative' | 'moderate' | 'aggressive'> = [];
-      for (let i = 0; i < playerCount - 1; i++) {
-        difficulties.push('moderate');
+    try {
+      if (mode === 'single') {
+        // Use default 'moderate' difficulty for all AI players
+        const difficulties: Array<'conservative' | 'moderate' | 'aggressive'> = [];
+        for (let i = 0; i < playerCount - 1; i++) {
+          difficulties.push('moderate');
+        }
+        await startGame(playerNames, difficulties);
+      } else {
+        // Local mode: all human players, no AI
+        await startGame(playerNames, []);
       }
-      await startGame(playerNames, difficulties);
-    } else {
-      // Local mode: all human players, no AI
-      await startGame(playerNames, []);
+      // Only call onStart if startGame succeeded (no error thrown)
+      onStart();
+    } catch (error) {
+      // Error is already handled in the store, just don't call onStart
+      console.error('Failed to start game:', error);
     }
-    onStart();
   };
 
   const updatePlayerName = (index: number, name: string) => {

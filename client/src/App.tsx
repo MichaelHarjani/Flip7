@@ -7,26 +7,36 @@ import GameBoard from './components/GameBoard';
 type GameMode = 'single' | 'local' | null;
 
 function App() {
-  const { gameState, startRound, error, clearError, loading } = useGameStore();
+  const { gameState, startRound, error, clearError, loading, gameId } = useGameStore();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
+  const [roundStarted, setRoundStarted] = useState(false);
 
   // Always apply dark mode class to document
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
 
+  // Automatically start the first round when gameId becomes available and game is in 'waiting' status
+  useEffect(() => {
+    if (gameStarted && gameId && !roundStarted && gameState && gameState.gameStatus === 'waiting') {
+      setRoundStarted(true);
+      // Small delay to ensure game state is fully set
+      setTimeout(() => {
+        startRound();
+      }, 100);
+    }
+  }, [gameStarted, gameId, roundStarted, gameState, startRound]);
+
   const handleGameStart = () => {
     setGameStarted(true);
-    // Start the first round
-    setTimeout(() => {
-      startRound();
-    }, 100);
+    setRoundStarted(false);
   };
 
   const handleNewGame = () => {
     setGameStarted(false);
     setGameMode(null);
+    setRoundStarted(false);
   };
 
   const bgGradient = 'bg-gradient-to-br from-gray-900 via-gray-800 to-purple-900';
