@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../stores/gameStore';
-import type { GameStore } from '../stores/gameStore';
 import PlayerArea from './PlayerArea';
 import ActionButtons from './ActionButtons';
 import ActionCardButtons from './ActionCardButtons';
@@ -134,7 +133,6 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
       
       aiDecisionTimerRef.current = setTimeout(() => {
         const playerIdAtStart = currentPlayer.id;
-        const currentPlayerIndexAtStart = gameState.currentPlayerIndex;
         
         // Double-check that this is still the current player before making decision
         // (in case the game state changed during the delay)
@@ -526,9 +524,9 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
       </div>
 
       {/* Action Buttons - Fixed at bottom, always visible (outside scale) */}
-      {(humanPlayer || currentHumanPlayer || gameState.gameStatus === 'gameEnd') && (
+      {(humanPlayer || currentHumanPlayer) && (
         <div className="flex-shrink-0 pt-2 border-t-2 space-y-2 pb-2 mt-auto min-h-[140px] flex flex-col">
-          {gameState.gameStatus === 'gameEnd' && onNewGame ? (
+          {false && onNewGame ? (
             <div className="flex gap-3 justify-center">
               <button
                 onClick={onNewGame}

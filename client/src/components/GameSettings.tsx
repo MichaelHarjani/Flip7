@@ -11,7 +11,7 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
   const { startGame, loading } = useGameStore();
   const [playerCount, setPlayerCount] = useState(mode === 'single' ? 3 : 2);
   const [playerNames, setPlayerNames] = useState<string[]>(mode === 'single' ? ['You'] : ['Player 1', 'Player 2']);
-  const [aiDifficulties, setAiDifficulties] = useState<Array<'conservative' | 'moderate' | 'aggressive'>>(['moderate']);
+  const [_aiDifficulties, setAiDifficulties] = useState<Array<'conservative' | 'moderate' | 'aggressive'>>(['moderate']);
 
   // Update player names array when player count changes
   useEffect(() => {

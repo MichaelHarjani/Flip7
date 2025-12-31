@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameStore } from '../stores/gameStore';
 import type { Card } from '@shared/types/index';
-import Card from './Card';
+import CardComponent from './Card';
 
 interface ActionCardButtonsProps {
   playerId: string;
@@ -123,7 +123,7 @@ export default function ActionCardButtons({ playerId, actionCards }: ActionCardB
                   onClick={() => !loading && handleCardClick(card.id)}
                   className={`cursor-pointer ${loading ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
-                  <Card 
+                  <CardComponent 
                     card={card} 
                     size="sm" 
                     playerId={playerId}
