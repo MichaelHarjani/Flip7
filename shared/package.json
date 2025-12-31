@@ -1,0 +1,12 @@
+{
+  "name": "@flip7/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./types/index.ts",
+  "exports": {
+    "./types/index": "./types/index.ts",
+    "./utils/gameLogic": "./utils/gameLogic.ts",
+    "./utils/cards": "./utils/cards.ts"
+  }
+}
+
