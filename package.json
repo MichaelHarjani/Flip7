@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Flip 7 card game - full stack web application",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev:client": "cd client && npm run dev",
     "dev:server": "cd server && npm run dev",
