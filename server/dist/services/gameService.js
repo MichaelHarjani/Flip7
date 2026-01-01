@@ -491,8 +491,9 @@ export class GameService {
         this.gameState.players.forEach(player => {
             if (!this.gameState)
                 return;
-            const roundScore = this.gameState.roundScores[player.id] ||
-                (player.hasBusted ? 0 : calculateScore(player));
+            // Always recalculate the score at round end to ensure accuracy
+            // The cached roundScores value might be stale if player's cards changed
+            const roundScore = player.hasBusted ? 0 : calculateScore(player);
             player.score += roundScore;
             this.gameState.roundScores[player.id] = roundScore;
             // Capture round data for history

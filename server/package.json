@@ -5,8 +5,9 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
+    "predev": "node build.js && node update-imports.js",
     "dev": "tsx watch src/server.ts",
-    "prebuild": "node build.js",
+    "prebuild": "node build.js && node update-imports.js",
     "build": "tsc",
     "start": "node dist/server.js"
   },

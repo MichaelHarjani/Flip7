@@ -5,12 +5,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Copy shared directory if it doesn't exist
+// Copy shared directory into src/shared so TypeScript can find it
 const sharedSrc = join(__dirname, '..', 'shared');
-const sharedDest = join(__dirname, 'shared');
+const sharedDest = join(__dirname, 'src', 'shared');
 
-if (!existsSync(sharedDest) && existsSync(sharedSrc)) {
-  console.log('Copying shared directory...');
+if (existsSync(sharedSrc)) {
+  console.log('Copying shared directory to src/shared...');
   mkdirSync(sharedDest, { recursive: true });
   
   // Copy types directory
@@ -30,7 +30,12 @@ if (!existsSync(sharedDest) && existsSync(sharedSrc)) {
   }
   
   console.log('Shared directory copied successfully');
-} else if (!existsSync(sharedSrc)) {
+} else {
   console.warn('Warning: Shared directory not found at', sharedSrc);
+  // Check if it's already copied
+  if (!existsSync(sharedDest)) {
+    console.error('Error: Shared directory not found and not already copied');
+    process.exit(1);
+  }
 }
 
