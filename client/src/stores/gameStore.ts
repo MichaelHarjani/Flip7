@@ -22,24 +22,17 @@ interface GameStore {
   clearError: () => void;
 }
 
-// Use environment variable for API base URL, fallback to relative path for development
+// Use environment variable for API base URL, fallback to relative path
+// Single player and local games always use Vercel serverless functions (/api/game)
+// VITE_WS_URL is only for WebSocket connections in multiplayer mode, not for REST API calls
 const getApiBase = () => {
   // If explicitly set, use it
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
   
-  // In production, derive from WebSocket URL
-  if (import.meta.env.PROD && import.meta.env.VITE_WS_URL) {
-    const wsUrl = import.meta.env.VITE_WS_URL;
-    // Convert wss://server.com or ws://server.com to https://server.com/api/game
-    const apiUrl = wsUrl
-      .replace(/^wss?:\/\//, 'https://')
-      .replace(/\/$/, '') + '/api/game';
-    return apiUrl;
-  }
-  
-  // Development fallback
+  // Always use relative path for Vercel serverless functions
+  // This works for both development (via proxy) and production (via Vercel)
   return '/api/game';
 };
 
