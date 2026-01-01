@@ -21,27 +21,34 @@ export default async function handler(
   }
 
   try {
+    console.log('Handler called, body:', JSON.stringify(req.body));
     const { playerNames, aiDifficulties } = req.body;
     
     if (!playerNames || !Array.isArray(playerNames) || playerNames.length < 1) {
       return res.status(400).json({ error: 'Invalid player names' });
     }
 
+    console.log('Creating game service...');
     const gameId = `game-${Date.now()}`;
     const gameService = createGameService();
+    console.log('Game service created, initializing game...');
     const gameState = gameService.initializeGame(playerNames, aiDifficulties || []);
+    console.log('Game initialized successfully');
     
     setGameService(gameId, gameService);
 
     res.json({ gameId, gameState });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error starting game:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('Error details:', { errorMessage, errorStack });
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    const errorStack = error?.stack || 'No stack trace';
+    console.error('Error details:', { errorMessage, errorStack, error });
+    
+    // Ensure we always send details
     res.status(500).json({ 
       error: 'Failed to start game',
-      details: errorMessage 
+      details: errorMessage,
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
     });
   }
 }
