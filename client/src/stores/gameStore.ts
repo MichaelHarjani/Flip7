@@ -102,26 +102,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
   startGame: async (playerNames, aiDifficulties) => {
     set({ loading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE}/start`, {
+      const url = `${API_BASE}/start`;
+      console.log('Starting game, API_BASE:', API_BASE, 'URL:', url);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerNames, aiDifficulties }),
       });
       
+      console.log('Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to start game' }));
         console.error('Start game error:', errorData);
-        throw new Error(errorData.details || errorData.error || 'Failed to start game');
+        throw new Error(errorData.details || errorData.error || `Failed to start game (${response.status})`);
       }
       
       const data = await response.json();
+      console.log('Game started successfully:', data.gameId);
       set({ 
         gameId: data.gameId, 
         gameState: data.gameState, 
         loading: false 
       });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
+      console.error('Start game exception:', error);
+      const errorMessage = error.message || 'Failed to start game. Please check your connection.';
+      set({ error: errorMessage, loading: false });
     }
   },
 
