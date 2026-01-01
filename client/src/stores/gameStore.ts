@@ -23,7 +23,27 @@ interface GameStore {
 }
 
 // Use environment variable for API base URL, fallback to relative path for development
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/game';
+const getApiBase = () => {
+  // If explicitly set, use it
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // In production, derive from WebSocket URL
+  if (import.meta.env.PROD && import.meta.env.VITE_WS_URL) {
+    const wsUrl = import.meta.env.VITE_WS_URL;
+    // Convert wss://server.com or ws://server.com to https://server.com/api/game
+    const apiUrl = wsUrl
+      .replace(/^wss?:\/\//, 'https://')
+      .replace(/\/$/, '') + '/api/game';
+    return apiUrl;
+  }
+  
+  // Development fallback
+  return '/api/game';
+};
+
+const API_BASE = getApiBase();
 
 /**
  * Select a target for an action card (Freeze or Flip Three)
