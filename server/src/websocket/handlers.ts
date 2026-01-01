@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameState } from '../../../shared/types/index.js';
+import type { GameState } from '../shared/types/index.js';
 import { roomService } from '../services/roomService.js';
 import { sessionService } from '../services/sessionService.js';
 import { matchmakingService } from '../services/matchmakingService.js';

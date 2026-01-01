@@ -1,4 +1,4 @@
-import type { MatchmakingQueueEntry } from '../../../shared/types/index.js';
+import type { MatchmakingQueueEntry } from '../shared/types/index.js';
 import { roomService } from './roomService.js';
 import { sessionService } from './sessionService.js';
 

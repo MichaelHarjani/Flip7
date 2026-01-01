@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { GameRoom, PlayerSession } from '../../../shared/types/index.js';
+import type { GameRoom, PlayerSession } from '../shared/types/index.js';
 import { sessionService } from './sessionService.js';
 
 /**

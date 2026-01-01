@@ -1,4 +1,4 @@
-import type { PlayerSession } from '../../../shared/types/index.js';
+import type { PlayerSession } from '../shared/types/index.js';
 
 /**
  * Service for managing player sessions

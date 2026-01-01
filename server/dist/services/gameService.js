@@ -1,5 +1,5 @@
-import { createDeck, shuffleDeck } from '../../../shared/utils/cards.js';
-import { hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../../../shared/utils/gameLogic.js';
+import { createDeck, shuffleDeck } from '../shared/utils/cards.js';
+import { hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../shared/utils/gameLogic.js';
 export class GameService {
     constructor() {
         this.gameState = null;

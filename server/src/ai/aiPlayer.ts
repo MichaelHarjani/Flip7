@@ -1,5 +1,5 @@
-import type { Card, Player, GameState } from '../../../shared/types/index.js';
-import { calculateScore, hasFlip7, checkBust, getActivePlayers } from '../../../shared/utils/gameLogic.js';
+import type { Card, Player, GameState } from '../shared/types/index.js';
+import { calculateScore, hasFlip7, checkBust, getActivePlayers } from '../shared/utils/gameLogic.js';
 
 export interface AIDecision {
   action: 'hit' | 'stay';

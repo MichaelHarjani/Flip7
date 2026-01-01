@@ -1,8 +1,8 @@
 import express from 'express';
-import { GameService } from '../services/gameService';
-import { makeAIDecision } from '../ai/aiPlayer';
-import { roomService } from '../services/roomService';
-import { matchmakingService } from '../services/matchmakingService';
+import { GameService } from '../services/gameService.js';
+import { makeAIDecision } from '../ai/aiPlayer.js';
+import { roomService } from '../services/roomService.js';
+import { matchmakingService } from '../services/matchmakingService.js';
 const router = express.Router();
 // Store game instances (in production, use Redis or database)
 const gameInstances = new Map();

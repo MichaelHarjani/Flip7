@@ -1,4 +1,4 @@
-import { calculateScore, hasFlip7, getActivePlayers } from '../../../shared/utils/gameLogic.js';
+import { calculateScore, hasFlip7, getActivePlayers } from '../shared/utils/gameLogic.js';
 /**
  * Calculate probability of busting on next card
  */

@@ -1,6 +1,6 @@
-import type { Card, Player, GameState, RoundHistory, LargestRound } from '../../../shared/types/index.js';
-import { createDeck, shuffleDeck } from '../../../shared/utils/cards.js';
-import { checkBust, hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../../../shared/utils/gameLogic.js';
+import type { Card, Player, GameState, RoundHistory, LargestRound } from '../shared/types/index.js';
+import { createDeck, shuffleDeck } from '../shared/utils/cards.js';
+import { checkBust, hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../shared/utils/gameLogic.js';
 
 export class GameService {
   private gameState: GameState | null = null;
