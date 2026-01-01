@@ -73,83 +73,85 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
   const allNamesValid = playerNames.every(name => name.trim().length > 0);
 
   return (
-    <div className="max-w-md mx-auto p-6 rounded-lg shadow-2xl border-4 bg-gray-800 border-gray-600">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-white">
-          {mode === 'single' ? 'Single Player Settings' : 'Local Game Settings'}
-        </h2>
-        <button
-          onClick={onBack}
-          className="px-3 py-1 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors"
-        >
-          Back
-        </button>
-      </div>
-      
-      <div className="space-y-4">
-        {mode === 'single' && (
+    <div className="flex-1 flex flex-col justify-center">
+      <div className="max-w-sm sm:max-w-md mx-auto p-4 sm:p-6 rounded-lg shadow-2xl border-2 sm:border-4 bg-gray-800 border-gray-600 w-full">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-2xl font-bold text-white">
+            {mode === 'single' ? 'Single Player' : 'Local Game'}
+          </h2>
+          <button
+            onClick={onBack}
+            className="px-3 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200 transition-colors"
+          >
+            Back
+          </button>
+        </div>
+        
+        <div className="space-y-3 sm:space-y-4">
+          {mode === 'single' && (
+            <div>
+              <label className="block text-sm font-medium mb-1 sm:mb-2 text-gray-200">
+                Your Name
+              </label>
+              <input
+                type="text"
+                value={playerNames[0] || ''}
+                onChange={(e) => updatePlayerName(0, e.target.value)}
+                className="w-full px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+                placeholder="Enter your name"
+              />
+            </div>
+          )}
+
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-200">
-              Your Name
+            <label className="block text-sm font-medium mb-1 sm:mb-2 text-gray-200">
+              Number of Players ({mode === 'single' ? '1-4' : '2-4'})
             </label>
             <input
-              type="text"
-              value={playerNames[0] || ''}
-              onChange={(e) => updatePlayerName(0, e.target.value)}
-              className="w-full px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
-              placeholder="Enter your name"
+              type="number"
+              min={mode === 'single' ? 1 : 2}
+              max="4"
+              value={playerCount}
+              onChange={(e) => {
+                const count = parseInt(e.target.value) || (mode === 'single' ? 1 : 2);
+                setPlayerCount(Math.max(mode === 'single' ? 1 : 2, Math.min(4, count)));
+              }}
+              className="w-full px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white focus:border-blue-400 focus:outline-none"
             />
           </div>
-        )}
 
-        <div>
-          <label className="block text-sm font-medium mb-2 text-gray-200">
-            Number of Players ({mode === 'single' ? '1-4' : '2-4'})
-          </label>
-          <input
-            type="number"
-            min={mode === 'single' ? 1 : 2}
-            max="4"
-            value={playerCount}
-            onChange={(e) => {
-              const count = parseInt(e.target.value) || (mode === 'single' ? 1 : 2);
-              setPlayerCount(Math.max(mode === 'single' ? 1 : 2, Math.min(4, count)));
-            }}
-            className="w-full px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white focus:border-blue-400 focus:outline-none"
-          />
-        </div>
-
-        {mode === 'local' && (
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-200">
-              Player Names
-            </label>
-            <div className="space-y-2">
-              {playerNames.map((name, index) => (
-                <div key={index}>
-                  <span className="text-sm mb-1 block text-gray-300">
-                    Player {index + 1}:
-                  </span>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => updatePlayerName(index, e.target.value)}
-                    className="w-full px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
-                    placeholder={`Enter player ${index + 1} name`}
-                  />
-                </div>
-              ))}
+          {mode === 'local' && (
+            <div>
+              <label className="block text-sm font-medium mb-1 sm:mb-2 text-gray-200">
+                Player Names
+              </label>
+              <div className="space-y-2">
+                {playerNames.map((name, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-sm text-gray-300 w-12 flex-shrink-0">
+                      P{index + 1}:
+                    </span>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => updatePlayerName(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+                      placeholder={`Player ${index + 1}`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <button
-          onClick={handleStart}
-          disabled={loading || !allNamesValid}
-          className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
-        >
-          {loading ? 'Starting...' : 'Start Game'}
-        </button>
+          <button
+            onClick={handleStart}
+            disabled={loading || !allNamesValid}
+            className="w-full px-4 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-base hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+          >
+            {loading ? 'Starting...' : 'Start Game'}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -146,12 +146,13 @@ function App() {
   }, [roomState, gameStarted]);
 
   const bgGradient = 'bg-gradient-to-br from-gray-900 via-gray-800 to-purple-900';
+  const screenClass = 'h-full overflow-hidden';
 
   // Show title screen
   if (!gameStarted && !gameMode && !multiplayerMode) {
     return (
-      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
-        <div className="container mx-auto">
+      <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
       </div>
@@ -161,8 +162,8 @@ function App() {
   // Show multiplayer room creation
   if (multiplayerMode === 'create') {
     return (
-      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
-        <div className="container mx-auto">
+      <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <CreateRoomForm onBack={() => setMultiplayerMode(null)} />
         </div>
       </div>
@@ -172,8 +173,8 @@ function App() {
   // Show join room input
   if (multiplayerMode === 'join') {
     return (
-      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
-        <div className="container mx-auto">
+      <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <RoomCodeInput 
             initialCode={urlRoomCode || undefined}
             onJoin={(_code) => {
@@ -195,8 +196,8 @@ function App() {
   // Show matchmaking queue
   if (multiplayerMode === 'matchmaking') {
     return (
-      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
-        <div className="container mx-auto">
+      <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <MatchmakingQueue onCancel={() => setMultiplayerMode(null)} />
         </div>
       </div>
@@ -206,8 +207,8 @@ function App() {
   // Show room lobby
   if (multiplayerMode === 'lobby' && roomState) {
     return (
-      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
-        <div className="container mx-auto">
+      <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <RoomLobby onBack={() => {
             setMultiplayerMode(null);
             useRoomStore.getState().reset();
@@ -220,8 +221,8 @@ function App() {
   // Show game settings for single/local
   if (!gameStarted && gameMode && ['single', 'local'].includes(gameMode)) {
     return (
-      <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
-        <div className="container mx-auto">
+      <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <GameSettings 
             mode={gameMode === 'single' ? 'single' : 'local'} 
             onStart={handleGameStart}
@@ -233,9 +234,9 @@ function App() {
   }
 
   return (
-    <div className={`h-screen ${bgGradient} p-2 md:p-3 transition-colors duration-300 flex flex-col overflow-hidden`}>
+    <div className={`${screenClass} ${bgGradient} p-1 sm:p-2 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
       <div className="container mx-auto flex-1 flex flex-col min-h-0">
-        <h1 className="text-xl md:text-2xl font-bold text-center mb-1 mt-1 flex-shrink-0 text-white">Flip 7</h1>
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-0.5 flex-shrink-0 text-white">Flip 7</h1>
         {error && (
           <div className="border-2 px-4 py-2 rounded mb-2 flex justify-between items-center max-w-4xl mx-auto flex-shrink-0 text-sm bg-red-900 border-red-600 text-red-100">
             <span>{error}</span>

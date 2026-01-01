@@ -109,10 +109,10 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
       <div className={cardsSpacingClass}>
         {/* Modifier cards - Always reserve space */}
-        <div className={`flex gap-1 flex-wrap min-h-[4rem]`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2.5rem] sm:min-h-[3.5rem]`}>
           {player.modifierCards.length > 0 ? (
             player.modifierCards.map(card => (
-              <Card key={card.id} card={card} size="sm" />
+              <Card key={card.id} card={card} size={isCompact ? "xs" : "sm"} />
             ))
           ) : (
             <div className="w-full h-full"></div>
@@ -120,10 +120,10 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         </div>
 
         {/* Number cards - Always reserve space */}
-        <div className={`flex gap-1 flex-wrap min-h-[6rem]`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[3.5rem] sm:min-h-[5rem]`}>
           {player.numberCards.length > 0 ? (
             player.numberCards.map(card => (
-              <Card key={card.id} card={card} size="md" />
+              <Card key={card.id} card={card} size={isCompact ? "sm" : "md"} />
             ))
           ) : (
             <div className="w-full h-full"></div>
@@ -131,10 +131,10 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         </div>
 
         {/* Action cards - Always reserve space */}
-        <div className={`flex gap-1 flex-wrap min-h-[4rem]`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2.5rem] sm:min-h-[3.5rem]`}>
           {player.actionCards.length > 0 ? (
             player.actionCards.map(card => (
-              <Card key={card.id} card={card} size="sm" playerId={player.id} />
+              <Card key={card.id} card={card} size={isCompact ? "xs" : "sm"} playerId={player.id} />
             ))
           ) : (
             <div className="w-full h-full"></div>

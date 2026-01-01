@@ -127,6 +127,11 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
         </div>
       )}
 
+      {/* Debug info - remove after testing */}
+      <div className="mb-2 text-xs text-gray-500">
+        Debug: isHost={String(isHost)}, loading={String(loading)}, players={room.players.length}, status={room.status}
+      </div>
+
       <div className="flex gap-3">
         {isHost && (
           <button
