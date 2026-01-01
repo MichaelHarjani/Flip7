@@ -68,7 +68,8 @@ const io = new Server(httpServer, {
   },
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = Number(process.env.PORT) || 5001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.use(cors());
 app.use(express.json());
@@ -82,8 +83,9 @@ app.get('/health', (req, res) => {
 // Setup WebSocket handlers
 setupWebSocketHandlers(io);
 
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
   console.log(`WebSocket server ready`);
+  console.log(`Health endpoint: http://${HOST}:${PORT}/health`);
 });
 
