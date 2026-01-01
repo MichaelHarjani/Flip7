@@ -25,9 +25,19 @@ interface WebSocketStore {
   clearError: () => void;
 }
 
-// WebSocket server URL - uses VITE_WS_URL from environment or fallback
-const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.PROD ? window.location.origin.replace('https://', 'wss://').replace('http://', 'ws://') : 'http://localhost:5001');
-console.log('WebSocket URL:', WS_URL);
+// WebSocket server URL - uses VITE_WS_URL from environment or fallback to Railway server
+const getWebSocketUrl = (): string => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  if (import.meta.env.PROD) {
+    // Production fallback to Railway server
+    return 'https://flip7-server-production.up.railway.app';
+  }
+  return 'http://localhost:5001';
+};
+const WS_URL = getWebSocketUrl();
+console.log('WebSocket URL:', WS_URL, 'env:', import.meta.env.VITE_WS_URL);
 
 export const useWebSocketStore = create<WebSocketStore>((set, get) => {
   let socket: Socket | null = null;
