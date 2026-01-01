@@ -13,15 +13,25 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
   const { connected } = useWebSocketStore();
   const { setGameState } = useGameStore();
   const [copied, setCopied] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   if (!room) {
     return null;
   }
 
+  // Generate shareable URL
+  const shareUrl = `${window.location.origin}/${room.roomCode}`;
+
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.roomCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
   };
 
   const handleStartGame = () => {
@@ -51,20 +61,36 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
     <div className="max-w-2xl mx-auto p-6 bg-gray-800 border-4 border-gray-600 rounded-lg">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-white mb-2">Room Lobby</h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-300">Room Code:</span>
-            <span className="text-2xl font-bold text-white tracking-widest">{room.roomCode}</span>
-            <button
-              onClick={handleCopyCode}
-              className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300">Room Code:</span>
+              <span className="text-2xl font-bold text-white tracking-widest">{room.roomCode}</span>
+              <button
+                onClick={handleCopyCode}
+                className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              <span className="text-sm text-gray-300">{connected ? 'Connected' : 'Disconnected'}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            <span className="text-sm text-gray-300">{connected ? 'Connected' : 'Disconnected'}</span>
+          
+          {/* Shareable URL */}
+          <div className="p-3 bg-gray-700/50 rounded-lg border border-gray-600">
+            <div className="text-sm text-gray-400 mb-1">Share this link with friends:</div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-blue-400 text-sm break-all">{shareUrl}</code>
+              <button
+                onClick={handleCopyUrl}
+                className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors whitespace-nowrap"
+              >
+                {copiedUrl ? 'Copied!' : 'Copy Link'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

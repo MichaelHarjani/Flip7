@@ -1,22 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRoomStore } from '../stores/roomStore';
 
 interface RoomCodeInputProps {
+  initialCode?: string;
   onJoin: (code: string) => void;
   onCancel: () => void;
 }
 
-export default function RoomCodeInput({ onJoin, onCancel }: RoomCodeInputProps) {
-  const [code, setCode] = useState('');
+export default function RoomCodeInput({ initialCode, onJoin, onCancel }: RoomCodeInputProps) {
+  const [code, setCode] = useState(initialCode || '');
   const [name, setName] = useState('');
   const { loading, error, joinRoom, clearError } = useRoomStore();
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+  
+  // Update code if initialCode changes
+  useEffect(() => {
+    if (initialCode) {
+      setCode(initialCode);
+    }
+  }, [initialCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().length === 6 && name.trim()) {
+    // Get values directly from the input elements as fallback
+    const nameValue = nameInputRef.current?.value || name;
+    const codeValue = codeInputRef.current?.value || code;
+    
+    if (codeValue.trim().length === 6 && nameValue.trim()) {
       clearError();
-      await joinRoom(code.toUpperCase(), name.trim());
-      onJoin(code.toUpperCase());
+      await joinRoom(codeValue.toUpperCase(), nameValue.trim());
+      onJoin(codeValue.toUpperCase());
     }
   };
 
@@ -30,6 +44,7 @@ export default function RoomCodeInput({ onJoin, onCancel }: RoomCodeInputProps) 
             Your Name
           </label>
           <input
+            ref={nameInputRef}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -46,6 +61,7 @@ export default function RoomCodeInput({ onJoin, onCancel }: RoomCodeInputProps) 
             Room Code
           </label>
           <input
+            ref={codeInputRef}
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
@@ -66,7 +82,7 @@ export default function RoomCodeInput({ onJoin, onCancel }: RoomCodeInputProps) 
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={loading || code.length !== 6 || !name.trim()}
+            disabled={loading}
             className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
           >
             {loading ? 'Joining...' : 'Join Room'}

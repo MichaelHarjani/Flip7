@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRoomStore } from '../stores/roomStore';
 
 interface CreateRoomFormProps {
@@ -9,12 +9,15 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
   const [name, setName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(4);
   const { loading, error, createRoom, clearError } = useRoomStore();
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
+    // Get value directly from the input element as fallback for browser automation
+    const inputValue = nameInputRef.current?.value || name;
+    if (inputValue.trim()) {
       clearError();
-      await createRoom(name.trim(), maxPlayers);
+      await createRoom(inputValue.trim(), maxPlayers);
       // Room created, will show lobby via useEffect in App.tsx
     }
   };
@@ -29,6 +32,7 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
             Your Name
           </label>
           <input
+            ref={nameInputRef}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -67,7 +71,7 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={loading || !name.trim()}
+            disabled={loading}
             className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
           >
             {loading ? 'Creating...' : 'Create Room'}

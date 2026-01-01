@@ -22,11 +22,10 @@ interface RoomStore {
 }
 
 export const useRoomStore = create<RoomStore>((set, get) => {
-  const wsStore = useWebSocketStore.getState();
-
-  // Setup WebSocket listeners
+  // Setup WebSocket listeners - called when socket connects
   const setupListeners = () => {
-    const { socket, on } = wsStore;
+    const wsStoreState = useWebSocketStore.getState();
+    const { socket, on } = wsStoreState;
 
     if (!socket) return;
 
@@ -88,17 +87,18 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     });
   };
 
-  // Initialize listeners when store is created
-  if (wsStore.socket) {
+  // Subscribe to websocket store changes to set up listeners when socket connects
+  useWebSocketStore.subscribe((state, prevState) => {
+    // Set up listeners when socket becomes connected
+    if (state.connected && !prevState.connected) {
+      setupListeners();
+    }
+  });
+
+  // Initialize listeners if socket already exists
+  const wsStoreState = useWebSocketStore.getState();
+  if (wsStoreState.socket && wsStoreState.connected) {
     setupListeners();
-  } else {
-    // Wait for socket to be created
-    const checkSocket = setInterval(() => {
-      if (wsStore.socket) {
-        setupListeners();
-        clearInterval(checkSocket);
-      }
-    }, 100);
   }
 
   return {
@@ -111,54 +111,81 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     error: null,
 
     createRoom: async (name: string, maxPlayers: number = 4) => {
-      const { socket, connect } = wsStore;
+      const wsStoreState = useWebSocketStore.getState();
       
-      if (!socket || !socket.connected) {
-        connect();
-        // Wait a bit for connection
-        await new Promise(resolve => setTimeout(resolve, 500));
+      if (!wsStoreState.socket || !wsStoreState.connected) {
+        wsStoreState.connect();
+        // Wait for connection with proper check
+        let attempts = 0;
+        while (!useWebSocketStore.getState().connected && attempts < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        if (!useWebSocketStore.getState().connected) {
+          set({ error: 'Failed to connect to server', loading: false });
+          return;
+        }
       }
 
       set({ loading: true, error: null });
-      wsStore.emit('room:create', { playerName: name, maxPlayers });
+      useWebSocketStore.getState().emit('room:create', { playerName: name, maxPlayers });
     },
 
     joinRoom: async (code: string, name: string) => {
-      const { socket, connect } = wsStore;
+      const wsStoreState = useWebSocketStore.getState();
       
-      if (!socket || !socket.connected) {
-        connect();
-        // Wait a bit for connection
-        await new Promise(resolve => setTimeout(resolve, 500));
+      if (!wsStoreState.socket || !wsStoreState.connected) {
+        wsStoreState.connect();
+        // Wait for connection with proper check
+        let attempts = 0;
+        while (!useWebSocketStore.getState().connected && attempts < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        if (!useWebSocketStore.getState().connected) {
+          set({ error: 'Failed to connect to server', loading: false });
+          return;
+        }
       }
 
       set({ loading: true, error: null });
-      wsStore.emit('room:join', { roomCode: code.toUpperCase(), playerName: name });
+      useWebSocketStore.getState().emit('room:join', { roomCode: code.toUpperCase(), playerName: name });
     },
 
     leaveRoom: () => {
       const { roomCode, sessionId } = get();
       if (roomCode && sessionId) {
-        wsStore.emit('room:leave');
+        useWebSocketStore.getState().emit('room:leave');
       }
       get().reset();
     },
 
     startMatchmaking: async (name: string, maxPlayers: number = 4) => {
-      const { socket, connect } = wsStore;
+      const wsStoreState = useWebSocketStore.getState();
       
-      if (!socket || !socket.connected) {
-        connect();
-        // Wait a bit for connection
-        await new Promise(resolve => setTimeout(resolve, 500));
+      if (!wsStoreState.socket || !wsStoreState.connected) {
+        wsStoreState.connect();
+        // Wait for connection with proper check
+        let attempts = 0;
+        while (!useWebSocketStore.getState().connected && attempts < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        if (!useWebSocketStore.getState().connected) {
+          set({ error: 'Failed to connect to server', loading: false });
+          return;
+        }
       }
 
       set({ loading: true, error: null });
-      wsStore.emit('matchmaking:join', { playerName: name, maxPlayers });
+      useWebSocketStore.getState().emit('matchmaking:join', { playerName: name, maxPlayers });
     },
 
     startGame: () => {
-      wsStore.emit('game:start');
+      useWebSocketStore.getState().emit('game:start');
     },
 
     clearError: () => {

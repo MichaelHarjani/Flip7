@@ -12,6 +12,44 @@ import CreateRoomForm from './components/CreateRoomForm';
 
 type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' | null;
 
+/**
+ * Extract room code from URL path or query parameter
+ * Supports: /ABC123, /?room=ABC123, or /#ABC123
+ */
+function getRoomCodeFromUrl(): string | null {
+  // Check path (e.g., /ABC123)
+  const pathCode = window.location.pathname.slice(1).toUpperCase();
+  if (pathCode.length === 6 && /^[A-Z0-9]+$/.test(pathCode)) {
+    return pathCode;
+  }
+  
+  // Check query parameter (e.g., ?room=ABC123)
+  const params = new URLSearchParams(window.location.search);
+  const queryCode = params.get('room')?.toUpperCase();
+  if (queryCode && queryCode.length === 6 && /^[A-Z0-9]+$/.test(queryCode)) {
+    return queryCode;
+  }
+  
+  // Check hash (e.g., #ABC123)
+  const hashCode = window.location.hash.slice(1).toUpperCase();
+  if (hashCode.length === 6 && /^[A-Z0-9]+$/.test(hashCode)) {
+    return hashCode;
+  }
+  
+  return null;
+}
+
+/**
+ * Clear room code from URL without page reload
+ */
+function clearRoomCodeFromUrl(): void {
+  const url = new URL(window.location.href);
+  url.pathname = '/';
+  url.search = '';
+  url.hash = '';
+  window.history.replaceState({}, '', url.toString());
+}
+
 function App() {
   const { gameState, startRound, error, clearError, loading, gameId, setGameState } = useGameStore();
   const { room: roomState } = useRoomStore();
@@ -19,10 +57,20 @@ function App() {
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [roundStarted, setRoundStarted] = useState(false);
   const [multiplayerMode, setMultiplayerMode] = useState<'lobby' | 'create' | 'join' | 'matchmaking' | null>(null);
+  const [urlRoomCode, setUrlRoomCode] = useState<string | null>(null);
 
   // Always apply dark mode class to document
   useEffect(() => {
     document.documentElement.classList.add('dark');
+  }, []);
+
+  // Check URL for room code on app load
+  useEffect(() => {
+    const roomCode = getRoomCodeFromUrl();
+    if (roomCode) {
+      setUrlRoomCode(roomCode);
+      setMultiplayerMode('join');
+    }
   }, []);
 
   // Connect WebSocket when entering multiplayer mode
@@ -127,10 +175,17 @@ function App() {
       <div className={`min-h-screen ${bgGradient} p-4 transition-colors duration-300`}>
         <div className="container mx-auto">
           <RoomCodeInput 
+            initialCode={urlRoomCode || undefined}
             onJoin={(_code) => {
               // Room joined, will show lobby via useEffect
+              clearRoomCodeFromUrl();
+              setUrlRoomCode(null);
             }}
-            onCancel={() => setMultiplayerMode(null)}
+            onCancel={() => {
+              setMultiplayerMode(null);
+              clearRoomCodeFromUrl();
+              setUrlRoomCode(null);
+            }}
           />
         </div>
       </div>
