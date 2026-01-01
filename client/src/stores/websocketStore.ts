@@ -25,7 +25,9 @@ interface WebSocketStore {
   clearError: () => void;
 }
 
+// WebSocket server URL - uses VITE_WS_URL from environment or fallback
 const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.PROD ? window.location.origin.replace('https://', 'wss://').replace('http://', 'ws://') : 'http://localhost:5001');
+console.log('WebSocket URL:', WS_URL);
 
 export const useWebSocketStore = create<WebSocketStore>((set, get) => {
   let socket: Socket | null = null;
