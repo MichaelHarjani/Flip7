@@ -10,8 +10,8 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "source": "/:path*",
+      "destination": "/index.html"
     }
   ]
 }
