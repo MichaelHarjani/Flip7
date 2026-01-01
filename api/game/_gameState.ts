@@ -3,7 +3,7 @@
 // For production, consider using a database (Redis, MongoDB, etc.)
 
 import { GameService } from './gameService.js';
-import type { GameState } from '../../shared/types/index.js';
+import type { GameState } from '../shared/types/index.js';
 
 // Store game instances in memory
 // In a production environment, this should be replaced with a database

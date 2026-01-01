@@ -115,7 +115,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to start game' }));
-        console.error('Start game error:', errorData);
+        console.error('Start game error response:', JSON.stringify(errorData, null, 2));
+        console.error('Response status:', response.status, response.statusText);
         throw new Error(errorData.details || errorData.error || `Failed to start game (${response.status})`);
       }
       
