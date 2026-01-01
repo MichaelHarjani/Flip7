@@ -53,34 +53,9 @@ try {
 
 console.log('=== Attempting to import modules ===');
 
-let gameRoutes;
-let setupWebSocketHandlers;
-
-try {
-  console.log('Importing gameRoutes...');
-  const gameRoutesModule = await import('./routes/gameRoutes.js');
-  gameRoutes = gameRoutesModule.default;
-  console.log('gameRoutes imported successfully');
-} catch (error: any) {
-  console.error('FAILED to import gameRoutes:', error);
-  console.error('Error message:', error?.message);
-  console.error('Error code:', error?.code);
-  console.error('Error stack:', error?.stack);
-  process.exit(1);
-}
-
-try {
-  console.log('Importing websocket handlers...');
-  const handlersModule = await import('./websocket/handlers.js');
-  setupWebSocketHandlers = handlersModule.setupWebSocketHandlers;
-  console.log('websocket handlers imported successfully');
-} catch (error: any) {
-  console.error('FAILED to import websocket handlers:', error);
-  console.error('Error message:', error?.message);
-  console.error('Error code:', error?.code);
-  console.error('Error stack:', error?.stack);
-  process.exit(1);
-}
+// Use regular imports instead of dynamic imports for better compatibility
+import gameRoutes from './routes/gameRoutes.js';
+import { setupWebSocketHandlers } from './websocket/handlers.js';
 
 console.log('=== All imports successful, starting server ===');
 
