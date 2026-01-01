@@ -2,6 +2,28 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { readdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Verify dist structure exists
+try {
+  const distPath = __dirname;
+  const servicesPath = join(distPath, 'services');
+  const routesPath = join(distPath, 'routes');
+  
+  console.log('Checking dist structure...');
+  console.log('Dist path:', distPath);
+  console.log('Services exists:', readdirSync(servicesPath).length > 0);
+  console.log('Routes exists:', readdirSync(routesPath).length > 0);
+} catch (error) {
+  console.error('Dist structure check failed:', error);
+  process.exit(1);
+}
+
 import gameRoutes from './routes/gameRoutes.js';
 import { setupWebSocketHandlers } from './websocket/handlers.js';
 
