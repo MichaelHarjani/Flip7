@@ -141,11 +141,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     
+    if (!currentState) {
+      set({ error: 'No game state found. Please start a new game.', loading: false });
+      return;
+    }
+    
     set({ loading: true, error: null });
     try {
       console.log('Starting round for game:', gameId);
       const response = await fetch(`${API_BASE}/${gameId}/round/start`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameState: currentState }),
       });
       
       console.log('Round start response status:', response.status);
@@ -177,7 +184,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   hit: async (playerId: string) => {
-    const { gameId } = get();
+    const { gameId, gameState: currentState } = get();
     const roomStore = useRoomStore.getState();
     const wsStore = useWebSocketStore.getState();
     
@@ -190,14 +197,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     // Fallback to REST API for single/local mode
-    if (!gameId) return;
+    if (!gameId || !currentState) return;
     
     set({ loading: true, error: null });
     try {
       const response = await fetch(`${API_BASE}/${gameId}/hit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId }),
+        body: JSON.stringify({ playerId, gameState: currentState }),
       });
       
       if (!response.ok) {
@@ -213,7 +220,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   stay: async (playerId: string) => {
-    const { gameId } = get();
+    const { gameId, gameState: currentState } = get();
     const roomStore = useRoomStore.getState();
     const wsStore = useWebSocketStore.getState();
     
@@ -226,14 +233,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     // Fallback to REST API for single/local mode
-    if (!gameId) return;
+    if (!gameId || !currentState) return;
     
     set({ loading: true, error: null });
     try {
       const response = await fetch(`${API_BASE}/${gameId}/stay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId }),
+        body: JSON.stringify({ playerId, gameState: currentState }),
       });
       
       if (!response.ok) {
@@ -249,7 +256,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   playActionCard: async (playerId: string, cardId: string, targetPlayerId?: string) => {
-    const { gameId } = get();
+    const { gameId, gameState: currentState } = get();
     const roomStore = useRoomStore.getState();
     const wsStore = useWebSocketStore.getState();
     
@@ -262,14 +269,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     // Fallback to REST API for single/local mode
-    if (!gameId) return;
+    if (!gameId || !currentState) return;
     
     set({ loading: true, error: null });
     try {
       const response = await fetch(`${API_BASE}/${gameId}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, cardId, targetPlayerId }),
+        body: JSON.stringify({ playerId, cardId, targetPlayerId, gameState: currentState }),
       });
       
       if (!response.ok) {
@@ -285,7 +292,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   startNextRound: async () => {
-    const { gameId } = get();
+    const { gameId, gameState: currentState } = get();
     const roomStore = useRoomStore.getState();
     const wsStore = useWebSocketStore.getState();
     
@@ -298,12 +305,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     // Fallback to REST API for single/local mode
-    if (!gameId) return;
+    if (!gameId || !currentState) return;
     
     set({ loading: true, error: null });
     try {
       const response = await fetch(`${API_BASE}/${gameId}/round/next`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameState: currentState }),
       });
       
       if (!response.ok) {
@@ -387,7 +396,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const response = await fetch(`${API_BASE}/${gameId}/ai/decision`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ playerId }),
+          body: JSON.stringify({ playerId, gameState }),
         });
         
         if (!response.ok) {

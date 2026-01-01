@@ -1,27 +1,35 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getGameService } from '../../_gameState.js';
+import { createGameService } from '../../_gameState.js';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { gameId } = req.query;
+    const { gameState: incomingState } = req.body;
     
-    if (!gameId || typeof gameId !== 'string') {
-      return res.status(400).json({ error: 'Invalid game ID' });
+    if (!incomingState) {
+      return res.status(400).json({ error: 'Game state is required' });
     }
 
-    const gameService = getGameService(gameId);
-    
-    if (!gameService) {
-      return res.status(404).json({ error: 'Game not found' });
-    }
+    // Create a new game service and restore state
+    const gameService = createGameService();
+    gameService.restoreState(incomingState);
 
     const gameState = gameService.startNextRound();
     res.json({ gameState });
@@ -30,4 +38,3 @@ export default async function handler(
     res.status(400).json({ error: error.message || 'Failed to start next round' });
   }
 }
-

@@ -704,6 +704,14 @@ export class GameService {
   }
 
   /**
+   * Restore game state from a serialized state object
+   * Used for stateless API operations where state is passed with each request
+   */
+  restoreState(state: GameState): void {
+    this.gameState = state;
+  }
+
+  /**
    * Play an action card
    */
   playActionCard(

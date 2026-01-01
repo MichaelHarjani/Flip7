@@ -1,36 +1,33 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getGameService } from '../../_gameState.js';
-import { makeAIDecision } from '../../../../server/src/ai/aiPlayer.js';
+import { makeAIDecision } from '../../../server/src/ai/aiPlayer.js';
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { gameId } = req.query;
-    const { playerId } = req.body;
+    const { playerId, gameState } = req.body;
     
-    if (!gameId || typeof gameId !== 'string') {
-      return res.status(400).json({ error: 'Invalid game ID' });
-    }
-
-    const gameService = getGameService(gameId);
-    
-    if (!gameService) {
-      return res.status(404).json({ error: 'Game not found' });
-    }
-
-    const gameState = gameService.getGameState();
     if (!gameState) {
-      return res.status(404).json({ error: 'Game state not found' });
+      return res.status(400).json({ error: 'Game state is required' });
     }
 
-    const player = gameState.players.find(p => p.id === playerId);
+    const player = gameState.players.find((p: any) => p.id === playerId);
     if (!player || !player.isAI) {
       return res.status(400).json({ error: 'Player not found or not AI' });
     }
@@ -42,4 +39,3 @@ export default async function handler(
     res.status(400).json({ error: error.message || 'Failed to get AI decision' });
   }
 }
-
