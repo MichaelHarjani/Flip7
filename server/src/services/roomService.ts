@@ -72,9 +72,7 @@ export class RoomService {
       throw new Error('Room is not accepting new players');
     }
 
-    if (room.players.length >= room.maxPlayers) {
-      throw new Error('Room is full');
-    }
+    // No max player limit - rooms can have unlimited players
 
     // Check if player name is already taken in this room
     if (room.players.some(p => p.name.toLowerCase() === playerName.toLowerCase())) {

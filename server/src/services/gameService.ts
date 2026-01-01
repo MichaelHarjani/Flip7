@@ -1,5 +1,5 @@
 import type { Card, Player, GameState, RoundHistory, LargestRound } from '../shared/types/index.js';
-import { createDeck, shuffleDeck } from '../shared/utils/cards.js';
+import { createDeck, shuffleDeck, createScaledDeck } from '../shared/utils/cards.js';
 import { checkBust, hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../shared/utils/gameLogic.js';
 
 export class GameService {
@@ -27,7 +27,8 @@ export class GameService {
       aiDifficulty: aiDifficulties[index - (playerNames.length - aiDifficulties.length)] || 'moderate',
     }));
 
-    const deck = shuffleDeck(createDeck());
+    // Create deck scaled for player count (1 deck per 10 players)
+    const deck = shuffleDeck(createScaledDeck(players.length));
 
       this.gameState = {
         players,

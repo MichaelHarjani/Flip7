@@ -12,7 +12,7 @@ interface RoomStore {
   error: string | null;
 
   // Actions
-  createRoom: (name: string, maxPlayers?: number) => Promise<void>;
+  createRoom: (name: string) => Promise<void>;
   joinRoom: (code: string, name: string) => Promise<void>;
   leaveRoom: () => void;
   startMatchmaking: (name: string, maxPlayers?: number) => Promise<void>;
@@ -110,7 +110,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     loading: false,
     error: null,
 
-    createRoom: async (name: string, maxPlayers: number = 4) => {
+    createRoom: async (name: string) => {
       const wsStoreState = useWebSocketStore.getState();
       
       if (!wsStoreState.socket || !wsStoreState.connected) {
@@ -129,7 +129,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
       }
 
       set({ loading: true, error: null });
-      useWebSocketStore.getState().emit('room:create', { playerName: name, maxPlayers });
+      useWebSocketStore.getState().emit('room:create', { playerName: name });
     },
 
     joinRoom: async (code: string, name: string) => {

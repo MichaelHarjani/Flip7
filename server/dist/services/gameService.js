@@ -1,4 +1,4 @@
-import { createDeck, shuffleDeck } from '../shared/utils/cards.js';
+import { shuffleDeck, createScaledDeck } from '../shared/utils/cards.js';
 import { hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../shared/utils/gameLogic.js';
 export class GameService {
     constructor() {
@@ -22,7 +22,8 @@ export class GameService {
             hasSecondChance: false,
             aiDifficulty: aiDifficulties[index - (playerNames.length - aiDifficulties.length)] || 'moderate',
         }));
-        const deck = shuffleDeck(createDeck());
+        // Create deck scaled for player count (1 deck per 10 players)
+        const deck = shuffleDeck(createScaledDeck(players.length));
         this.gameState = {
             players,
             deck,

@@ -78,3 +78,25 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return shuffled;
 }
 
+/**
+ * Create a deck scaled for the number of players
+ * Uses 1 deck for 1-10 players, 2 decks for 11-20, etc.
+ */
+export function createScaledDeck(playerCount: number): Card[] {
+  const numberOfDecks = Math.max(1, Math.ceil(playerCount / 10));
+  const combinedDeck: Card[] = [];
+  
+  for (let deckNum = 0; deckNum < numberOfDecks; deckNum++) {
+    const deck = createDeck();
+    // Add deck number prefix to card IDs to ensure uniqueness
+    for (const card of deck) {
+      combinedDeck.push({
+        ...card,
+        id: `deck${deckNum}-${card.id}`,
+      });
+    }
+  }
+  
+  return combinedDeck;
+}
+

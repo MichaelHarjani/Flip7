@@ -101,7 +101,12 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
 
       <div className="mb-4">
         <div className="text-sm text-gray-300">
-          Players: {room.players.length} / {room.maxPlayers}
+          Players: {room.players.length}
+          {room.players.length >= 10 && (
+            <span className="ml-2 text-blue-400">
+              ({Math.ceil(room.players.length / 10)} deck{Math.ceil(room.players.length / 10) > 1 ? 's' : ''} in play)
+            </span>
+          )}
         </div>
         {room.players.length < 2 && (
           <div className="text-sm text-yellow-400 mt-1">

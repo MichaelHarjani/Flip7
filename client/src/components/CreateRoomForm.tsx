@@ -7,7 +7,6 @@ interface CreateRoomFormProps {
 
 export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
   const [name, setName] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState(4);
   const { loading, error, createRoom, clearError } = useRoomStore();
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -17,7 +16,8 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
     const inputValue = nameInputRef.current?.value || name;
     if (inputValue.trim()) {
       clearError();
-      await createRoom(inputValue.trim(), maxPlayers);
+      // No max player limit - rooms can have unlimited players
+      await createRoom(inputValue.trim());
       // Room created, will show lobby via useEffect in App.tsx
     }
   };
@@ -42,24 +42,6 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
             required
             disabled={loading}
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Max Players
-          </label>
-          <select
-            value={maxPlayers}
-            onChange={(e) => setMaxPlayers(Number(e.target.value))}
-            className="w-full px-4 py-2 bg-gray-700 border-2 border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
-            disabled={loading}
-          >
-            <option value={2}>2 Players</option>
-            <option value={3}>3 Players</option>
-            <option value={4}>4 Players</option>
-            <option value={5}>5 Players</option>
-            <option value={6}>6 Players</option>
-          </select>
         </div>
 
         {error && (
