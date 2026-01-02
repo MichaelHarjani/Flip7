@@ -3,7 +3,6 @@
   "buildCommand": "npm install && cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
   "installCommand": "npm install && cd client && npm install",
-  "framework": "vite",
   "functions": {
     "api/**/*.ts": {
       "runtime": "@vercel/node@3"
@@ -12,6 +11,6 @@
   "rewrites": [
     { "source": "/api/game/start", "destination": "/api/game/start" },
     { "source": "/api/game/:path*", "destination": "/api/game/[...path]" },
-    { "source": "/:path*", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
