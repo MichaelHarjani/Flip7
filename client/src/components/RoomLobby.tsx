@@ -134,7 +134,7 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
         <br />
         Button disabled: {String(loading || room.players.length < 2 || room.status !== 'waiting')}
         <br />
-        Disabled reasons: loading={String(loading)}, players<2={String(room.players.length < 2)}, status!='waiting'={String(room.status !== 'waiting')}
+        Disabled reasons: loading={String(loading)}, playersLessThan2={String(room.players.length < 2)}, statusNotWaiting={String(room.status !== 'waiting')}
       </div>
 
       <div className="flex gap-3">
