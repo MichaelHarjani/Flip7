@@ -9,16 +9,9 @@
       "runtime": "@vercel/node@3"
     }
   },
-  "routes": [
-    { "src": "/api/game/start", "dest": "/api/game/start" },
-    { "src": "/api/game/([^/]+)/round-begin", "dest": "/api/game/[gameId]/round-begin?gameId=$1" },
-    { "src": "/api/game/([^/]+)/round-next", "dest": "/api/game/[gameId]/round-next?gameId=$1" },
-    { "src": "/api/game/([^/]+)/hit", "dest": "/api/game/[gameId]/hit?gameId=$1" },
-    { "src": "/api/game/([^/]+)/stay", "dest": "/api/game/[gameId]/stay?gameId=$1" },
-    { "src": "/api/game/([^/]+)/action", "dest": "/api/game/[gameId]/action?gameId=$1" },
-    { "src": "/api/game/([^/]+)/state", "dest": "/api/game/[gameId]/state?gameId=$1" },
-    { "src": "/api/game/([^/]+)/ai/decision", "dest": "/api/game/[gameId]/ai/decision?gameId=$1" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/game/start", "destination": "/api/game/start" },
+    { "source": "/api/game/:path*", "destination": "/api/game/[...path]" },
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
