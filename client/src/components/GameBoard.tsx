@@ -476,7 +476,7 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   const humanPlayers = gameState.players?.filter(p => !p.isAI) || [];
 
   return (
-    <div className={`max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select ${screenShake ? 'screen-shake' : ''}`}>
+    <div className={`max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select overflow-hidden ${screenShake ? 'screen-shake' : ''}`}>
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
       <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden" style={{ maxHeight: '100%' }}>
         {/* Compact header with scores and game state indicators */}
@@ -543,14 +543,14 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
         ) : (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Scrollable content area - AI players and human player */}
-            <div className="flex-1 overflow-y-auto min-h-0 mb-2 scrollbar-thin" style={{ 
-              paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
+            <div className="flex-1 overflow-y-auto min-h-0 mb-1 sm:mb-2 scrollbar-thin overflow-x-hidden" style={{ 
+              paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0px))',
               WebkitOverflowScrolling: 'touch'
             }}>
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-2">
-                <div className="flex gap-2">
+              <div className="flex-shrink-0 mb-1 sm:mb-2">
+                <div className="flex gap-1 sm:gap-2">
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -582,10 +582,10 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-4 pt-2 mt-2">
+              <div className="flex-shrink-0 border-t-2 sm:border-t-4 pt-1 sm:pt-2 mt-1 sm:mt-2">
                 {humanPlayers.length > 1 ? (
                   // Multiple human players (Local mode) - show in a row like AI players
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 sm:gap-2">
                     {humanPlayers.map((player) => {
                       const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                       const widthClass = humanPlayers.length === 3 ? 'flex-1' : humanPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[200px]';
@@ -629,8 +629,8 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
       {(humanPlayer || currentHumanPlayer) && (
         <div 
           data-action-buttons
-          className="flex-shrink-0 pt-2 sm:pt-2 border-t-2 border-gray-600 space-y-1 sm:space-y-2 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[80px] sm:min-h-[100px]" 
-          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
+          className="flex-shrink-0 pt-1 sm:pt-2 border-t-2 border-gray-600 space-y-0.5 sm:space-y-1 md:space-y-2 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[60px] sm:min-h-[80px] md:min-h-[100px]" 
+          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
         >
           {false && onNewGame ? (
             <div className="flex gap-2 sm:gap-3 justify-center">
@@ -667,8 +667,8 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
           ) : currentHumanPlayer &&
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
-            <div className="flex flex-col gap-1 sm:gap-2">
-              <div className="flex items-start gap-2 sm:gap-4 justify-center flex-wrap">
+            <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2">
+              <div className="flex items-start gap-1 sm:gap-2 md:gap-4 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
               </div>

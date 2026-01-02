@@ -24,10 +24,10 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
   // Get info about the card that triggered the Second Chance usage
   const usedByInfo = isUsedSecondChance ? player?.secondChanceUsedBy : null;
   const sizeClasses = {
-    xs: 'w-7 h-9 text-[9px]',
-    sm: 'w-10 h-14 text-[10px]',
-    md: 'w-14 h-20 text-xs',
-    lg: 'w-18 h-28 text-sm',
+    xs: 'w-6 h-8 sm:w-7 sm:h-9 text-[8px] sm:text-[9px]',
+    sm: 'w-8 h-11 sm:w-10 sm:h-14 text-[9px] sm:text-[10px]',
+    md: 'w-12 h-16 sm:w-14 sm:h-20 text-[10px] sm:text-xs',
+    lg: 'w-16 h-22 sm:w-18 sm:h-28 text-xs sm:text-sm',
   };
 
   // Animation classes
@@ -51,6 +51,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
     duration-200
     relative
     group
+    overflow-visible
   `;
 
   // Tooltip content
@@ -72,8 +73,8 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
 
   if (card.type === 'number') {
     return (
-      <div className={`${baseClasses} bg-white border-4 border-blue-600 text-blue-900 shadow-lg`}>
-        <div className={`${size === 'xs' ? 'text-xl' : size === 'sm' ? 'text-2xl' : size === 'md' ? 'text-2xl' : 'text-3xl'} font-extrabold`}>{card.value}</div>
+      <div className={`${baseClasses} bg-white border-2 sm:border-4 border-blue-600 text-blue-900 shadow-lg`}>
+        <div className={`${size === 'xs' ? 'text-base sm:text-xl' : size === 'sm' ? 'text-lg sm:text-2xl' : size === 'md' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-extrabold`}>{card.value}</div>
         {showTooltip && (
           <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
             {getTooltipContent()}
@@ -93,7 +94,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
 
     if (card.modifierType === 'multiply') {
       return (
-        <div className={`${baseClasses} bg-yellow-300 border-4 border-yellow-700 text-yellow-950 shadow-lg`}>
+        <div className={`${baseClasses} bg-yellow-300 border-2 sm:border-4 border-yellow-700 text-yellow-950 shadow-lg`}>
           <div className={`${modifierSizeClasses[size]} font-extrabold`}>×{card.modifierValue}</div>
           {showTooltip && (
             <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
@@ -104,7 +105,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
       );
     }
     return (
-      <div className={`${baseClasses} bg-green-300 border-4 border-green-700 text-green-950 shadow-lg`}>
+      <div className={`${baseClasses} bg-green-300 border-2 sm:border-4 border-green-700 text-green-950 shadow-lg`}>
         <div className={`${modifierSizeClasses[size]} font-extrabold`}>+{card.modifierValue}</div>
         {showTooltip && (
           <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
@@ -190,7 +191,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
     }
 
     return (
-      <div className={`${baseClasses} ${actionColors[card.actionType || 'freeze']} shadow-lg relative`}>
+      <div className={`${baseClasses} ${actionColors[card.actionType || 'freeze']} shadow-lg relative border-2 sm:border-4`}>
         <div className={`${iconSizeClasses[size]} font-extrabold`}>
           {actionIcons[card.actionType || 'freeze']}
         </div>

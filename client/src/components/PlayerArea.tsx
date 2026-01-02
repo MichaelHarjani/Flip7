@@ -29,11 +29,11 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
   const score = calculateScore(player);
   const hasFlip7Bonus = hasFlip7(player);
 
-  const paddingClass = isCompact ? 'p-1' : 'p-2 md:p-3';
-  const headerMarginClass = isCompact ? 'mb-0.5' : 'mb-2';
-  const titleSizeClass = isCompact ? 'text-xs' : 'text-base';
-  const scoreSizeClass = isCompact ? 'text-xs' : 'text-sm';
-  const cardsSpacingClass = isCompact ? 'space-y-0.5' : 'space-y-1';
+  const paddingClass = isCompact ? 'p-0.5 sm:p-1' : 'p-1.5 sm:p-2 md:p-3';
+  const headerMarginClass = isCompact ? 'mb-0.5' : 'mb-1 sm:mb-2';
+  const titleSizeClass = isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base';
+  const scoreSizeClass = isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm';
+  const cardsSpacingClass = isCompact ? 'space-y-0' : 'space-y-0.5 sm:space-y-1';
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;
 
@@ -52,7 +52,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
     <div
       data-player-area
       data-player-id={player.id}
-      className={`relative ${paddingClass} rounded-lg border-4 transition-all duration-300
+      className={`relative ${paddingClass} rounded-lg border-2 sm:border-4 transition-all duration-300 overflow-hidden
         ${isFrozen
           ? 'border-cyan-400 bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 animate-pulse-soft'
           : isCurrentPlayer 
@@ -72,8 +72,8 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
     >
       <div className={`flex flex-col ${headerMarginClass} relative`}>
         {/* Name and tags on first line with avatar */}
-        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-          <span className="text-2xl">{getPlayerAvatar()}</span>
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap mb-0.5 sm:mb-1">
+          <span className="text-lg sm:text-2xl">{getPlayerAvatar()}</span>
           <h3 className={`font-bold ${titleSizeClass} text-white`}>{player.name}</h3>
           {player.isAI && (
             <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-gray-600 border-gray-400 text-gray-200 animate-scale-in">AI</span>
@@ -88,17 +88,17 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         {/* Scores on second line - Enhanced with larger display */}
         <div className="flex items-center justify-between">
           <div className="text-left">
-            <div className={`text-xs font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-sm' : 'text-lg'} font-bold text-white`}>{player.score}</span></div>
-            <div className={`font-bold ${scoreSizeClass} text-white flex items-center gap-2`}>
+            <div className={`${isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'} font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-xs sm:text-sm' : 'text-base sm:text-lg'} font-bold text-white`}>{player.score}</span></div>
+            <div className={`font-bold ${scoreSizeClass} text-white flex items-center gap-1 sm:gap-2`}>
               <span>Round:</span> 
-              <span className={`${isCompact ? 'text-xl' : 'text-3xl'} font-extrabold ${
+              <span className={`${isCompact ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-extrabold ${
                 score > 7 ? 'text-red-400' : score === 7 ? 'text-green-400' : 'text-white'
               }`}>{score}</span>
               {hasFlip7Bonus && (
-                <span className="ml-1 font-extrabold text-sm text-green-300 animate-bounce-soft">+15 🎉</span>
+                <span className="ml-0.5 sm:ml-1 font-extrabold text-[10px] sm:text-sm text-green-300 animate-bounce-soft">+15 🎉</span>
               )}
               {/* Card count indicator */}
-              <span className="text-xs text-gray-400 ml-auto">
+              <span className={`${isCompact ? 'text-[8px] sm:text-xs' : 'text-xs'} text-gray-400 ml-auto`}>
                 ({player.numberCards.length} cards)
               </span>
             </div>
@@ -131,7 +131,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
       <div className={cardsSpacingClass}>
         {/* Modifier cards - Always reserve space with animations */}
-        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2.5rem] sm:min-h-[3.5rem]`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[1.5rem] sm:min-h-[2.5rem] md:min-h-[3.5rem] overflow-hidden`}>
           {player.modifierCards.length > 0 ? (
             player.modifierCards.map((card, index) => (
               <Card 
@@ -149,13 +149,13 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         </div>
 
         {/* Number cards - Always reserve space with flip animations */}
-        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[3.5rem] sm:min-h-[5rem]`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2rem] sm:min-h-[3.5rem] md:min-h-[5rem] overflow-hidden`}>
           {player.numberCards.length > 0 ? (
             player.numberCards.map((card, index) => (
               <Card 
                 key={card.id} 
                 card={card} 
-                size={isCompact ? "sm" : "md"} 
+                size={isCompact ? "xs" : "sm"} 
                 animate="flip"
                 showTooltip={true}
                 className={`animation-delay-${index * 100}`}
@@ -167,7 +167,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         </div>
 
         {/* Action cards - Always reserve space with scale animations */}
-        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2.5rem] sm:min-h-[3.5rem]`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[1.5rem] sm:min-h-[2.5rem] md:min-h-[3.5rem] overflow-hidden`}>
           {player.actionCards.length > 0 ? (
             player.actionCards.map((card, index) => (
               <Card 

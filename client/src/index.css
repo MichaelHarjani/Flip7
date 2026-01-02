@@ -80,32 +80,32 @@ code {
 
 @media (max-width: 640px) {
   .game-content-scale {
-    zoom: 0.85;
+    zoom: 0.9;
   }
 }
 
 @media (max-width: 400px) {
   .game-content-scale {
-    zoom: 0.75;
+    zoom: 0.8;
   }
 }
 
 @media (max-height: 700px) {
   .game-content-scale {
-    zoom: 0.8;
+    zoom: 0.85;
   }
 }
 
 @media (max-height: 600px) {
   .game-content-scale {
-    zoom: 0.7;
+    zoom: 0.75;
   }
 }
 
 /* Combined small screen and short height */
 @media (max-width: 400px) and (max-height: 700px) {
   .game-content-scale {
-    zoom: 0.65;
+    zoom: 0.7;
   }
 }
 
@@ -125,6 +125,60 @@ code {
   [data-action-buttons] ~ * {
     margin-bottom: 0;
   }
+}
+
+/* Constrain animations to prevent going off screen */
+[data-player-area] {
+  overflow: hidden;
+  contain: layout style paint;
+}
+
+/* Prevent card animations from going off screen */
+.animate-flip,
+.animate-slide-in,
+.animate-scale-in,
+.animate-glow {
+  will-change: transform;
+  transform-origin: center center;
+  contain: layout style paint;
+}
+
+/* Constrain hover effects on mobile */
+@media (max-width: 640px) {
+  .hover\:scale-105:hover,
+  .hover\:scale-110:hover {
+    transform: scale(1.02) !important;
+  }
+  
+  /* Reduce animation intensity on mobile - override with more constrained transforms */
+  .animate-flip {
+    animation: flipMobile 0.6s ease-in-out;
+  }
+  
+  .animate-slide-in {
+    animation: slideInMobile 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleInMobile 0.3s ease-out;
+  }
+}
+
+/* Mobile-specific animation keyframes with constrained transforms */
+@keyframes flipMobile {
+  0% { transform: rotateY(0deg) scale(0.9); opacity: 0; }
+  50% { transform: rotateY(90deg) scale(0.95); opacity: 0.5; }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
+
+@keyframes slideInMobile {
+  0% { transform: translateX(-30%) scale(0.9); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes scaleInMobile {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* Screen shake animation for dramatic effects */
