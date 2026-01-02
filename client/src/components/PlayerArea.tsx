@@ -56,7 +56,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         ${isFrozen
           ? 'border-cyan-400 bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 animate-pulse-soft'
           : isCurrentPlayer 
-            ? 'border-yellow-500 bg-yellow-900 shadow-2xl animate-pulse-soft'
+            ? 'border-yellow-500 bg-yellow-900 shadow-2xl animate-border-glow'
             : 'border-gray-500 bg-gray-800 shadow-md'
         }
         ${player.hasBusted ? 'opacity-60 animate-shake' : ''}

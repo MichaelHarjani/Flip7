@@ -5,7 +5,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ onClose }: SettingsProps) {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, reduceMotion, setTheme, setReduceMotion } = useThemeStore();
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-scale-in">
@@ -23,62 +23,35 @@ export default function Settings({ onClose }: SettingsProps) {
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-semibold text-white mb-3">Theme</h3>
-            <div className="grid grid-cols-1 gap-3">
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as ThemeType)}
+              className="w-full px-4 py-2.5 bg-gray-700 border-2 border-gray-600 rounded-lg text-white font-semibold focus:border-blue-500 focus:outline-none cursor-pointer"
+            >
               {(Object.keys(themeConfigs) as ThemeType[]).map((themeKey) => {
                 const config = themeConfigs[themeKey];
-                const isActive = theme === themeKey;
-                
                 return (
-                  <button
-                    key={themeKey}
-                    onClick={() => setTheme(themeKey)}
-                    className={`
-                      relative p-4 rounded-xl border-2 transition-all text-left
-                      ${isActive 
-                        ? 'border-blue-500 bg-blue-900/30 shadow-lg shadow-blue-500/20' 
-                        : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-white mb-1">{config.name}</div>
-                        <div className="flex gap-2 mt-2">
-                          {/* Color preview */}
-                          {themeKey === 'classic-casino' && (
-                            <>
-                              <div className="w-6 h-6 rounded-full bg-felt border-2 border-gold"></div>
-                              <div className="w-6 h-6 rounded-full bg-gold border-2 border-gold-dark"></div>
-                            </>
-                          )}
-                          {themeKey === 'cyberpunk-neon' && (
-                            <>
-                              <div className="w-6 h-6 rounded-full bg-neon-blue border-2 border-neon-pink"></div>
-                              <div className="w-6 h-6 rounded-full bg-neon-purple border-2 border-neon-green"></div>
-                            </>
-                          )}
-                          {themeKey === 'minimalist' && (
-                            <>
-                              <div className="w-6 h-6 rounded-full bg-minimal-light border-2 border-minimal-dark"></div>
-                              <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-gray-600"></div>
-                            </>
-                          )}
-                          {themeKey === 'dark-luxury' && (
-                            <>
-                              <div className="w-6 h-6 rounded-full bg-gray-800 border-2 border-purple-600"></div>
-                              <div className="w-6 h-6 rounded-full bg-purple-600 border-2 border-blue-600"></div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      {isActive && (
-                        <div className="text-blue-400 text-2xl">✓</div>
-                      )}
-                    </div>
-                  </button>
+                  <option key={themeKey} value={themeKey}>
+                    {config.name}
+                  </option>
                 );
               })}
-            </div>
+            </select>
+          </div>
+
+          <div>
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-1">Reduce Motion</h3>
+                <p className="text-sm text-gray-400">Disable animations and transitions</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={reduceMotion}
+                onChange={(e) => setReduceMotion(e.target.checked)}
+                className="w-6 h-6 rounded border-2 border-gray-600 bg-gray-700 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
+              />
+            </label>
           </div>
         </div>
 

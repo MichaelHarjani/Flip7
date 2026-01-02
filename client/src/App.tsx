@@ -54,7 +54,7 @@ function clearRoomCodeFromUrl(): void {
 function App() {
   const { gameState, startRound, error, clearError, loading, gameId, setGameState } = useGameStore();
   const { room: roomState } = useRoomStore();
-  const { getThemeConfig } = useThemeStore();
+  const { getThemeConfig, reduceMotion } = useThemeStore();
   const themeConfig = getThemeConfig();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
@@ -66,6 +66,15 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
+
+  // Apply reduce motion class when enabled
+  useEffect(() => {
+    if (reduceMotion) {
+      document.documentElement.classList.add('reduce-motion');
+    } else {
+      document.documentElement.classList.remove('reduce-motion');
+    }
+  }, [reduceMotion]);
 
   // Check URL for room code on app load
   useEffect(() => {
@@ -253,7 +262,7 @@ function App() {
         )}
         {gameState ? (
           <div className="flex-1 min-h-0">
-            <GameBoard onNewGame={handleNewGame} />
+            <GameBoard onNewGame={handleNewGame} onBack={handleNewGame} />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto p-6 text-center rounded-lg shadow-lg border-4 bg-gray-800 border-gray-600 text-white">

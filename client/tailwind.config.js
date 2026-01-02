@@ -44,6 +44,7 @@ export default {
         'scale-in': 'scaleIn 0.3s ease-out',
         'bounce-soft': 'bounceSoft 0.5s ease-out',
         'shimmer': 'shimmer 2s linear infinite',
+        'border-glow': 'borderGlow 2s ease-in-out infinite',
       },
       keyframes: {
         flip: {
@@ -83,6 +84,14 @@ export default {
         shimmer: {
           '0%': { backgroundPosition: '-1000px 0' },
           '100%': { backgroundPosition: '1000px 0' },
+        },
+        borderGlow: {
+          '0%, 100%': { 
+            boxShadow: '0 0 8px rgba(234, 179, 8, 0.6), 0 0 12px rgba(234, 179, 8, 0.4), 0 0 16px rgba(234, 179, 8, 0.2)',
+          },
+          '50%': { 
+            boxShadow: '0 0 16px rgba(250, 204, 21, 0.9), 0 0 24px rgba(250, 204, 21, 0.7), 0 0 32px rgba(250, 204, 21, 0.4)',
+          },
         },
       },
     },

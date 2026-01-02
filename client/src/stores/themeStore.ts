@@ -59,7 +59,9 @@ export const themeConfigs: Record<ThemeType, ThemeConfig> = {
 
 interface ThemeStore {
   theme: ThemeType;
+  reduceMotion: boolean;
   setTheme: (theme: ThemeType) => void;
+  setReduceMotion: (reduceMotion: boolean) => void;
   getThemeConfig: () => ThemeConfig;
 }
 
@@ -67,7 +69,9 @@ export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
       theme: 'dark-luxury',
+      reduceMotion: false,
       setTheme: (theme: ThemeType) => set({ theme }),
+      setReduceMotion: (reduceMotion: boolean) => set({ reduceMotion }),
       getThemeConfig: () => themeConfigs[get().theme],
     }),
     {

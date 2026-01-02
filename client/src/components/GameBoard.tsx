@@ -13,9 +13,10 @@ import { hasFlip7 } from '../utils/gameLogic';
 
 interface GameBoardProps {
   onNewGame?: () => void;
+  onBack?: () => void;
 }
 
-export default function GameBoard({ onNewGame }: GameBoardProps) {
+export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
   const { roomCode } = useRoomStore();
   const { getThemeConfig } = useThemeStore();
@@ -435,32 +436,36 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
     );
 
     return (
-      <div className="max-w-6xl mx-auto flex-1 flex flex-col p-1 md:p-2 min-h-0">
+      <div className="max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0">
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Game Over Header */}
-          <div className="border-4 rounded-lg p-3 text-center mb-2 flex-shrink-0 bg-green-900 border-green-600">
-            <h2 className="text-2xl font-bold mb-2 text-green-100">Game Over!</h2>
-            <p className="text-lg mb-2 text-green-200">
+          <div className="border-2 sm:border-4 rounded-lg p-1.5 sm:p-2 md:p-3 text-center mb-1 sm:mb-2 flex-shrink-0 bg-green-900 border-green-600">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 text-green-100">Game Over!</h2>
+            <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2 text-green-200">
               <span className="font-bold">{winner.name}</span> wins with {winner.score} points!
             </p>
             <ScoreDisplay />
           </div>
           
           {/* Scrollable Stats */}
-          <div className="flex-1 overflow-y-auto min-h-0 px-1">
+          <div className="flex-1 overflow-y-auto min-h-0 px-0.5 sm:px-1 pb-safe">
             <GameStats />
           </div>
           
-          {/* New Game Button */}
+          {/* New Game Button - Fixed at bottom */}
           {onNewGame && (
-            <div className="flex-shrink-0 pt-2 pb-2 mt-2 border-t-2 border-gray-600">
-              <div className="flex gap-3 justify-center">
+            <div className="flex-shrink-0 pt-1 sm:pt-2 pb-safe mt-1 sm:mt-2 border-t-2 border-gray-600 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent">
+              <div className="flex gap-2 sm:gap-3 justify-center pb-1 sm:pb-2">
                 <button
                   onClick={onNewGame}
-                  className="px-6 py-3 bg-blue-500 text-white rounded-lg font-bold text-base hover:bg-blue-600 transition-colors"
-                  style={{ minWidth: '13rem' }}
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 hover:scale-105 active:bg-blue-700 active:scale-95 transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
+                  style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
                 >
-                  New Game
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <span>🔄</span>
+                    <span>New Game</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </button>
               </div>
             </div>
@@ -477,12 +482,24 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
 
   return (
     <div className={`max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select overflow-hidden ${screenShake ? 'screen-shake' : ''}`}>
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 border-2 border-gray-600 text-white transition-colors"
+          aria-label="Back to main menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
       <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden" style={{ maxHeight: '100%' }}>
         {/* Compact header with scores and game state indicators */}
         <div className={`mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
           <div className="flex justify-between items-center gap-1 mb-0.5">
-            <h1 className={`text-sm sm:text-lg md:text-xl font-bold ${themeConfig.textPrimary}`}>Flip 7</h1>
+            <h1 className={`text-sm sm:text-lg md:text-xl font-bold ${themeConfig.textPrimary} ${onBack ? 'ml-10 sm:ml-12' : ''}`}>Flip 7</h1>
             <div className={`text-[9px] sm:text-[10px] ${themeConfig.textSecondary} flex items-center gap-1`}>
               <span className="font-semibold">R{gameState.round || 1}</span>
               <span>•</span>

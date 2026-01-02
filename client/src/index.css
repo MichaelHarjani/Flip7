@@ -181,6 +181,29 @@ code {
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* Reduce Motion - Disable all animations when enabled */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.reduce-motion .animate-flip,
+.reduce-motion .animate-slide-in,
+.reduce-motion .animate-scale-in,
+.reduce-motion .animate-glow,
+.reduce-motion .animate-shake,
+.reduce-motion .animate-pulse-soft,
+.reduce-motion .animate-float,
+.reduce-motion .animate-bounce-soft,
+.reduce-motion .animate-shimmer,
+.reduce-motion .animate-border-glow {
+  animation: none !important;
+}
+
 /* Screen shake animation for dramatic effects */
 @keyframes screenShake {
   0%, 100% { transform: translate(0, 0); }
