@@ -81,6 +81,13 @@ export const useRoomStore = create<RoomStore>((set, get) => {
       set({ loading: true, error: null });
     });
 
+    // Game state received (game started)
+    on('game:state', (data: { gameState: any }) => {
+      console.log('game:state received in roomStore', data);
+      // Reset loading state when game starts
+      set({ loading: false, error: null });
+    });
+
     // Error
     on('error', (data: { message: string }) => {
       set({ error: data.message, loading: false });
