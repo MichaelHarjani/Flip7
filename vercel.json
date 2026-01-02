@@ -4,10 +4,39 @@
   "outputDirectory": "client/dist",
   "installCommand": "npm install && cd client && npm install",
   "framework": "vite",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/api/game/:gameId/round-begin",
+      "destination": "/api/game/[gameId]/round-begin"
+    },
+    {
+      "source": "/api/game/:gameId/round-next",
+      "destination": "/api/game/[gameId]/round-next"
+    },
+    {
+      "source": "/api/game/:gameId/hit",
+      "destination": "/api/game/[gameId]/hit"
+    },
+    {
+      "source": "/api/game/:gameId/stay",
+      "destination": "/api/game/[gameId]/stay"
+    },
+    {
+      "source": "/api/game/:gameId/action",
+      "destination": "/api/game/[gameId]/action"
+    },
+    {
+      "source": "/api/game/:gameId/state",
+      "destination": "/api/game/[gameId]/state"
+    },
+    {
+      "source": "/api/game/:gameId/ai/decision",
+      "destination": "/api/game/[gameId]/ai/decision"
     },
     {
       "source": "/:path*",
