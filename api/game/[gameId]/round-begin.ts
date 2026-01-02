@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createGameService } from '../../_gameState.js';
+import { createGameService } from '../_gameState.js';
 
 export default async function handler(
   req: VercelRequest,
@@ -31,10 +31,11 @@ export default async function handler(
     const gameService = createGameService();
     gameService.restoreState(incomingState);
 
-    const gameState = gameService.startNextRound();
+    const gameState = gameService.startRound();
     res.json({ gameState });
   } catch (error: any) {
-    console.error('Error starting next round:', error);
-    res.status(400).json({ error: error.message || 'Failed to start next round' });
+    console.error('Error starting round:', error);
+    res.status(500).json({ error: error.message || 'Failed to start round' });
   }
 }
+
