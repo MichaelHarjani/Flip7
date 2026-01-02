@@ -3,11 +3,6 @@
   "buildCommand": "npm install && cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
   "installCommand": "npm install && cd client && npm install",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "@vercel/node@3"
-    }
-  },
   "rewrites": [
     { "source": "/api/game/start", "destination": "/api/game/start" },
     { "source": "/api/game/:gameId/:action", "destination": "/api/game/handler?gameId=:gameId&action=:action" },
