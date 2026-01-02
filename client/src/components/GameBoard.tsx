@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { useWebSocketStore } from '../stores/websocketStore';
 import { useRoomStore } from '../stores/roomStore';
+import { useThemeStore } from '../stores/themeStore';
 import PlayerArea from './PlayerArea';
 import ActionButtons from './ActionButtons';
 import ActionCardButtons from './ActionCardButtons';
@@ -17,7 +18,10 @@ interface GameBoardProps {
 export default function GameBoard({ onNewGame }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
   const { roomCode } = useRoomStore();
+  const { getThemeConfig } = useThemeStore();
+  const themeConfig = getThemeConfig();
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<string | null>(null);
   const maxThinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const aiDecisionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const aiProcessingRef = useRef<string | null>(null);
@@ -27,6 +31,7 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   const previousGameStateRef = useRef<typeof gameState>(null);
   const confettiIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedStateRef = useRef<string>(''); // Track last processed game state to detect changes
+  const [screenShake, setScreenShake] = useState(false);
 
   // Calculate current player before any early returns (for useEffect)
   const currentPlayer = gameState?.players?.[gameState.currentPlayerIndex];
@@ -234,7 +239,20 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.currentPlayerIndex, gameState?.gameStatus, currentPlayer?.id, gameState?.pendingActionCard, gameState]);
 
-  // Check for Flip 7 achievement when round ends
+  // Check for bust and trigger screen shake
+  useEffect(() => {
+    if (gameState?.players) {
+      const anyPlayerBusted = gameState.players.some(p => p.hasBusted);
+      const previouslyBusted = previousGameStateRef.current?.players?.some(p => p.hasBusted) || false;
+      
+      if (anyPlayerBusted && !previouslyBusted) {
+        setScreenShake(true);
+        setTimeout(() => setScreenShake(false), 500);
+      }
+    }
+  }, [gameState?.players]);
+
+  // Check for Flip 7 achievement when round ends - ENHANCED
   useEffect(() => {
     // Check if status changed from 'playing' to 'roundEnd'
     const wasPlaying = previousGameStateRef.current?.gameStatus === 'playing';
@@ -253,15 +271,22 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
           clearInterval(confettiIntervalRef.current);
         }
         
-        // Trigger confetti
-        const duration = 3000;
+        // ENHANCED CONFETTI - More dramatic and varied
+        const duration = 5000; // Longer duration
         const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
         function randomInRange(min: number, max: number) {
           return Math.random() * (max - min) + min;
         }
 
+        // Immediate burst for impact
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+
+        // Continuous celebration
         confettiIntervalRef.current = setInterval(function() {
           const timeLeft = animationEnd - Date.now();
 
@@ -274,15 +299,31 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
           }
 
           const particleCount = 50 * (timeLeft / duration);
+          
+          // Multi-directional confetti
           confetti({
-            ...defaults,
             particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#FF6347', '#00FF00', '#0080FF']
           });
           confetti({
-            ...defaults,
             particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            angle: 120,
+            spread: 55,
+            origin: { x: 1, y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#FF6347', '#00FF00', '#0080FF']
+          });
+          
+          // Falling from top
+          confetti({
+            particleCount: particleCount / 2,
+            startVelocity: 45,
+            spread: 360,
+            ticks: 100,
+            origin: { x: randomInRange(0.1, 0.9), y: 0 },
+            colors: ['#FFD700', '#FFA500', '#FF6347']
           });
         }, 250);
       }
@@ -321,13 +362,23 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
 
   if (!gameState) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center rounded-lg shadow-lg border-4 bg-gray-800 border-gray-600 text-white">
-        <h2 className="text-2xl font-bold mb-4 text-white">Loading Game...</h2>
+      <div className="max-w-4xl mx-auto p-6 text-center rounded-lg shadow-lg border-4 bg-gray-800 border-gray-600 text-white animate-scale-in">
+        <h2 className="text-2xl font-bold mb-4 text-white flex items-center justify-center gap-2">
+          {loading && <span className="animate-spin text-3xl">⟳</span>}
+          <span>Loading Game...</span>
+        </h2>
         <div className="mb-4 text-gray-300">
-          {loading ? 'Please wait...' : 'No game state available'}
+          {loading ? (
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-700 rounded shimmer w-3/4 mx-auto"></div>
+              <div className="h-4 bg-gray-700 rounded shimmer w-1/2 mx-auto"></div>
+            </div>
+          ) : (
+            'No game state available'
+          )}
         </div>
         {error && (
-          <div className="border-2 px-4 py-3 rounded mb-4 bg-red-900 border-red-600 text-red-100">
+          <div className="border-2 px-4 py-3 rounded mb-4 bg-red-900 border-red-600 text-red-100 animate-shake">
             {error}
           </div>
         )}
@@ -338,16 +389,29 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   // If game is waiting, show start round button
   if (gameState.gameStatus === 'waiting') {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="border-4 rounded-lg p-6 text-center bg-blue-900 border-blue-600">
-          <h2 className="text-2xl font-bold mb-4 text-blue-100">Ready to Start!</h2>
-          <p className="mb-4 text-blue-200">Round {gameState.round}</p>
+      <div className="max-w-4xl mx-auto p-6 animate-scale-in">
+        <div className="border-4 rounded-lg p-6 text-center bg-blue-900 border-blue-600 shadow-2xl">
+          <h2 className="text-2xl font-bold mb-4 text-blue-100 animate-float">🎮 Ready to Start!</h2>
+          <p className="mb-4 text-blue-200 text-lg">Round {gameState.round}</p>
           <button
             onClick={startRound}
             disabled={loading}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg relative overflow-hidden group"
           >
-            {loading ? 'Starting...' : 'Start Round'}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {loading ? (
+                <>
+                  <span className="animate-spin">⟳</span>
+                  <span>Starting...</span>
+                </>
+              ) : (
+                <>
+                  <span>🚀</span>
+                  <span>Start Round</span>
+                </>
+              )}
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
           </button>
         </div>
       </div>
@@ -412,18 +476,30 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   const humanPlayers = gameState.players?.filter(p => !p.isAI) || [];
 
   return (
-    <div className="max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select">
+    <div className={`max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select ${screenShake ? 'screen-shake' : ''}`}>
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
       <div className="flex-1 flex flex-col min-h-0 game-content-scale">
-        {/* Compact header with scores */}
-        <div className="mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 bg-gray-800 border-gray-600">
+        {/* Compact header with scores and game state indicators */}
+        <div className={`mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
           <div className="flex justify-between items-center gap-1 mb-0.5">
-            <h1 className="text-base sm:text-lg font-bold text-white">Flip 7</h1>
-            <div className="text-[9px] sm:text-xs text-gray-300">
-              Round {gameState.round || 1} • {gameState.players?.[gameState.dealerIndex]?.name || '?'} deals
+            <h1 className={`text-sm sm:text-lg md:text-xl font-bold ${themeConfig.textPrimary}`}>Flip 7</h1>
+            <div className={`text-[9px] sm:text-[10px] ${themeConfig.textSecondary} flex items-center gap-1`}>
+              <span className="font-semibold">R{gameState.round || 1}</span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5">
+                <span className="text-sm">🎴</span>
+                <span>{gameState.players?.[gameState.dealerIndex]?.name || '?'}</span>
+              </span>
             </div>
           </div>
           <ScoreDisplay />
+          
+          {/* Last action indicator */}
+          {lastAction && (
+            <div className="mt-1 text-[9px] sm:text-xs text-center bg-blue-900/50 border border-blue-600 rounded px-2 py-0.5 text-blue-200 animate-scale-in">
+              {lastAction}
+            </div>
+          )}
         </div>
 
         {error && (
@@ -432,15 +508,19 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
           </div>
         )}
 
-        {/* Flip 7 Announcement - Overlay */}
+        {/* Flip 7 Announcement - Overlay - ENHANCED */}
         {flip7Player && isRoundEnd && (
-          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 border-4 px-6 py-4 rounded-lg text-center shadow-xl bg-gradient-to-r from-yellow-900 via-yellow-800 to-yellow-900 border-yellow-500 text-yellow-100">
-            <h2 className="text-3xl font-bold mb-2 text-yellow-100">
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 border-4 px-6 py-4 rounded-xl text-center shadow-2xl bg-gradient-to-r from-yellow-900 via-yellow-700 to-yellow-900 border-yellow-400 text-yellow-100 animate-bounce-soft">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent animate-shimmer"></div>
+            <h2 className="text-3xl font-bold mb-2 text-yellow-100 relative animate-float">
               🎉 FLIP 7 ACHIEVED! 🎉
             </h2>
-            <p className="text-xl font-semibold text-yellow-200">
+            <p className="text-xl font-semibold text-yellow-200 relative">
               {flip7Player} got the Flip 7!
             </p>
+            <div className="mt-2 text-2xl relative animate-pulse">
+              ⭐ +15 Points ⭐
+            </div>
           </div>
         )}
 
@@ -463,11 +543,11 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
         ) : (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Scrollable content area - AI players and human player */}
-            <div className="flex-1 overflow-y-auto min-h-0 mb-0.5 sm:mb-1">
+            <div className="flex-1 overflow-y-auto min-h-0 mb-2">
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-1 sm:mb-2">
-                <div className="flex gap-1 sm:gap-2">
+              <div className="flex-shrink-0 mb-2">
+                <div className="flex gap-2">
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -475,7 +555,7 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
                       player.isAI &&
                       player.isActive &&
                       !player.hasBusted;
-                    const widthClass = aiPlayers.length === 3 ? 'flex-1' : aiPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[120px] sm:min-w-[200px]';
+                    const widthClass = aiPlayers.length === 3 ? 'flex-1' : aiPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[200px]';
                     return (
                       <div key={player.id || `player-${originalIndex}`} className={`flex flex-col ${widthClass}`}>
                         <PlayerArea
@@ -499,13 +579,13 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-2 sm:border-t-4 pt-1 sm:pt-2 mt-1 sm:mt-2 border-gray-600">
+              <div className="flex-shrink-0 border-t-4 pt-2 mt-2">
                 {humanPlayers.length > 1 ? (
                   // Multiple human players (Local mode) - show in a row like AI players
-                  <div className="flex gap-1 sm:gap-2">
+                  <div className="flex gap-2">
                     {humanPlayers.map((player) => {
                       const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
-                      const widthClass = humanPlayers.length === 3 ? 'flex-1' : humanPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[120px] sm:min-w-[200px]';
+                      const widthClass = humanPlayers.length === 3 ? 'flex-1' : humanPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[200px]';
                       return (
                         <div key={player.id || `player-${originalIndex}`} className={`flex flex-col ${widthClass}`}>
                           <PlayerArea
@@ -514,18 +594,26 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
                             isDealer={originalIndex === gameState.dealerIndex}
                             isCompact={true}
                           />
+                          <div className="mt-1 text-center text-xs italic h-4 text-transparent">
+                            {'\u00A0'}
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  // Single human player - show full size (but compact on mobile)
-                  <PlayerArea
-                    player={humanPlayers[0]}
-                    isCurrentPlayer={!isRoundEnd && gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.currentPlayerIndex}
-                    isDealer={gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.dealerIndex}
-                    isCompact={true}
-                  />
+                  // Single human player - show full size
+                  <>
+                    <PlayerArea
+                      player={humanPlayers[0]}
+                      isCurrentPlayer={!isRoundEnd && gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.currentPlayerIndex}
+                      isDealer={gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.dealerIndex}
+                      isCompact={false}
+                    />
+                    <div className="mt-1 text-center text-xs italic h-4 text-transparent">
+                      {'\u00A0'}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -551,9 +639,22 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
               <button
                 onClick={startNextRound}
                 disabled={loading}
-                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[120px] sm:min-w-[160px]"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 active:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
               >
-                Next Round
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <span className="animate-spin">⟳</span>
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>▶️</span>
+                      <span>Next Round</span>
+                    </>
+                  )}
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               </button>
             </div>
           ) : currentHumanPlayer &&

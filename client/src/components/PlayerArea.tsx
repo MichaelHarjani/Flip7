@@ -39,18 +39,29 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;
 
+  // Player avatar emoji based on player index or name
+  const getPlayerAvatar = () => {
+    if (player.isAI) {
+      return '🤖';
+    }
+    // Use first letter as basis for emoji
+    const firstLetter = player.name.charAt(0).toUpperCase();
+    const avatars = ['👤', '🎮', '🎯', '⭐', '🎲', '🃏'];
+    return avatars[firstLetter.charCodeAt(0) % avatars.length];
+  };
+
   return (
     <div
       data-player-area
       data-player-id={player.id}
-      className={`relative ${paddingClass} rounded-lg border-4 transition-all
+      className={`relative ${paddingClass} rounded-lg border-4 transition-all duration-300
         ${isFrozen
-          ? 'border-cyan-400 bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900'
+          ? 'border-cyan-400 bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 animate-pulse-soft'
           : isCurrentPlayer 
-            ? 'border-yellow-500 bg-yellow-900 shadow-xl'
+            ? 'border-yellow-500 bg-yellow-900 shadow-2xl animate-pulse-soft'
             : 'border-gray-500 bg-gray-800 shadow-md'
         }
-        ${player.hasBusted ? 'opacity-60' : ''}
+        ${player.hasBusted ? 'opacity-60 animate-shake' : ''}
         ${!player.isActive && !isFrozen
           ? 'border-gray-600 bg-gray-900'
           : ''
@@ -62,79 +73,115 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
       } : undefined}
     >
       <div className={`flex flex-col ${headerMarginClass} relative`}>
-        {/* Name and tags on first line */}
+        {/* Name and tags on first line with avatar */}
         <div className="flex items-center gap-1.5 flex-wrap mb-1">
+          <span className="text-2xl">{getPlayerAvatar()}</span>
           <h3 className={`font-bold ${titleSizeClass} text-white`}>{player.name}</h3>
           {player.isAI && (
-            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-gray-600 border-gray-400 text-gray-200">AI</span>
+            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-gray-600 border-gray-400 text-gray-200 animate-scale-in">AI</span>
           )}
           {isDealer && (
-            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-blue-700 border-blue-500 text-blue-100">Dealer</span>
+            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-blue-700 border-blue-500 text-blue-100 animate-scale-in">🎴 Dealer</span>
           )}
           {player.hasSecondChance && (
-            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-orange-700 border-orange-500 text-orange-100">2nd Chance</span>
+            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-orange-700 border-orange-500 text-orange-100 animate-bounce-soft">❤️ 2nd Chance</span>
           )}
         </div>
-        {/* Scores on second line */}
+        {/* Scores on second line - Enhanced with larger display */}
         <div className="flex items-center justify-between">
           <div className="text-left">
-            <div className={`text-xs font-semibold text-gray-300`}>Total: <span className={`${totalScoreSizeClass} font-bold text-white`}>{player.score}</span></div>
-            <div className={`font-bold ${scoreSizeClass} text-white`}>
-              Round: <span className={roundScoreSizeClass}>{score}</span>
+            <div className={`text-xs font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-sm' : 'text-lg'} font-bold text-white`}>{player.score}</span></div>
+            <div className={`font-bold ${scoreSizeClass} text-white flex items-center gap-2`}>
+              <span>Round:</span> 
+              <span className={`${isCompact ? 'text-xl' : 'text-3xl'} font-extrabold ${
+                score > 7 ? 'text-red-400' : score === 7 ? 'text-green-400' : 'text-white'
+              }`}>{score}</span>
               {hasFlip7Bonus && (
-                <span className="ml-1 font-extrabold text-xs text-green-300">+15</span>
+                <span className="ml-1 font-extrabold text-sm text-green-300 animate-bounce-soft">+15 🎉</span>
               )}
+              {/* Card count indicator */}
+              <span className="text-xs text-gray-400 ml-auto">
+                ({player.numberCards.length} cards)
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Status badge in top right */}
+        {/* Status badge in top right - Enhanced */}
         {player.hasBusted && (
-          <div className={`absolute top-0 right-0 font-extrabold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 text-red-200 bg-red-900 border-red-600`}>BUST!</div>
+          <div className={`absolute top-0 right-0 font-extrabold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 text-red-200 bg-red-900 border-red-600 shadow-lg animate-shake`}>💥 BUST!</div>
         )}
 
         {!player.isActive && !player.hasBusted && (
-          <div className={`absolute top-0 right-0 font-semibold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 ${
+          <div className={`absolute top-0 right-0 font-semibold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 shadow-lg ${
             isFrozen
-              ? 'text-cyan-100 bg-cyan-900/50 border-cyan-400 shadow-lg shadow-cyan-500/50'
+              ? 'text-cyan-100 bg-cyan-900/50 border-cyan-400 shadow-cyan-500/50 animate-pulse-soft'
               : 'text-gray-300 bg-gray-700 border-gray-500'
           }`}>
             {isFrozen 
               ? `🧊 Frozen${frozenByPlayer ? ` by ${frozenByPlayer.id === player.id ? 'self' : frozenByPlayer.name}` : ''}`
-              : 'Stayed'
+              : '✋ Stayed'
             }
           </div>
+        )}
+
+        {/* Current player indicator - Pulse animation */}
+        {isCurrentPlayer && !player.hasBusted && player.isActive && (
+          <div className="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse shadow-lg shadow-yellow-500/50"></div>
         )}
       </div>
 
       <div className={cardsSpacingClass}>
-        {/* Modifier cards - Always reserve space */}
+        {/* Modifier cards - Always reserve space with animations */}
         <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2.5rem] sm:min-h-[3.5rem]`}>
           {player.modifierCards.length > 0 ? (
-            player.modifierCards.map(card => (
-              <Card key={card.id} card={card} size={isCompact ? "xs" : "sm"} />
+            player.modifierCards.map((card, index) => (
+              <Card 
+                key={card.id} 
+                card={card} 
+                size={isCompact ? "xs" : "sm"} 
+                animate="slide-in"
+                showTooltip={true}
+                className={`animation-delay-${index * 100}`}
+              />
             ))
           ) : (
             <div className="w-full h-full"></div>
           )}
         </div>
 
-        {/* Number cards - Always reserve space */}
+        {/* Number cards - Always reserve space with flip animations */}
         <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[3.5rem] sm:min-h-[5rem]`}>
           {player.numberCards.length > 0 ? (
-            player.numberCards.map(card => (
-              <Card key={card.id} card={card} size={isCompact ? "sm" : "md"} />
+            player.numberCards.map((card, index) => (
+              <Card 
+                key={card.id} 
+                card={card} 
+                size={isCompact ? "sm" : "md"} 
+                animate="flip"
+                showTooltip={true}
+                className={`animation-delay-${index * 100}`}
+              />
             ))
           ) : (
             <div className="w-full h-full"></div>
           )}
         </div>
 
-        {/* Action cards - Always reserve space */}
+        {/* Action cards - Always reserve space with scale animations */}
         <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2.5rem] sm:min-h-[3.5rem]`}>
           {player.actionCards.length > 0 ? (
-            player.actionCards.map(card => (
-              <Card key={card.id} card={card} size={isCompact ? "xs" : "sm"} playerId={player.id} />
+            player.actionCards.map((card, index) => (
+              <Card 
+                key={card.id} 
+                card={card} 
+                size={isCompact ? "xs" : "sm"} 
+                playerId={player.id}
+                animate="scale-in"
+                showTooltip={true}
+                isPlayable={isCurrentPlayer && player.isActive}
+                className={`animation-delay-${index * 100}`}
+              />
             ))
           ) : (
             <div className="w-full h-full"></div>

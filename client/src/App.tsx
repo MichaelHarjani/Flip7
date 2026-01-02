@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from './stores/gameStore';
 import { useRoomStore } from './stores/roomStore';
 import { useWebSocketStore } from './stores/websocketStore';
+import { useThemeStore } from './stores/themeStore';
 import TitleScreen from './components/TitleScreen';
 import GameSettings from './components/GameSettings';
 import GameBoard from './components/GameBoard';
@@ -53,6 +54,8 @@ function clearRoomCodeFromUrl(): void {
 function App() {
   const { gameState, startRound, error, clearError, loading, gameId, setGameState } = useGameStore();
   const { room: roomState } = useRoomStore();
+  const { getThemeConfig } = useThemeStore();
+  const themeConfig = getThemeConfig();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [roundStarted, setRoundStarted] = useState(false);
@@ -145,7 +148,7 @@ function App() {
     }
   }, [roomState, gameStarted]);
 
-  const bgGradient = 'bg-gradient-to-br from-gray-900 via-gray-800 to-purple-900';
+  const bgGradient = themeConfig.bgGradient;
   const screenClass = 'h-full overflow-hidden';
 
   // Show title screen
@@ -236,6 +239,7 @@ function App() {
   return (
     <div className={`${screenClass} ${bgGradient} p-1 sm:p-2 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
       <div className="container mx-auto flex-1 flex flex-col min-h-0">
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-0.5 flex-shrink-0 text-white">Flip 7</h1>
         {error && (
           <div className="border-2 px-4 py-2 rounded mb-2 flex justify-between items-center max-w-4xl mx-auto flex-shrink-0 text-sm bg-red-900 border-red-600 text-red-100">
             <span>{error}</span>

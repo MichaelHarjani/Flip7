@@ -6,9 +6,12 @@ interface CardProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
   playerId?: string; // Player ID to check if this Second Chance card was used
+  animate?: 'flip' | 'slide-in' | 'glow' | 'shake' | 'none';
+  showTooltip?: boolean;
+  isPlayable?: boolean;
 }
 
-export default function Card({ card, size = 'md', className = '', playerId }: CardProps) {
+export default function Card({ card, size = 'md', className = '', playerId, animate = 'none', showTooltip = false, isPlayable = false }: CardProps) {
   const { gameState } = useGameStore();
   
   // Check if this is a used Second Chance card
@@ -27,9 +30,15 @@ export default function Card({ card, size = 'md', className = '', playerId }: Ca
     lg: 'w-18 h-28 text-sm',
   };
 
+  // Animation classes
+  const animationClass = animate !== 'none' ? `animate-${animate}` : '';
+  const playableClass = isPlayable ? 'cursor-pointer animate-glow hover:scale-110' : 'hover:scale-105';
+
   const baseClasses = `
     ${sizeClasses[size]}
     ${className}
+    ${animationClass}
+    ${playableClass}
     rounded-lg
     border-2
     flex
@@ -38,14 +47,38 @@ export default function Card({ card, size = 'md', className = '', playerId }: Ca
     justify-center
     font-bold
     shadow-md
-    transition-transform
-    hover:scale-105
+    transition-all
+    duration-200
+    relative
+    group
   `;
+
+  // Tooltip content
+  const getTooltipContent = () => {
+    if (card.type === 'number') {
+      return `Number Card: ${card.value}`;
+    } else if (card.type === 'modifier') {
+      return `${card.modifierType === 'multiply' ? 'Multiply' : 'Add'}: ${card.modifierValue}`;
+    } else if (card.type === 'action') {
+      const actionNames = {
+        freeze: 'Freeze - Skip next player',
+        flipThree: 'Flip 3 - Draw 3 cards',
+        secondChance: 'Second Chance - Save from bust',
+      };
+      return actionNames[card.actionType || 'freeze'];
+    }
+    return '';
+  };
 
   if (card.type === 'number') {
     return (
       <div className={`${baseClasses} bg-white border-4 border-blue-600 text-blue-900 shadow-lg`}>
         <div className={`${size === 'xs' ? 'text-xl' : size === 'sm' ? 'text-2xl' : size === 'md' ? 'text-2xl' : 'text-3xl'} font-extrabold`}>{card.value}</div>
+        {showTooltip && (
+          <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
+            {getTooltipContent()}
+          </div>
+        )}
       </div>
     );
   }
@@ -62,12 +95,22 @@ export default function Card({ card, size = 'md', className = '', playerId }: Ca
       return (
         <div className={`${baseClasses} bg-yellow-300 border-4 border-yellow-700 text-yellow-950 shadow-lg`}>
           <div className={`${modifierSizeClasses[size]} font-extrabold`}>×{card.modifierValue}</div>
+          {showTooltip && (
+            <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
+              {getTooltipContent()}
+            </div>
+          )}
         </div>
       );
     }
     return (
       <div className={`${baseClasses} bg-green-300 border-4 border-green-700 text-green-950 shadow-lg`}>
         <div className={`${modifierSizeClasses[size]} font-extrabold`}>+{card.modifierValue}</div>
+        {showTooltip && (
+          <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
+            {getTooltipContent()}
+          </div>
+        )}
       </div>
     );
   }
@@ -151,6 +194,11 @@ export default function Card({ card, size = 'md', className = '', playerId }: Ca
         <div className={`${iconSizeClasses[size]} font-extrabold`}>
           {actionIcons[card.actionType || 'freeze']}
         </div>
+        {showTooltip && (
+          <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
+            {getTooltipContent()}
+          </div>
+        )}
       </div>
     );
   }

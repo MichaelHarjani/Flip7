@@ -113,21 +113,29 @@ export default function ActionCardButtons({ playerId, actionCards }: ActionCardB
   return (
     <>
       <div className="space-y-2 relative">
-        <div className="text-sm font-semibold mb-2 text-gray-300">Action Cards:</div>
+        <div className="text-sm font-semibold mb-2 text-gray-300 flex items-center gap-2">
+          <span>⚡ Action Cards:</span>
+          {loading && <span className="animate-spin text-xs">⟳</span>}
+        </div>
         <div className="flex flex-wrap gap-2">
-          {playableCards.map(card => {
+          {playableCards.map((card, index) => {
             const info = getCardInfo(card.actionType || 'freeze');
             return (
-              <div key={card.id} className="relative">
+              <div key={card.id} className="relative animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
                 <div 
                   onClick={() => !loading && handleCardClick(card.id)}
-                  className={`cursor-pointer ${loading ? 'cursor-not-allowed opacity-50' : ''}`}
+                  className={`cursor-pointer transition-all duration-200 ${
+                    loading ? 'cursor-not-allowed opacity-50' : 'hover:scale-110'
+                  }`}
                 >
                   <CardComponent 
                     card={card} 
                     size="sm" 
                     playerId={playerId}
-                    className={selectedCard === card.id ? `ring-4 ${info.ringColor}` : ''}
+                    animate="scale-in"
+                    showTooltip={true}
+                    isPlayable={!loading}
+                    className={selectedCard === card.id ? `ring-4 ${info.ringColor} animate-pulse-soft` : ''}
                   />
                 </div>
               </div>
@@ -136,54 +144,57 @@ export default function ActionCardButtons({ playerId, actionCards }: ActionCardB
         </div>
       </div>
       
-      {/* Popup positioned inside PlayerArea on the right side */}
+      {/* Popup positioned inside PlayerArea on the right side - ENHANCED */}
       {selectedCard && selectedCardData && cardInfo && playerAreaRef.current && createPortal(
-        <div className={`absolute right-2 top-1/2 -translate-y-1/2 border-2 rounded-lg shadow-xl p-3 z-50 min-w-[220px] max-w-[280px] ${
+        <div className={`absolute right-2 top-1/2 -translate-y-1/2 border-2 rounded-lg shadow-2xl p-3 z-50 min-w-[220px] max-w-[280px] animate-scale-in ${
           cardInfo.bgColor
         } ${cardInfo.borderColor}`}
         style={{ 
           maxHeight: '80vh',
           overflowY: 'auto'
         }}>
-          <div className={`text-sm font-semibold mb-2 ${cardInfo.textColor}`}>
-            Play {cardInfo.name} on:
+          <div className={`text-sm font-semibold mb-2 ${cardInfo.textColor} flex items-center gap-2`}>
+            <span>🎯</span>
+            <span>Play {cardInfo.name} on:</span>
           </div>
           <div className="space-y-1">
             {canTargetOthers ? (
               <>
-                {otherActivePlayers.map(target => (
+                {otherActivePlayers.map((target, index) => (
                   <button
                     key={target.id}
                     onClick={() => handlePlayCard(selectedCardData.id, target.id)}
                     disabled={loading}
-                    className="w-full text-left px-3 py-2 rounded text-sm font-semibold border bg-blue-800 hover:bg-blue-700 border-blue-600 text-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full text-left px-3 py-2 rounded text-sm font-semibold border bg-blue-800 hover:bg-blue-700 hover:shadow-lg hover:scale-105 active:scale-95 border-blue-600 text-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-scale-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    {target.name}
+                    👤 {target.name}
                   </button>
                 ))}
                 <button
                   onClick={() => handlePlayCard(selectedCardData.id, playerId)}
                   disabled={loading}
-                  className="w-full text-left px-3 py-2 rounded text-sm font-semibold border bg-gray-700 hover:bg-gray-600 border-gray-500 text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full text-left px-3 py-2 rounded text-sm font-semibold border bg-gray-700 hover:bg-gray-600 hover:shadow-lg hover:scale-105 active:scale-95 border-gray-500 text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-scale-in"
+                  style={{ animationDelay: `${otherActivePlayers.length * 50}ms` }}
                 >
-                  Yourself
+                  🤚 Yourself
                 </button>
               </>
             ) : (
               <button
                 onClick={() => handlePlayCard(selectedCardData.id, playerId)}
                 disabled={loading}
-                className="w-full text-left px-3 py-2 rounded text-sm font-semibold border bg-blue-800 hover:bg-blue-700 border-blue-600 text-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full text-left px-3 py-2 rounded text-sm font-semibold border bg-blue-800 hover:bg-blue-700 hover:shadow-lg hover:scale-105 active:scale-95 border-blue-600 text-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                Yourself (no other active players)
+                🤚 Yourself (no other active players)
               </button>
             )}
             <button
               onClick={() => setSelectedCard(null)}
               disabled={loading}
-              className="w-full px-3 py-1 text-xs mt-2 text-gray-300 hover:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-3 py-1 text-xs mt-2 text-gray-300 hover:text-gray-100 hover:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              Cancel
+              ✕ Cancel
             </button>
           </div>
         </div>,
