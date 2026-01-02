@@ -109,8 +109,6 @@ code {
   }
 }
 
-<<<<<<< Current (Your changes)
-=======
 /* Screen shake animation for dramatic effects */
 @keyframes screenShake {
   0%, 100% { transform: translate(0, 0); }
@@ -146,5 +144,3 @@ code {
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
-
->>>>>>> Incoming (Background Agent changes)
