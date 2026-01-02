@@ -52,7 +52,7 @@ function clearRoomCodeFromUrl(): void {
 }
 
 function App() {
-  const { gameState, startRound, error, clearError, loading, gameId, setGameState } = useGameStore();
+  const { gameState, startRound, error, clearError, loading, gameId } = useGameStore();
   const { room: roomState } = useRoomStore();
   const { getThemeConfig, reduceMotion } = useThemeStore();
   const themeConfig = getThemeConfig();
@@ -95,24 +95,14 @@ function App() {
     }
   }, [multiplayerMode]);
 
-  // Listen for game state updates from WebSocket
+  // Watch for game state changes and transition to game when appropriate
   useEffect(() => {
-    const wsStore = useWebSocketStore.getState();
-    if (wsStore.socket) {
-      const handleGameState = (data: { gameState: any }) => {
-        setGameState(data.gameState);
-        if (data.gameState && data.gameState.gameStatus === 'playing') {
-          setGameStarted(true);
-        }
-      };
-
-      wsStore.on('game:state', handleGameState);
-
-      return () => {
-        wsStore.off('game:state', handleGameState);
-      };
+    if (gameState && (gameState.gameStatus === 'playing' || gameState.gameStatus === 'roundEnd' || gameState.gameStatus === 'gameEnd')) {
+      if (!gameStarted) {
+        setGameStarted(true);
+      }
     }
-  }, [setGameState]);
+  }, [gameState, gameStarted]);
 
   // Automatically start the first round when gameId becomes available and game is in 'waiting' status
   useEffect(() => {
