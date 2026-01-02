@@ -35,6 +35,7 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
   };
 
   const handleStartGame = () => {
+    console.log('Start Game button clicked', { isHost, loading, players: room.players.length, status: room.status });
     startGame();
   };
 
@@ -130,6 +131,10 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
       {/* Debug info - remove after testing */}
       <div className="mb-2 text-xs text-gray-500">
         Debug: isHost={String(isHost)}, loading={String(loading)}, players={room.players.length}, status={room.status}
+        <br />
+        Button disabled: {String(loading || room.players.length < 2 || room.status !== 'waiting')}
+        <br />
+        Disabled reasons: loading={String(loading)}, players<2={String(room.players.length < 2)}, status!='waiting'={String(room.status !== 'waiting')}
       </div>
 
       <div className="flex gap-3">

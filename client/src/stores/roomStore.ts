@@ -185,7 +185,17 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     },
 
     startGame: () => {
-      useWebSocketStore.getState().emit('game:start');
+      const wsStore = useWebSocketStore.getState();
+      console.log('startGame called', { connected: wsStore.connected, socket: !!wsStore.socket });
+      
+      if (!wsStore.connected || !wsStore.socket) {
+        set({ error: 'Not connected to server. Please wait for connection.', loading: false });
+        console.error('Cannot start game: WebSocket not connected');
+        return;
+      }
+      
+      set({ loading: true, error: null });
+      wsStore.emit('game:start');
     },
 
     clearError: () => {
