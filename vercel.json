@@ -9,38 +9,16 @@
       "runtime": "@vercel/node@3"
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/game/:gameId/round-begin",
-      "destination": "/api/game/[gameId]/round-begin"
-    },
-    {
-      "source": "/api/game/:gameId/round-next",
-      "destination": "/api/game/[gameId]/round-next"
-    },
-    {
-      "source": "/api/game/:gameId/hit",
-      "destination": "/api/game/[gameId]/hit"
-    },
-    {
-      "source": "/api/game/:gameId/stay",
-      "destination": "/api/game/[gameId]/stay"
-    },
-    {
-      "source": "/api/game/:gameId/action",
-      "destination": "/api/game/[gameId]/action"
-    },
-    {
-      "source": "/api/game/:gameId/state",
-      "destination": "/api/game/[gameId]/state"
-    },
-    {
-      "source": "/api/game/:gameId/ai/decision",
-      "destination": "/api/game/[gameId]/ai/decision"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "src": "/api/game/start", "dest": "/api/game/start" },
+    { "src": "/api/game/([^/]+)/round-begin", "dest": "/api/game/[gameId]/round-begin?gameId=$1" },
+    { "src": "/api/game/([^/]+)/round-next", "dest": "/api/game/[gameId]/round-next?gameId=$1" },
+    { "src": "/api/game/([^/]+)/hit", "dest": "/api/game/[gameId]/hit?gameId=$1" },
+    { "src": "/api/game/([^/]+)/stay", "dest": "/api/game/[gameId]/stay?gameId=$1" },
+    { "src": "/api/game/([^/]+)/action", "dest": "/api/game/[gameId]/action?gameId=$1" },
+    { "src": "/api/game/([^/]+)/state", "dest": "/api/game/[gameId]/state?gameId=$1" },
+    { "src": "/api/game/([^/]+)/ai/decision", "dest": "/api/game/[gameId]/ai/decision?gameId=$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
