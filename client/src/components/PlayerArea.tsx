@@ -33,8 +33,6 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
   const headerMarginClass = isCompact ? 'mb-0.5' : 'mb-2';
   const titleSizeClass = isCompact ? 'text-xs' : 'text-base';
   const scoreSizeClass = isCompact ? 'text-xs' : 'text-sm';
-  const roundScoreSizeClass = isCompact ? 'text-sm' : 'text-xl';
-  const totalScoreSizeClass = isCompact ? 'text-xs' : 'text-sm';
   const cardsSpacingClass = isCompact ? 'space-y-0.5' : 'space-y-1';
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;

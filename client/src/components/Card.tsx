@@ -6,7 +6,7 @@ interface CardProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
   playerId?: string; // Player ID to check if this Second Chance card was used
-  animate?: 'flip' | 'slide-in' | 'glow' | 'shake' | 'none';
+  animate?: 'flip' | 'slide-in' | 'scale-in' | 'glow' | 'shake' | 'none';
   showTooltip?: boolean;
   isPlayable?: boolean;
 }

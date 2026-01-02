@@ -21,7 +21,7 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   const { getThemeConfig } = useThemeStore();
   const themeConfig = getThemeConfig();
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
-  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [lastAction, _setLastAction] = useState<string | null>(null);
   const maxThinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const aiDecisionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const aiProcessingRef = useRef<string | null>(null);
