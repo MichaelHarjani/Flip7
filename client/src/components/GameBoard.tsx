@@ -418,9 +418,9 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
         {/* Compact header with scores */}
         <div className="mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 bg-gray-800 border-gray-600">
           <div className="flex justify-between items-center gap-1 mb-0.5">
-            <h1 className="text-sm sm:text-lg md:text-xl font-bold text-white">Flip 7</h1>
-            <div className="text-[9px] sm:text-[10px] text-gray-300">
-              R{gameState.round || 1} • {gameState.players?.[gameState.dealerIndex]?.name || '?'} deals
+            <h1 className="text-base sm:text-lg font-bold text-white">Flip 7</h1>
+            <div className="text-[9px] sm:text-xs text-gray-300">
+              Round {gameState.round || 1} • {gameState.players?.[gameState.dealerIndex]?.name || '?'} deals
             </div>
           </div>
           <ScoreDisplay />
