@@ -478,7 +478,7 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
   return (
     <div className={`max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select ${screenShake ? 'screen-shake' : ''}`}>
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
-      <div className="flex-1 flex flex-col min-h-0 game-content-scale">
+      <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden" style={{ maxHeight: '100%' }}>
         {/* Compact header with scores and game state indicators */}
         <div className={`mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
           <div className="flex justify-between items-center gap-1 mb-0.5">
@@ -543,7 +543,10 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
         ) : (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Scrollable content area - AI players and human player */}
-            <div className="flex-1 overflow-y-auto min-h-0 mb-2">
+            <div className="flex-1 overflow-y-auto min-h-0 mb-2 scrollbar-thin" style={{ 
+              paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
+              WebkitOverflowScrolling: 'touch'
+            }}>
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
               <div className="flex-shrink-0 mb-2">
@@ -624,7 +627,11 @@ export default function GameBoard({ onNewGame }: GameBoardProps) {
 
       {/* Action Buttons - Fixed at bottom, always visible (outside scale) */}
       {(humanPlayer || currentHumanPlayer) && (
-        <div className="flex-shrink-0 pt-1 sm:pt-2 border-t border-gray-600 space-y-1 sm:space-y-2 pb-1 sm:pb-2 mt-auto min-h-[80px] sm:min-h-[120px] flex flex-col justify-center">
+        <div 
+          data-action-buttons
+          className="flex-shrink-0 pt-2 sm:pt-2 border-t-2 border-gray-600 space-y-1 sm:space-y-2 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[80px] sm:min-h-[100px]" 
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
+        >
           {false && onNewGame ? (
             <div className="flex gap-2 sm:gap-3 justify-center">
               <button

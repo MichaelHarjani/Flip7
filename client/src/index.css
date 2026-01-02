@@ -109,6 +109,24 @@ code {
   }
 }
 
+/* Ensure action buttons are always visible on mobile */
+@media (max-width: 640px) {
+  /* Ensure buttons container stays at bottom and is always visible */
+  [data-action-buttons] {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: linear-gradient(to top, rgba(17, 24, 39, 0.95) 0%, rgba(17, 24, 39, 0.95) 50%, transparent 100%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  /* Ensure scrollable content doesn't overflow into button area */
+  [data-action-buttons] ~ * {
+    margin-bottom: 0;
+  }
+}
+
 /* Screen shake animation for dramatic effects */
 @keyframes screenShake {
   0%, 100% { transform: translate(0, 0); }
