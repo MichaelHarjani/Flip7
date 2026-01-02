@@ -21,26 +21,17 @@ export default async function handler(
   }
 
   try {
-    // Parse the path from the catch-all route
-    const pathSegments = req.query.path;
-    const path = Array.isArray(pathSegments) ? pathSegments : [pathSegments];
+    // Parse gameId and action from query parameters (set by Vercel rewrites)
+    const gameId = req.query.gameId as string;
+    const actionParam = req.query.action as string;
+    const subaction = req.query.subaction as string;
     
-    // Extract gameId and action from path
-    // Expected formats:
-    // - [gameId, 'round-begin']
-    // - [gameId, 'round-next']
-    // - [gameId, 'hit']
-    // - [gameId, 'stay']
-    // - [gameId, 'action']
-    // - [gameId, 'state']
-    // - [gameId, 'ai', 'decision']
-    
-    if (path.length < 2) {
-      return res.status(400).json({ error: 'Invalid path' });
+    if (!gameId || !actionParam) {
+      return res.status(400).json({ error: 'Invalid path: gameId and action are required' });
     }
 
-    const gameId = path[0];
-    const action = path.length === 3 && path[1] === 'ai' ? 'ai-decision' : path[1];
+    // Combine action and subaction if present (e.g., 'ai' + 'decision' -> 'ai-decision')
+    const action = subaction ? `${actionParam}-${subaction}` : actionParam;
     
     const { gameState: incomingState, playerId, cardId, targetPlayerId } = req.body;
     

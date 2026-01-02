@@ -10,7 +10,8 @@
   },
   "rewrites": [
     { "source": "/api/game/start", "destination": "/api/game/start" },
-    { "source": "/api/game/:path*", "destination": "/api/game/[...path]" },
+    { "source": "/api/game/:gameId/:action", "destination": "/api/game/handler?gameId=:gameId&action=:action" },
+    { "source": "/api/game/:gameId/:action/:subaction", "destination": "/api/game/handler?gameId=:gameId&action=:action&subaction=:subaction" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
