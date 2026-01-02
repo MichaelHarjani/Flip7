@@ -1,6 +1,7 @@
 import type { Card, Player, GameState, RoundHistory, LargestRound } from '../shared/types/index.js';
 import { createDeck, shuffleDeck } from '../shared/utils/cards.js';
 import { checkBust, hasFlip7, calculateScore, organizePlayerCards, getActivePlayers } from '../shared/utils/gameLogic.js';
+import { makeAIDecision } from './aiPlayer.js';
 
 export class GameService {
   private gameState: GameState | null = null;
@@ -801,6 +802,29 @@ export class GameService {
     }
 
     return this.gameState;
+  }
+
+  /**
+   * Get AI decision for a player
+   */
+  makeAIDecision(playerId: string): { action: 'hit' | 'stay'; actionCard?: { cardId: string; targetPlayerId?: string } } {
+    if (!this.gameState) {
+      throw new Error('Game not initialized');
+    }
+
+    const player = this.gameState.players.find(p => p.id === playerId);
+    if (!player || !player.isAI) {
+      throw new Error('Player not found or not AI');
+    }
+
+    return makeAIDecision(player, this.gameState, player.aiDifficulty || 'moderate');
+  }
+
+  /**
+   * Get current game state (alias for getGameState)
+   */
+  getState(): GameState | null {
+    return this.getGameState();
   }
 }
 
