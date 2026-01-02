@@ -149,7 +149,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       console.log('Starting round for game:', gameId);
-      const response = await fetch(`${API_BASE}/${gameId}/round/start`, {
+      const response = await fetch(`${API_BASE}/${gameId}/round/begin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameState: currentState }),
