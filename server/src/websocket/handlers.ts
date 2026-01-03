@@ -166,9 +166,10 @@ export function setupWebSocketHandlers(io: Server): void {
         const gameId = `game-${Date.now()}`;
         const gameService = new GameService();
         
-        // Create player names array from sessions
+        // Create player names and IDs arrays from sessions
         const playerNames = room.players.map(p => p.name);
-        const gameState = gameService.initializeGame(playerNames, []); // No AI players in multiplayer
+        const playerIds = room.players.map(p => p.playerId);
+        const gameState = gameService.initializeGame(playerNames, [], playerIds); // No AI players in multiplayer
 
         // Store game instance
         gameInstances.set(gameId, gameService);

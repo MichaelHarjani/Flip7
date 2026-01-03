@@ -20,6 +20,7 @@ interface GameStore {
   makeAIDecision: (playerId: string) => Promise<void>;
   setGameState: (gameState: GameState) => void;
   clearError: () => void;
+  reset: () => void;
 }
 
 // Use environment variable for API base URL, fallback to relative path
@@ -525,6 +526,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  reset: () => {
+    set({
+      gameId: null,
+      gameState: null,
+      loading: false,
+      error: null,
+    });
   },
 }));
 

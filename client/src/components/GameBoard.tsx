@@ -34,11 +34,24 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   const lastProcessedStateRef = useRef<string>(''); // Track last processed game state to detect changes
   const [screenShake, setScreenShake] = useState(false);
 
+  // Get the local player's ID from room store (for multiplayer)
+  const { playerId: localPlayerId, roomCode: multiplayerRoomCode } = useRoomStore();
+  
   // Calculate current player before any early returns (for useEffect)
   const currentPlayer = gameState?.players?.[gameState.currentPlayerIndex];
   const humanPlayer = gameState?.players?.find(p => !p.isAI);
-  const currentHumanPlayer = currentPlayer && !currentPlayer.isAI ? currentPlayer : null;
   const isRoundEnd = gameState?.gameStatus === 'roundEnd';
+  
+  // In multiplayer mode, only show actions for the local player when it's their turn
+  // In single/local mode, show actions for any human player whose turn it is
+  const isMultiplayer = !!multiplayerRoomCode;
+  const localPlayer = isMultiplayer 
+    ? gameState?.players?.find(p => p.id === localPlayerId)
+    : humanPlayer;
+  const isLocalPlayerTurn = isMultiplayer 
+    ? (currentPlayer?.id === localPlayerId)
+    : (currentPlayer && !currentPlayer.isAI);
+  const currentHumanPlayer = isLocalPlayerTurn ? currentPlayer : null;
 
   // Listen for WebSocket game state updates in multiplayer mode
   useEffect(() => {
@@ -643,7 +656,7 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
       </div>
 
       {/* Action Buttons - Fixed at bottom, always visible (outside scale) */}
-      {(humanPlayer || currentHumanPlayer) && (
+      {(localPlayer || humanPlayer || currentHumanPlayer) && (
         <div 
           data-action-buttons
           className="flex-shrink-0 pt-1 sm:pt-2 border-t-2 border-gray-600 space-y-0.5 sm:space-y-1 md:space-y-2 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[60px] sm:min-h-[80px] md:min-h-[100px]" 
@@ -688,6 +701,14 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
               <div className="flex items-start gap-1 sm:gap-2 md:gap-4 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
+              </div>
+            </div>
+          ) : isMultiplayer && currentPlayer && !isLocalPlayerTurn && gameState?.gameStatus === 'playing' ? (
+            // Show waiting message in multiplayer when it's not our turn
+            <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2">
+              <div className="flex items-center justify-center text-gray-400 text-sm sm:text-base md:text-lg py-2">
+                <span className="animate-pulse">⏳</span>
+                <span className="ml-2">Waiting for {currentPlayer.name}...</span>
               </div>
             </div>
           ) : null}

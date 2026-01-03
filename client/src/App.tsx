@@ -126,6 +126,7 @@ function App() {
     setRoundStarted(false);
     setMultiplayerMode(null);
     useRoomStore.getState().reset();
+    useGameStore.getState().reset();
   };
 
   const handleSelectMode = (mode: GameMode) => {
@@ -206,14 +207,16 @@ function App() {
     );
   }
 
-  // Show room lobby
-  if (multiplayerMode === 'lobby' && roomState) {
+  // Show room lobby (but not if game has started)
+  if (multiplayerMode === 'lobby' && roomState && !gameStarted) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <RoomLobby onBack={() => {
             setMultiplayerMode(null);
+            setGameStarted(false);
             useRoomStore.getState().reset();
+            useGameStore.getState().reset();
           }} />
         </div>
       </div>

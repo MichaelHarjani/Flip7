@@ -34,12 +34,17 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('Start Game button clicked', { isHost, loading, players: room.players.length, status: room.status });
     startGame();
   };
 
-  const handleLeave = () => {
+  const handleLeave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Leave Room button clicked');
     leaveRoom();
     onBack();
   };
@@ -128,18 +133,10 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
         </div>
       )}
 
-      {/* Debug info - remove after testing */}
-      <div className="mb-2 text-xs text-gray-500">
-        Debug: isHost={String(isHost)}, loading={String(loading)}, players={room.players.length}, status={room.status}
-        <br />
-        Button disabled: {String(loading || room.players.length < 2 || room.status !== 'waiting')}
-        <br />
-        Disabled reasons: loading={String(loading)}, playersLessThan2={String(room.players.length < 2)}, statusNotWaiting={String(room.status !== 'waiting')}
-      </div>
-
       <div className="flex gap-3">
         {isHost && (
           <button
+            type="button"
             onClick={handleStartGame}
             disabled={loading || room.players.length < 2 || room.status !== 'waiting'}
             className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"
@@ -148,6 +145,7 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
           </button>
         )}
         <button
+          type="button"
           onClick={handleLeave}
           disabled={loading}
           className="px-6 py-3 bg-red-600 hover:bg-red-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors"

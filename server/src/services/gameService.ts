@@ -7,13 +7,18 @@ export class GameService {
 
   /**
    * Initialize a new game
+   * @param playerNames - Array of player names (for single player/local mode)
+   * @param aiDifficulties - Array of AI difficulties
+   * @param playerIds - Optional array of player IDs (for multiplayer mode)
    */
   initializeGame(
     playerNames: string[],
-    aiDifficulties: Array<'conservative' | 'moderate' | 'aggressive'> = []
+    aiDifficulties: Array<'conservative' | 'moderate' | 'aggressive'> = [],
+    playerIds?: string[]
   ): GameState {
     const players: Player[] = playerNames.map((name, index) => ({
-      id: `player-${index}`,
+      // Use provided playerIds if available, otherwise generate based on index
+      id: playerIds && playerIds[index] ? playerIds[index] : `player-${index}`,
       name,
       isAI: index >= playerNames.length - aiDifficulties.length,
       cards: [],
