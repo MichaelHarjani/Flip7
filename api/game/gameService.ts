@@ -567,10 +567,13 @@ export class GameService {
     if (!this.gameState) return;
 
     // Prevent double-processing if round already ended
-    if (this.gameState.gameStatus === 'roundEnd') {
+    // IMPORTANT: Check this BEFORE any processing to prevent race conditions
+    // where multiple calls could both pass the check before the status is set
+    if (this.gameState.gameStatus === 'roundEnd' || this.gameState.gameStatus === 'gameEnd') {
       return;
     }
 
+    // Set status immediately to prevent any concurrent calls from processing
     this.gameState.gameStatus = 'roundEnd';
 
     // Calculate final scores for all players
@@ -585,6 +588,7 @@ export class GameService {
       // The cached roundScores value might be stale if player's cards changed
       const roundScore = player.hasBusted ? 0 : calculateScore(player);
       
+      // Add the round score - the guard at the top ensures this only runs once per round
       player.score += roundScore;
       this.gameState.roundScores[player.id] = roundScore;
       

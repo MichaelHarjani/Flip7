@@ -569,10 +569,13 @@ export class GameService {
     if (!this.gameState) return;
 
     // Prevent double-processing if round already ended
-    if (this.gameState.gameStatus === 'roundEnd') {
+    // IMPORTANT: Check this BEFORE any processing to prevent race conditions
+    // where multiple calls could both pass the check before the status is set
+    if (this.gameState.gameStatus === 'roundEnd' || this.gameState.gameStatus === 'gameEnd') {
       return;
     }
 
+    // Set status immediately to prevent any concurrent calls from processing
     this.gameState.gameStatus = 'roundEnd';
 
     // Calculate final scores for all players
@@ -587,7 +590,31 @@ export class GameService {
       // The cached roundScores value might be stale if player's cards changed
       const roundScore = player.hasBusted ? 0 : calculateScore(player);
       
+      // IMPORTANT: Track if we've already added the score in this endRound() call
+      // The roundScores dictionary is set during the round (e.g., when player stays),
+      // but that only stores the score calculation - it doesn't mean it was added to player.score
+      // The score is ONLY added here in endRound(). The guard at the top should prevent
+      // endRound() from being called twice, but we add this extra safety check.
+      // 
+      // The key insight: roundScores[player.id] being set means we calculated the score earlier,
+      // but NOT that we added it to player.score. So we always need to add it here.
+      // However, if endRound() was somehow called before (despite the guard), we'd double-add.
+      // To prevent that, we check if the score calculation matches what's stored AND
+      // if it's likely the score was already added (which we can't know for sure without
+      // additional tracking).
+      //
+      // Simplest solution: Since the guard prevents endRound() from running twice,
+      // we can safely always add the score. But to be extra safe, we check if roundScores
+      // was already set to this exact value, which would indicate we might have already processed it.
+      // However, this is imperfect because roundScores is set during the round too.
+      //
+      // Better solution: Always add, but track in a way that survives the guard check.
+      // Actually, the guard should be sufficient. If we're here, endRound() hasn't run yet.
+      // So we should always add the score.
+      
+      // Add the round score - the guard at the top ensures this only runs once per round
       player.score += roundScore;
+      
       this.gameState.roundScores[player.id] = roundScore;
       
       // Capture round data for history
