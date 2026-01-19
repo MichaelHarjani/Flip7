@@ -165,10 +165,12 @@ export function setupWebSocketHandlers(io: Server): void {
         // Initialize game
         const gameId = `game-${Date.now()}`;
         const gameService = new GameService();
-        
+
         // Create player names and IDs arrays from sessions
         const playerNames = room.players.map(p => p.name);
         const playerIds = room.players.map(p => p.playerId);
+
+        console.log(`[Game Start] Initializing game ${gameId} with ${playerNames.length} players`);
         const gameState = gameService.initializeGame(playerNames, [], playerIds); // No AI players in multiplayer
 
         // Store game instance
@@ -179,13 +181,24 @@ export function setupWebSocketHandlers(io: Server): void {
         roomService.updateRoomStatus(roomCode, 'starting');
 
         // Start first round
+        console.log(`[Game Start] Starting first round for game ${gameId}`);
         const updatedGameState = gameService.startRound();
+
+        // Only update room status to 'playing' AFTER startRound succeeds
         roomService.updateRoomStatus(roomCode, 'playing');
 
-        // Broadcast game state to all players
+        console.log(`[Game Start] Broadcasting game state to room ${roomCode}, status: ${updatedGameState.gameStatus}`);
+
+        // Broadcast game state to all players in the room
         io.to(roomCode).emit('game:state', { gameState: updatedGameState });
       } catch (error: any) {
-        socket.emit('error', { message: error.message || 'Failed to start game' });
+        console.error(`[Game Start] Error starting game for room ${roomCode}:`, error);
+
+        // Rollback room status on error
+        roomService.updateRoomStatus(roomCode, 'waiting');
+
+        // Broadcast error to ALL players in the room, not just the host
+        io.to(roomCode).emit('error', { message: error.message || 'Failed to start game' });
       }
     });
 

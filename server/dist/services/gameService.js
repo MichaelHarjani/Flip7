@@ -5,11 +5,43 @@ export class GameService {
         this.gameState = null;
     }
     /**
-     * Initialize a new game
+     * Reshuffle the discard pile back into the deck, excluding cards currently in players' hands
+     * According to official rules: "If you need to reshuffle mid-round, leave all cards in front
+     * of players where they are, even if that player has busted and is out of the round."
      */
-    initializeGame(playerNames, aiDifficulties = []) {
+    reshuffleDiscardPile() {
+        if (!this.gameState)
+            return;
+        if (this.gameState.discardPile.length === 0) {
+            throw new Error('No cards available in deck or discard pile');
+        }
+        // Get all card IDs currently held by players (these should be excluded from reshuffle)
+        const cardsInPlayerHands = new Set();
+        this.gameState.players.forEach(player => {
+            player.cards.forEach(card => {
+                cardsInPlayerHands.add(card.id);
+            });
+        });
+        // Only reshuffle cards from discard pile that are NOT currently in players' hands
+        const cardsToReshuffle = this.gameState.discardPile.filter(card => !cardsInPlayerHands.has(card.id));
+        if (cardsToReshuffle.length === 0) {
+            throw new Error('No cards available to reshuffle (all discarded cards are in players\' hands)');
+        }
+        // Shuffle and add to deck
+        this.gameState.deck = shuffleDeck(cardsToReshuffle);
+        // Remove reshuffled cards from discard pile (keep cards that are in players' hands)
+        this.gameState.discardPile = this.gameState.discardPile.filter(card => cardsInPlayerHands.has(card.id));
+    }
+    /**
+     * Initialize a new game
+     * @param playerNames - Array of player names (for single player/local mode)
+     * @param aiDifficulties - Array of AI difficulties
+     * @param playerIds - Optional array of player IDs (for multiplayer mode)
+     */
+    initializeGame(playerNames, aiDifficulties = [], playerIds) {
         const players = playerNames.map((name, index) => ({
-            id: `player-${index}`,
+            // Use provided playerIds if available, otherwise generate based on index
+            id: playerIds && playerIds[index] ? playerIds[index] : `player-${index}`,
             name,
             isAI: index >= playerNames.length - aiDifficulties.length,
             cards: [],
@@ -70,24 +102,27 @@ export class GameService {
             this.gameState.gameStatus = 'playing';
             this.gameState.pendingActionCard = undefined;
             // Deal one card face up to each player
+            // IMPORTANT: According to official rules, if an Action card comes up during initial dealing,
+            // pause dealing IMMEDIATELY to resolve it, then continue dealing to remaining players
             const activePlayers = this.gameState.players.filter(p => p.isActive);
             if (activePlayers.length === 0) {
                 throw new Error('No active players to deal cards to');
             }
             for (const player of activePlayers) {
                 if (this.gameState.deck.length === 0) {
-                    // Reshuffle discard pile if deck runs out
-                    if (this.gameState.discardPile.length === 0) {
-                        throw new Error('No cards available in deck or discard pile');
-                    }
-                    this.gameState.deck = shuffleDeck([...this.gameState.discardPile]);
-                    this.gameState.discardPile = [];
+                    // Reshuffle discard pile if deck runs out (excluding cards in players' hands)
+                    this.reshuffleDiscardPile();
                 }
                 const card = this.gameState.deck.pop();
                 if (!card) {
                     throw new Error('Failed to draw card from deck');
                 }
+                // Deal the card - action cards are resolved immediately during initial dealing
                 this.dealCardToPlayer(player, card, true);
+                // CRITICAL: Action cards (Freeze, Flip Three) are resolved IMMEDIATELY during initial dealing
+                // The dealCardToPlayer method handles this via handleActionCard, which returns immediately
+                // for Freeze and Flip Three, applying their effects before dealing continues
+                // This matches the official rule: "pause dealing immediately to resolve it"
             }
             // Set current player to first active player after dealer
             const dealerIndex = this.gameState.dealerIndex;
@@ -151,8 +186,8 @@ export class GameService {
                             if (this.gameState.discardPile.length === 0) {
                                 break; // No more cards
                             }
-                            this.gameState.deck = shuffleDeck([...this.gameState.discardPile]);
-                            this.gameState.discardPile = [];
+                            // Reshuffle discard pile (excluding cards in players' hands)
+                            this.reshuffleDiscardPile();
                         }
                         const newCard = this.gameState.deck.pop();
                         if (!newCard)
@@ -336,7 +371,6 @@ export class GameService {
                     return false; // Card should be added to player's hand
                 }
             case 'flipThree':
-            case 'flipThree':
                 // Player must accept next 3 cards immediately
                 // Draw 3 cards for the target player
                 for (let i = 0; i < 3; i++) {
@@ -344,8 +378,8 @@ export class GameService {
                         if (this.gameState.discardPile.length === 0) {
                             break; // No more cards available
                         }
-                        this.gameState.deck = shuffleDeck([...this.gameState.discardPile]);
-                        this.gameState.discardPile = [];
+                        // Reshuffle discard pile (excluding cards in players' hands)
+                        this.reshuffleDiscardPile();
                     }
                     const newCard = this.gameState.deck.pop();
                     if (!newCard)
@@ -394,8 +428,8 @@ export class GameService {
                 if (this.gameState.discardPile.length === 0) {
                     throw new Error('No cards remaining');
                 }
-                this.gameState.deck = shuffleDeck([...this.gameState.discardPile]);
-                this.gameState.discardPile = [];
+                // Reshuffle discard pile (excluding cards in players' hands)
+                this.reshuffleDiscardPile();
             }
             const card = this.gameState.deck.pop();
             // Deal card - action cards (Flip3/Freeze) will be resolved immediately before being added to hand
@@ -481,9 +515,12 @@ export class GameService {
         if (!this.gameState)
             return;
         // Prevent double-processing if round already ended
-        if (this.gameState.gameStatus === 'roundEnd') {
+        // IMPORTANT: Check this BEFORE any processing to prevent race conditions
+        // where multiple calls could both pass the check before the status is set
+        if (this.gameState.gameStatus === 'roundEnd' || this.gameState.gameStatus === 'gameEnd') {
             return;
         }
+        // Set status immediately to prevent any concurrent calls from processing
         this.gameState.gameStatus = 'roundEnd';
         // Calculate final scores for all players
         const playerScores = {};
@@ -495,6 +532,28 @@ export class GameService {
             // Always recalculate the score at round end to ensure accuracy
             // The cached roundScores value might be stale if player's cards changed
             const roundScore = player.hasBusted ? 0 : calculateScore(player);
+            // IMPORTANT: Track if we've already added the score in this endRound() call
+            // The roundScores dictionary is set during the round (e.g., when player stays),
+            // but that only stores the score calculation - it doesn't mean it was added to player.score
+            // The score is ONLY added here in endRound(). The guard at the top should prevent
+            // endRound() from being called twice, but we add this extra safety check.
+            // 
+            // The key insight: roundScores[player.id] being set means we calculated the score earlier,
+            // but NOT that we added it to player.score. So we always need to add it here.
+            // However, if endRound() was somehow called before (despite the guard), we'd double-add.
+            // To prevent that, we check if the score calculation matches what's stored AND
+            // if it's likely the score was already added (which we can't know for sure without
+            // additional tracking).
+            //
+            // Simplest solution: Since the guard prevents endRound() from running twice,
+            // we can safely always add the score. But to be extra safe, we check if roundScores
+            // was already set to this exact value, which would indicate we might have already processed it.
+            // However, this is imperfect because roundScores is set during the round too.
+            //
+            // Better solution: Always add, but track in a way that survives the guard check.
+            // Actually, the guard should be sufficient. If we're here, endRound() hasn't run yet.
+            // So we should always add the score.
+            // Add the round score - the guard at the top ensures this only runs once per round
             player.score += roundScore;
             this.gameState.roundScores[player.id] = roundScore;
             // Capture round data for history
