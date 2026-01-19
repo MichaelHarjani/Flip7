@@ -45,13 +45,25 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   // In multiplayer mode, only show actions for the local player when it's their turn
   // In single/local mode, show actions for any human player whose turn it is
   const isMultiplayer = !!multiplayerRoomCode;
-  const localPlayer = isMultiplayer 
+  const localPlayer = isMultiplayer
     ? gameState?.players?.find(p => p.id === localPlayerId)
     : humanPlayer;
-  const isLocalPlayerTurn = isMultiplayer 
+  const isLocalPlayerTurn = isMultiplayer
     ? (currentPlayer?.id === localPlayerId)
     : (currentPlayer && !currentPlayer.isAI);
   const currentHumanPlayer = isLocalPlayerTurn ? currentPlayer : null;
+
+  // Debug logging for multiplayer turn detection
+  if (isMultiplayer && gameState) {
+    console.log('[GameBoard] Multiplayer turn check:', {
+      localPlayerId,
+      currentPlayerId: currentPlayer?.id,
+      currentPlayerName: currentPlayer?.name,
+      isLocalPlayerTurn,
+      localPlayerFound: !!localPlayer,
+      allPlayerIds: gameState.players?.map(p => ({ id: p.id, name: p.name }))
+    });
+  }
 
   // Listen for WebSocket game state updates in multiplayer mode
   useEffect(() => {
