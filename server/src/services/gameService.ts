@@ -54,21 +54,33 @@ export class GameService {
     aiDifficulties: Array<'conservative' | 'moderate' | 'aggressive'> = [],
     playerIds?: string[]
   ): GameState {
-    const players: Player[] = playerNames.map((name, index) => ({
+    console.log('[GameService] initializeGame called with:', {
+      playerNames,
+      playerIds,
+      playerIdsLength: playerIds?.length,
+      aiDifficulties
+    });
+
+    const players: Player[] = playerNames.map((name, index) => {
       // Use provided playerIds if available, otherwise generate based on index
-      id: playerIds && playerIds[index] ? playerIds[index] : `player-${index}`,
-      name,
-      isAI: index >= playerNames.length - aiDifficulties.length,
-      cards: [],
-      numberCards: [],
-      modifierCards: [],
-      actionCards: [],
-      score: 0,
-      isActive: true,
-      hasBusted: false,
-      hasSecondChance: false,
-      aiDifficulty: aiDifficulties[index - (playerNames.length - aiDifficulties.length)] || 'moderate',
-    }));
+      const playerId = playerIds && playerIds[index] ? playerIds[index] : `player-${index}`;
+      console.log(`[GameService] Creating player ${index}: name="${name}", playerId="${playerId}"`);
+
+      return {
+        id: playerId,
+        name,
+        isAI: index >= playerNames.length - aiDifficulties.length,
+        cards: [],
+        numberCards: [],
+        modifierCards: [],
+        actionCards: [],
+        score: 0,
+        isActive: true,
+        hasBusted: false,
+        hasSecondChance: false,
+        aiDifficulty: aiDifficulties[index - (playerNames.length - aiDifficulties.length)] || 'moderate',
+      };
+    });
 
     // Create deck scaled for player count (1 deck per 10 players)
     const deck = shuffleDeck(createScaledDeck(players.length));

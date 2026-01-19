@@ -179,6 +179,10 @@ export function setupWebSocketHandlers(io: Server): void {
           isHost: p.isHost
         })));
 
+        console.log(`[Game Start] playerNames array:`, playerNames);
+        console.log(`[Game Start] playerIds array:`, playerIds);
+        console.log(`[Game Start] playerIds length:`, playerIds?.length, 'playerNames length:', playerNames?.length);
+
         const gameState = gameService.initializeGame(playerNames, [], playerIds); // No AI players in multiplayer
 
         console.log(`[Game Start] Game state players:`, gameState.players.map((p, i) => ({
