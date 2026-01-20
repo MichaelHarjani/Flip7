@@ -171,16 +171,27 @@ export function setupWebSocketHandlers(io: Server): void {
         const playerIds = room.players.map(p => p.playerId);
 
         console.log(`[Game Start] Initializing game ${gameId} with ${playerNames.length} players`);
+        console.log(`[Game Start] Room object:`, JSON.stringify(room, null, 2));
         console.log(`[Game Start] Player mapping:`, room.players.map((p, i) => ({
           index: i,
           name: p.name,
           playerId: p.playerId,
+          hasPlayerId: !!p.playerId,
+          playerIdType: typeof p.playerId,
+          playerIdValue: p.playerId,
           sessionId: p.sessionId,
           isHost: p.isHost
         })));
 
         console.log(`[Game Start] playerNames array:`, playerNames);
         console.log(`[Game Start] playerIds array:`, playerIds);
+        console.log(`[Game Start] playerIds array detail:`, playerIds.map((id, i) => ({
+          index: i,
+          value: id,
+          type: typeof id,
+          truthy: !!id,
+          length: id?.length
+        })));
         console.log(`[Game Start] playerIds length:`, playerIds?.length, 'playerNames length:', playerNames?.length);
 
         const gameState = gameService.initializeGame(playerNames, [], playerIds); // No AI players in multiplayer
