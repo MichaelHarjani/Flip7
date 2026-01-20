@@ -63,11 +63,21 @@ export class GameService {
 
     const players: Player[] = playerNames.map((name, index) => {
       // Use provided playerIds if available, otherwise generate based on index
-      const playerId = playerIds && playerIds[index] ? playerIds[index] : `player-${index}`;
-      console.log(`[GameService] Creating player ${index}: name="${name}", playerId="${playerId}"`);
+      const hasPlayerIds = !!playerIds;
+      const hasIndexValue = playerIds && playerIds[index];
+      const finalPlayerId = playerIds && playerIds[index] ? playerIds[index] : `player-${index}`;
+
+      console.log(`[GameService] Creating player ${index}:`, {
+        name,
+        hasPlayerIds,
+        playerIdsArrayValue: playerIds?.[index],
+        hasIndexValue: !!hasIndexValue,
+        finalPlayerId,
+        willUseFallback: !hasIndexValue
+      });
 
       return {
-        id: playerId,
+        id: finalPlayerId,
         name,
         isAI: index >= playerNames.length - aiDifficulties.length,
         cards: [],

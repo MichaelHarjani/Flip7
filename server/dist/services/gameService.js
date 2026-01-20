@@ -39,21 +39,40 @@ export class GameService {
      * @param playerIds - Optional array of player IDs (for multiplayer mode)
      */
     initializeGame(playerNames, aiDifficulties = [], playerIds) {
-        const players = playerNames.map((name, index) => ({
+        console.log('[GameService] initializeGame called with:', {
+            playerNames,
+            playerIds,
+            playerIdsLength: playerIds?.length,
+            aiDifficulties
+        });
+        const players = playerNames.map((name, index) => {
             // Use provided playerIds if available, otherwise generate based on index
-            id: playerIds && playerIds[index] ? playerIds[index] : `player-${index}`,
-            name,
-            isAI: index >= playerNames.length - aiDifficulties.length,
-            cards: [],
-            numberCards: [],
-            modifierCards: [],
-            actionCards: [],
-            score: 0,
-            isActive: true,
-            hasBusted: false,
-            hasSecondChance: false,
-            aiDifficulty: aiDifficulties[index - (playerNames.length - aiDifficulties.length)] || 'moderate',
-        }));
+            const hasPlayerIds = !!playerIds;
+            const hasIndexValue = playerIds && playerIds[index];
+            const finalPlayerId = playerIds && playerIds[index] ? playerIds[index] : `player-${index}`;
+            console.log(`[GameService] Creating player ${index}:`, {
+                name,
+                hasPlayerIds,
+                playerIdsArrayValue: playerIds?.[index],
+                hasIndexValue: !!hasIndexValue,
+                finalPlayerId,
+                willUseFallback: !hasIndexValue
+            });
+            return {
+                id: finalPlayerId,
+                name,
+                isAI: index >= playerNames.length - aiDifficulties.length,
+                cards: [],
+                numberCards: [],
+                modifierCards: [],
+                actionCards: [],
+                score: 0,
+                isActive: true,
+                hasBusted: false,
+                hasSecondChance: false,
+                aiDifficulty: aiDifficulties[index - (playerNames.length - aiDifficulties.length)] || 'moderate',
+            };
+        });
         // Create deck scaled for player count (1 deck per 10 players)
         const deck = shuffleDeck(createScaledDeck(players.length));
         this.gameState = {

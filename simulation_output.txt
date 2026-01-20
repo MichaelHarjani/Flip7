@@ -1,0 +1,31 @@
+
+============================================================
+EXPERIMENT 1: Bust Probability Strategies (0% to 100%)
+Testing 21 strategies in 4-player games
+============================================================
+
+Testing BustProb_0% (1/21)...
+Traceback (most recent call last):
+  File "/Users/michael/Projects/flip7-webapp/flip7_simulation.py", line 718, in <module>
+    run_comprehensive_experiment(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        bust_strategies,
+        ^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        games_per_matchup=500
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/michael/Projects/flip7-webapp/flip7_simulation.py", line 657, in run_comprehensive_experiment
+    winner = game.play_game()
+  File "/Users/michael/Projects/flip7-webapp/flip7_simulation.py", line 492, in play_game
+    self.play_round()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/michael/Projects/flip7-webapp/flip7_simulation.py", line 463, in play_round
+    self.deal_initial_cards()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/michael/Projects/flip7-webapp/flip7_simulation.py", line 345, in deal_initial_cards
+    card = self.game_state.draw_card()
+  File "/Users/michael/Projects/flip7-webapp/flip7_simulation.py", line 205, in draw_card
+    raise Exception("No cards available to draw!")
+Exception: No cards available to draw!
