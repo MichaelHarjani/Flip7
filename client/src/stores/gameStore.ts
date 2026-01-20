@@ -192,8 +192,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Check if we're in multiplayer mode
     if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
       set({ loading: true, error: null });
-      wsStore.emit('game:hit', { playerId });
-      // Game state will be updated via WebSocket listener
+      try {
+        wsStore.emit('game:hit', { playerId });
+        // Game state will be updated via WebSocket listener
+      } catch (error: any) {
+        set({ loading: false, error: error.message });
+      }
       return;
     }
     
@@ -228,8 +232,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Check if we're in multiplayer mode
     if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
       set({ loading: true, error: null });
-      wsStore.emit('game:stay', { playerId });
-      // Game state will be updated via WebSocket listener
+      try {
+        wsStore.emit('game:stay', { playerId });
+        // Game state will be updated via WebSocket listener
+      } catch (error: any) {
+        set({ loading: false, error: error.message });
+      }
       return;
     }
     
@@ -264,8 +272,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Check if we're in multiplayer mode
     if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
       set({ loading: true, error: null });
-      wsStore.emit('game:playActionCard', { playerId, cardId, targetPlayerId });
-      // Game state will be updated via WebSocket listener
+      try {
+        wsStore.emit('game:playActionCard', { playerId, cardId, targetPlayerId });
+        // Game state will be updated via WebSocket listener
+      } catch (error: any) {
+        set({ loading: false, error: error.message });
+      }
       return;
     }
     
@@ -300,8 +312,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Check if we're in multiplayer mode
     if (roomStore.roomCode && wsStore.socket && wsStore.connected) {
       set({ loading: true, error: null });
-      wsStore.emit('game:nextRound');
-      // Game state will be updated via WebSocket listener
+      try {
+        wsStore.emit('game:nextRound');
+        // Game state will be updated via WebSocket listener
+      } catch (error: any) {
+        set({ loading: false, error: error.message });
+      }
       return;
     }
     
@@ -521,7 +537,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   setGameState: (gameState: GameState) => {
-    set({ gameState });
+    set({ gameState, loading: false, error: null });
   },
 
   clearError: () => {
