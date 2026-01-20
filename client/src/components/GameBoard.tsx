@@ -50,6 +50,17 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   const localPlayer = isMultiplayer
     ? gameState?.players?.find(p => p.id === localPlayerId)
     : humanPlayer;
+
+  // Debug logging for player identity - CRITICAL for debugging cross-tab issue
+  if (isMultiplayer && gameState) {
+    console.log('[GameBoard] Player identity lookup:', {
+      myPlayerId: localPlayerId,
+      allPlayers: gameState.players?.map(p => ({ id: p.id, name: p.name })),
+      foundMyPlayer: localPlayer ? { id: localPlayer.id, name: localPlayer.name } : null,
+      usingFallback: !localPlayer ? 'YES - will use first human player!' : 'NO',
+    });
+  }
+
   const isLocalPlayerTurn = isMultiplayer
     ? (currentPlayer?.id === localPlayerId)
     : (currentPlayer && !currentPlayer.isAI);
@@ -72,16 +83,20 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
     if (roomCode) {
       const wsStore = useWebSocketStore.getState();
       const handleGameState = (data: { gameState: any }) => {
+        console.log('[GameBoard] Received game:state from server:', {
+          players: data.gameState.players?.map((p: any) => ({ id: p.id, name: p.name })),
+          myStoredPlayerId: getPlayerId(),
+        });
         setGameState(data.gameState);
       };
-      
+
       wsStore.on('game:state', handleGameState);
-      
+
       return () => {
         wsStore.off('game:state', handleGameState);
       };
     }
-  }, [roomCode, setGameState]);
+  }, [roomCode, setGameState, getPlayerId]);
 
   // Handle AI turns - MUST be called before any early returns (Rules of Hooks)
   useEffect(() => {
