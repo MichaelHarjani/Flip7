@@ -2,6 +2,7 @@ import type { Player } from '@shared/types/index';
 import Card from './Card';
 import { calculateScore, hasFlip7 } from '../utils/gameLogic';
 import { useGameStore } from '../stores/gameStore';
+import { getAICharacterIconPath } from '../utils/aiPlayerNames';
 
 interface PlayerAreaProps {
   player: Player;
@@ -37,9 +38,16 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;
 
-  // Player avatar emoji based on player index or name
+  // Player avatar - use character icon for AI players, emoji for human players
   const getPlayerAvatar = () => {
     if (player.isAI) {
+      // Try to get character icon path
+      const iconPath = getAICharacterIconPath(player.name);
+      if (iconPath) {
+        // Return JSX for image (will be handled in render)
+        return iconPath;
+      }
+      // Fallback to robot emoji
       return '🤖';
     }
     // Use first letter as basis for emoji
@@ -47,6 +55,9 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
     const avatars = ['👤', '🎮', '🎯', '⭐', '🎲', '🃏'];
     return avatars[firstLetter.charCodeAt(0) % avatars.length];
   };
+
+  const playerAvatar = getPlayerAvatar();
+  const isIconPath = player.isAI && typeof playerAvatar === 'string' && playerAvatar.endsWith('.png');
 
   return (
     <div
@@ -73,7 +84,24 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
       <div className={`flex flex-col ${headerMarginClass} relative`}>
         {/* Name and tags on first line with avatar */}
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap mb-0.5 sm:mb-1">
-          <span className="text-lg sm:text-2xl">{getPlayerAvatar()}</span>
+          {isIconPath ? (
+            <img 
+              src={playerAvatar as string} 
+              alt={player.name}
+              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
+              onError={(e) => {
+                // Fallback to emoji if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = document.createElement('span');
+                fallback.className = 'text-lg sm:text-2xl';
+                fallback.textContent = '🤖';
+                target.parentNode?.insertBefore(fallback, target);
+              }}
+            />
+          ) : (
+            <span className="text-lg sm:text-2xl">{playerAvatar}</span>
+          )}
           <h3 className={`font-bold ${titleSizeClass} text-white`}>{player.name}</h3>
           {player.isAI && (
             <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-gray-600 border-gray-400 text-gray-200 animate-scale-in">AI</span>

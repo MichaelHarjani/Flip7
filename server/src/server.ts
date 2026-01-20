@@ -57,6 +57,11 @@ console.log('=== Attempting to import modules ===');
 import gameRoutes from './routes/gameRoutes.js';
 import { setupWebSocketHandlers } from './websocket/handlers.js';
 
+// New SSE+REST API routes
+import roomsRouter from './api/rooms.js';
+import gameActionsRouter from './api/game-actions.js';
+import sseRouter from './api/sse.js';
+
 console.log('=== All imports successful, starting server ===');
 
 const app = express();
@@ -74,7 +79,13 @@ const HOST = process.env.HOST || '0.0.0.0';
 app.use(cors());
 app.use(express.json());
 
+// Legacy single-player game routes
 app.use('/api/game', gameRoutes);
+
+// New multiplayer REST API routes
+app.use('/api/rooms', roomsRouter);
+app.use('/api/game-mp', gameActionsRouter);
+app.use('/api/sse', sseRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

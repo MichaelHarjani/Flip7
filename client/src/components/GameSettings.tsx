@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../stores/gameStore';
+import { getRandomAINames } from '../utils/aiPlayerNames';
 
 interface GameSettingsProps {
   onStart: () => void;
@@ -29,9 +30,9 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
       // Preserve the user's name if they've entered one
       const currentHumanName = playerNames[0] && playerNames[0] !== 'You' ? playerNames[0] : 'You';
       const newNames = [currentHumanName];
-      for (let i = 0; i < playerCount - 1; i++) {
-        newNames.push(`AI Player ${i + 1}`);
-      }
+      // Get random AI character names
+      const aiNames = getRandomAINames(playerCount - 1);
+      newNames.push(...aiNames);
       setPlayerNames(newNames);
       
       // Adjust AI difficulties array (using default 'moderate' for all)
