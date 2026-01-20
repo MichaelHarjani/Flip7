@@ -28,6 +28,7 @@ interface RoomStore {
 export const useRoomStore = create<RoomStore>((set, get) => {
   // Helper functions to persist player identity per tab using sessionStorage
   const savePlayerIdentity = (sessionId: string, playerId: string) => {
+    console.log('[RoomStore] Saving player identity to sessionStorage', { sessionId, playerId });
     sessionStorage.setItem('flip7_sessionId', sessionId);
     sessionStorage.setItem('flip7_playerId', playerId);
   };
@@ -83,7 +84,20 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     on('room:updated', (data: { room: GameRoom }) => {
       const currentRoom = get().room;
       if (currentRoom && currentRoom.roomCode === data.room.roomCode) {
-        set({ room: data.room });
+        // Preserve this tab's player identity from sessionStorage
+        // (Don't let room updates overwrite our local player ID)
+        const localIdentity = getPlayerIdentity();
+        console.log('[RoomStore] room:updated event received', {
+          roomPlayers: data.room.players.map(p => ({ id: p.id, name: p.name })),
+          mySessionId: localIdentity.sessionId,
+          myPlayerId: localIdentity.playerId,
+        });
+        set({
+          room: data.room,
+          // Keep sessionStorage values, don't overwrite with room data
+          sessionId: localIdentity.sessionId,
+          playerId: localIdentity.playerId,
+        });
       }
     });
 
