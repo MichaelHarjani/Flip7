@@ -9,11 +9,14 @@ interface RoomLobbyProps {
 }
 
 export default function RoomLobby({ onBack }: RoomLobbyProps) {
-  const { room, sessionId, isHost, loading, error, startGame, leaveRoom, clearError } = useRoomStore();
+  const { room, getSessionId, isHost, loading, error, startGame, leaveRoom, clearError } = useRoomStore();
   const { connected } = useWebSocketStore();
   const { setGameState } = useGameStore();
   const [copied, setCopied] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+
+  // IMPORTANT: Always read from sessionStorage to get the correct sessionId for THIS tab
+  const sessionId = getSessionId();
 
   if (!room) {
     return null;

@@ -35,13 +35,15 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   const [screenShake, setScreenShake] = useState(false);
 
   // Get the local player's ID from room store (for multiplayer)
-  const { playerId: localPlayerId, roomCode: multiplayerRoomCode } = useRoomStore();
-  
+  const { roomCode: multiplayerRoomCode, getPlayerId } = useRoomStore();
+  // IMPORTANT: Always read from sessionStorage to get the correct playerId for THIS tab
+  const localPlayerId = getPlayerId();
+
   // Calculate current player before any early returns (for useEffect)
   const currentPlayer = gameState?.players?.[gameState.currentPlayerIndex];
   const humanPlayer = gameState?.players?.find(p => !p.isAI);
   const isRoundEnd = gameState?.gameStatus === 'roundEnd';
-  
+
   // In multiplayer mode, only show actions for the local player when it's their turn
   // In single/local mode, show actions for any human player whose turn it is
   const isMultiplayer = !!multiplayerRoomCode;

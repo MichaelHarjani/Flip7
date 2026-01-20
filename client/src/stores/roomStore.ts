@@ -5,11 +5,15 @@ import { useWebSocketStore } from './websocketStore';
 interface RoomStore {
   roomCode: string | null;
   room: GameRoom | null;
-  sessionId: string | null;
-  playerId: string | null;
+  sessionId: string | null;  // Deprecated: use getSessionId() instead
+  playerId: string | null;    // Deprecated: use getPlayerId() instead
   isHost: boolean;
   loading: boolean;
   error: string | null;
+
+  // Getters that read from sessionStorage (unique per tab)
+  getSessionId: () => string | null;
+  getPlayerId: () => string | null;
 
   // Actions
   createRoom: (name: string) => Promise<void>;
@@ -22,6 +26,24 @@ interface RoomStore {
 }
 
 export const useRoomStore = create<RoomStore>((set, get) => {
+  // Helper functions to persist player identity per tab using sessionStorage
+  const savePlayerIdentity = (sessionId: string, playerId: string) => {
+    sessionStorage.setItem('flip7_sessionId', sessionId);
+    sessionStorage.setItem('flip7_playerId', playerId);
+  };
+
+  const getPlayerIdentity = () => {
+    return {
+      sessionId: sessionStorage.getItem('flip7_sessionId'),
+      playerId: sessionStorage.getItem('flip7_playerId'),
+    };
+  };
+
+  const clearPlayerIdentity = () => {
+    sessionStorage.removeItem('flip7_sessionId');
+    sessionStorage.removeItem('flip7_playerId');
+  };
+
   // Setup WebSocket listeners - called when socket connects
   const setupListeners = () => {
     const wsStoreState = useWebSocketStore.getState();
@@ -31,6 +53,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
     // Room created
     on('room:created', (data: { room: GameRoom; sessionId: string; playerId: string }) => {
+      savePlayerIdentity(data.sessionId, data.playerId);
       set({
         room: data.room,
         roomCode: data.room.roomCode,
@@ -44,6 +67,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
     // Room joined
     on('room:joined', (data: { room: GameRoom; sessionId: string; playerId: string }) => {
+      savePlayerIdentity(data.sessionId, data.playerId);
       set({
         room: data.room,
         roomCode: data.room.roomCode,
@@ -65,6 +89,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
     // Matchmaking matched
     on('matchmaking:matched', (data: { room: GameRoom; sessionId: string; playerId: string }) => {
+      savePlayerIdentity(data.sessionId, data.playerId);
       set({
         room: data.room,
         roomCode: data.room.roomCode,
@@ -108,14 +133,21 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     setupListeners();
   }
 
+  // Initialize from sessionStorage (to restore state on page reload)
+  const savedIdentity = getPlayerIdentity();
+
   return {
     roomCode: null,
     room: null,
-    sessionId: null,
-    playerId: null,
+    sessionId: savedIdentity.sessionId,
+    playerId: savedIdentity.playerId,
     isHost: false,
     loading: false,
     error: null,
+
+    // Getters that always read from sessionStorage (unique per tab)
+    getSessionId: () => sessionStorage.getItem('flip7_sessionId'),
+    getPlayerId: () => sessionStorage.getItem('flip7_playerId'),
 
     createRoom: async (name: string) => {
       const wsStoreState = useWebSocketStore.getState();
@@ -162,7 +194,8 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     },
 
     leaveRoom: () => {
-      const { roomCode, sessionId } = get();
+      const { roomCode, getSessionId } = get();
+      const sessionId = getSessionId();
       if (roomCode && sessionId) {
         useWebSocketStore.getState().emit('room:leave');
       }
@@ -210,6 +243,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     },
 
     reset: () => {
+      clearPlayerIdentity();
       set({
         roomCode: null,
         room: null,
