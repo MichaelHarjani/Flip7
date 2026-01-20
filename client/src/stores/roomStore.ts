@@ -88,7 +88,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
         // (Don't let room updates overwrite our local player ID)
         const localIdentity = getPlayerIdentity();
         console.log('[RoomStore] room:updated event received', {
-          roomPlayers: data.room.players.map(p => ({ id: p.id, name: p.name })),
+          roomPlayers: data.room.players.map(p => ({ playerId: p.playerId, name: p.name })),
           mySessionId: localIdentity.sessionId,
           myPlayerId: localIdentity.playerId,
         });
