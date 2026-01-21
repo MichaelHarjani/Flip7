@@ -43,7 +43,8 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
 
     connect: (url?: string) => {
       const wsUrl = url || WS_URL;
-      
+      console.log('[WebSocket] Connecting to:', wsUrl);
+
       // Disconnect existing connection
       if (socket) {
         socket.disconnect();
