@@ -4,3 +4,4 @@ dist/
 .DS_Store
 server/src/shared/
 server/src/shared/
+.vercel
