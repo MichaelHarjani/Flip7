@@ -26,11 +26,12 @@ interface WebSocketStore {
 }
 
 // WebSocket server URL
-// Note: In production, we use the Railway server. The VITE_WS_URL env variable
-// can override this for development or alternative deployments.
-const WS_URL = import.meta.env.DEV 
-  ? 'http://localhost:5001' 
-  : 'https://flip7-server-production.up.railway.app';
+// Use VITE_WS_URL from environment variables, or fall back to defaults
+const WS_URL = import.meta.env.VITE_WS_URL || (
+  import.meta.env.DEV
+    ? 'http://localhost:5001'
+    : 'https://flip7-server-production.up.railway.app'
+);
 
 export const useWebSocketStore = create<WebSocketStore>((set, get) => {
   let socket: Socket | null = null;
