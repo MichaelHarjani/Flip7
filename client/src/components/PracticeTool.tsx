@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card as CardType } from '../../../server/src/shared/types';
+import type { Card as CardType } from '@shared/types/index';
 
 interface PracticeToolProps {
   onClose: () => void;
