@@ -17,19 +17,16 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
   const [hasSecondChance, setHasSecondChance] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [deckStats, setDeckStats] = useState({
-    numbersDrawn: [] as number[],
-    totalDraws: 0
-  });
+  const [hasDrawnOnce, setHasDrawnOnce] = useState(false);
 
-  // Initialize a simple deck for practice
+  // Initialize the correct deck for practice - matches actual game
   const createDeck = (): CardType[] => {
     const deck: CardType[] = [];
     let cardIdCounter = 0;
 
-    // Number cards: 12 twelves, 11 elevens, ..., 1 one, 1 zero
-    for (let value = 12; value >= 0; value--) {
-      const count = value === 0 ? 1 : value;
+    // Number cards: 12×12, 11×11, 10×10, ..., 1×1, 0×1
+    for (let value = 12; value >= 1; value--) {
+      const count = value; // 12 twelves, 11 elevens, etc.
       for (let i = 0; i < count; i++) {
         deck.push({
           id: `card-${cardIdCounter++}`,
@@ -38,6 +35,13 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
         });
       }
     }
+
+    // Zero card (only 1)
+    deck.push({
+      id: `card-${cardIdCounter++}`,
+      type: 'number',
+      value: 0
+    });
 
     // Add modifiers
     [2, 4, 6, 8, 10].forEach(value => {
@@ -73,19 +77,19 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
     return deck;
   };
 
-  const [deck] = useState(createDeck());
+  const [deck, setDeck] = useState(createDeck());
 
-  const drawCard = (): CardType => {
-    const availableDeck = deck.filter(card => {
-      // Don't draw cards already in hand (for number cards only)
-      if (card.type === 'number') {
-        return !hand.some(h => h.type === 'number' && h.value === card.value);
-      }
-      return true;
-    });
+  const drawCard = (): CardType | null => {
+    if (deck.length === 0) return null;
 
-    const randomIndex = Math.floor(Math.random() * availableDeck.length);
-    return availableDeck[randomIndex];
+    // Draw a random card from the remaining deck
+    const randomIndex = Math.floor(Math.random() * deck.length);
+    const drawnCard = deck[randomIndex];
+
+    // Remove the card from the deck
+    setDeck(prev => prev.filter((_, index) => index !== randomIndex));
+
+    return drawnCard;
   };
 
   const calculateScore = (): number => {
@@ -125,20 +129,16 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
     const numberCards = getNumberCards();
     if (numberCards.length === 0) return 0;
 
-    // Calculate remaining number cards that would cause a bust
-    const numbersInHand = numberCards.map(card => card.value);
-    let bustCards = 0;
+    // Get the numbers already in hand
+    const numbersInHand = new Set(numberCards.map(card => card.value));
 
-    numbersInHand.forEach(num => {
-      if (num === 0) {
-        bustCards += 1; // Only 1 zero
-      } else {
-        bustCards += num!; // The count of that number in the deck
-      }
-    });
+    // Count how many cards in the remaining deck would cause a bust
+    const bustCards = deck.filter(card =>
+      card.type === 'number' && numbersInHand.has(card.value)
+    ).length;
 
-    // Total remaining cards (approximate)
-    const remainingCards = deck.length - deckStats.totalDraws;
+    // Total remaining cards in deck
+    const remainingCards = deck.length;
 
     return remainingCards > 0 ? (bustCards / remainingCards) * 100 : 0;
   };
@@ -212,14 +212,16 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
 
     // Small delay before drawing
     setTimeout(() => {
+      setHasDrawnOnce(true);
       const card = drawCard();
-      setDeckStats(prev => ({
-        ...prev,
-        totalDraws: prev.totalDraws + 1,
-        numbersDrawn: card.type === 'number' && card.value !== undefined
-          ? [...prev.numbersDrawn, card.value]
-          : prev.numbersDrawn
-      }));
+
+      if (!card) {
+        setFeedback({
+          type: 'neutral',
+          message: 'Deck is empty! Reset to continue practicing.'
+        });
+        return;
+      }
 
       // Check for bust
       if (card.type === 'number' && hand.some(h => h.type === 'number' && h.value === card.value)) {
@@ -335,10 +337,8 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
     setHasSecondChance(false);
     setGameOver(false);
     setFeedback(null);
-    setDeckStats({
-      numbersDrawn: [],
-      totalDraws: 0
-    });
+    setDeck(createDeck());
+    // Don't reset hasDrawnOnce - keep instructions hidden
   };
 
   const renderCard = (card: CardType, index: number) => {
@@ -400,16 +400,18 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {/* Instructions */}
-          <div className="bg-blue-900 border border-blue-500 p-4 rounded-lg">
-            <p className="text-white font-semibold mb-2">How Practice Mode Works:</p>
-            <ul className="text-sm text-gray-200 space-y-1 list-disc list-inside">
-              <li>Draw cards and decide when to stay, just like a real game</li>
-              <li>Get real-time feedback on your decisions and probabilities</li>
-              <li>Learn when you're taking too much risk or playing too conservatively</li>
-              <li>Understand the math behind bust probability and scoring</li>
-            </ul>
-          </div>
+          {/* Instructions - only show before first draw */}
+          {!hasDrawnOnce && (
+            <div className="bg-blue-900 border border-blue-500 p-4 rounded-lg">
+              <p className="text-white font-semibold mb-2">How Practice Mode Works:</p>
+              <ul className="text-sm text-gray-200 space-y-1 list-disc list-inside">
+                <li>Draw cards and decide when to stay, just like a real game</li>
+                <li>Get real-time feedback on your decisions and probabilities</li>
+                <li>Learn when you're taking too much risk or playing too conservatively</li>
+                <li>Understand the math behind bust probability and scoring</li>
+              </ul>
+            </div>
+          )}
 
           {/* Current Hand */}
           <div className="bg-gray-800 border-2 border-gray-600 p-4 rounded-lg">
@@ -482,6 +484,16 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
                   const addModSum = addMods.reduce((sum, c) => sum + (c.modifierValue || 0), 0);
                   const isFlip7 = numbers.length >= 7;
 
+                  // Calculate step by step to match calculateScore()
+                  let runningTotal = numberSum;
+                  if (hasMultiplier) {
+                    runningTotal = runningTotal * 2;
+                  }
+                  runningTotal += addModSum;
+                  if (isFlip7) {
+                    runningTotal += 15;
+                  }
+
                   return (
                     <>
                       {numbers.length > 0 && (
@@ -491,12 +503,12 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
                       )}
                       {hasMultiplier && (
                         <p>
-                          Multiplier: {numberSum} × 2 = {numberSum * 2}
+                          Apply ×2: {numberSum} × 2 = {numberSum * 2}
                         </p>
                       )}
                       {addMods.length > 0 && (
                         <p>
-                          Add Modifiers: {addMods.map(c => `+${c.modifierValue}`).join(' + ')} = +{addModSum}
+                          Add Modifiers: {hasMultiplier ? numberSum * 2 : numberSum} + {addMods.map(c => c.modifierValue).join(' + ')} = {(hasMultiplier ? numberSum * 2 : numberSum) + addModSum}
                         </p>
                       )}
                       {isFlip7 && (
@@ -505,7 +517,7 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
                         </p>
                       )}
                       <p className="border-t border-gray-600 pt-1 mt-1 font-bold text-white">
-                        Total: {currentScore} points
+                        Total: {runningTotal} points
                       </p>
                     </>
                   );
