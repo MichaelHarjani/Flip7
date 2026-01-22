@@ -419,8 +419,33 @@ export default function PracticeTool({ onClose }: PracticeToolProps) {
             {hand.length === 0 ? (
               <p className="text-gray-400 text-center py-8">No cards yet. Click HIT to start!</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {hand.map((card, index) => renderCard(card, index))}
+              <div className="space-y-2">
+                {/* Modifier cards on top */}
+                {hand.filter(c => c.type === 'modifier').length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {hand
+                      .filter(c => c.type === 'modifier')
+                      .map((card, index) => renderCard(card, index))}
+                  </div>
+                )}
+
+                {/* Number cards in middle */}
+                {hand.filter(c => c.type === 'number').length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {hand
+                      .filter(c => c.type === 'number')
+                      .map((card, index) => renderCard(card, index))}
+                  </div>
+                )}
+
+                {/* Action cards at bottom */}
+                {hand.filter(c => c.type === 'action').length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {hand
+                      .filter(c => c.type === 'action')
+                      .map((card, index) => renderCard(card, index))}
+                  </div>
+                )}
               </div>
             )}
           </div>
