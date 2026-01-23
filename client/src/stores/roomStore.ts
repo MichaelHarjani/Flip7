@@ -27,10 +27,13 @@ interface RoomStore {
 
 export const useRoomStore = create<RoomStore>((set, get) => {
   // Helper functions to persist player identity per tab using sessionStorage
-  const savePlayerIdentity = (sessionId: string, playerId: string) => {
-    console.log('[RoomStore] Saving player identity to sessionStorage', { sessionId, playerId });
+  const savePlayerIdentity = (sessionId: string, playerId: string, roomCode?: string) => {
+    console.log('[RoomStore] Saving player identity to sessionStorage', { sessionId, playerId, roomCode });
     sessionStorage.setItem('flip7_sessionId', sessionId);
     sessionStorage.setItem('flip7_playerId', playerId);
+    if (roomCode) {
+      sessionStorage.setItem('flip7_roomCode', roomCode);
+    }
   };
 
   const getPlayerIdentity = () => {
@@ -43,6 +46,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
   const clearPlayerIdentity = () => {
     sessionStorage.removeItem('flip7_sessionId');
     sessionStorage.removeItem('flip7_playerId');
+    sessionStorage.removeItem('flip7_roomCode');
   };
 
   // Setup WebSocket listeners - called when socket connects
@@ -54,7 +58,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
     // Room created
     on('room:created', (data: { room: GameRoom; sessionId: string; playerId: string }) => {
-      savePlayerIdentity(data.sessionId, data.playerId);
+      savePlayerIdentity(data.sessionId, data.playerId, data.room.roomCode);
       set({
         room: data.room,
         roomCode: data.room.roomCode,
@@ -68,7 +72,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
     // Room joined
     on('room:joined', (data: { room: GameRoom; sessionId: string; playerId: string }) => {
-      savePlayerIdentity(data.sessionId, data.playerId);
+      savePlayerIdentity(data.sessionId, data.playerId, data.room.roomCode);
       set({
         room: data.room,
         roomCode: data.room.roomCode,
@@ -103,7 +107,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
 
     // Matchmaking matched
     on('matchmaking:matched', (data: { room: GameRoom; sessionId: string; playerId: string }) => {
-      savePlayerIdentity(data.sessionId, data.playerId);
+      savePlayerIdentity(data.sessionId, data.playerId, data.room.roomCode);
       set({
         room: data.room,
         roomCode: data.room.roomCode,
@@ -125,6 +129,29 @@ export const useRoomStore = create<RoomStore>((set, get) => {
       console.log('game:state received in roomStore', data);
       // Reset loading state when game starts
       set({ loading: false, error: null });
+    });
+
+    // Host migrated
+    on('host:migrated', (data: { newHostId: string; newHostName: string; message: string }) => {
+      console.log('[RoomStore] Host migrated:', data);
+      const localIdentity = getPlayerIdentity();
+      const amINewHost = localIdentity.sessionId === data.newHostId;
+
+      set({
+        isHost: amINewHost,
+        error: null, // Clear any previous errors
+      });
+
+      // Show notification to user
+      if (amINewHost) {
+        console.log('[RoomStore] You are now the host!');
+      }
+    });
+
+    // Player disconnected
+    on('player:disconnected', (data: { sessionId: string; playerId: string }) => {
+      console.log('[RoomStore] Player disconnected:', data);
+      // Room will be updated via room:updated event
     });
 
     // Error

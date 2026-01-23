@@ -62,6 +62,11 @@ import roomsRouter from './api/rooms.js';
 import gameActionsRouter from './api/game-actions.js';
 import sseRouter from './api/sse.js';
 
+// Services for cleanup
+import { roomService } from './services/roomService.js';
+import { sessionService } from './services/sessionService.js';
+import { gameStateBufferService } from './services/gameStateBuffer.js';
+
 console.log('=== All imports successful, starting server ===');
 
 const app = express();
@@ -94,9 +99,27 @@ app.get('/health', (req, res) => {
 // Setup WebSocket handlers
 setupWebSocketHandlers(io);
 
+// Setup periodic cleanup tasks
+const CLEANUP_INTERVAL = 60000; // Run cleanup every 60 seconds
+setInterval(() => {
+  console.log('[Cleanup] Running periodic cleanup...');
+
+  // Clean up old sessions (disconnected for more than 5 minutes)
+  sessionService.cleanupDisconnectedSessions(300000);
+
+  // Clean up empty or old rooms
+  roomService.cleanupRooms();
+
+  // Clean up old game state buffers
+  gameStateBufferService.cleanupOldBuffers();
+
+  console.log('[Cleanup] Cleanup complete');
+}, CLEANUP_INTERVAL);
+
 httpServer.listen(PORT, HOST, () => {
   console.log(`Server running on ${HOST}:${PORT}`);
   console.log(`WebSocket server ready`);
   console.log(`Health endpoint: http://${HOST}:${PORT}/health`);
+  console.log(`Cleanup task scheduled every ${CLEANUP_INTERVAL / 1000} seconds`);
 });
 

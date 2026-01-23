@@ -102,6 +102,17 @@ export class SessionService {
   }
 
   /**
+   * Update session properties
+   */
+  updateSession(sessionId: string, updates: Partial<PlayerSession>): void {
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      Object.assign(session, updates);
+      session.lastSeen = new Date();
+    }
+  }
+
+  /**
    * Update session last seen
    */
   updateLastSeen(sessionId: string): void {

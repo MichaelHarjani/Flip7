@@ -5,6 +5,7 @@ import { sessionService } from '../services/sessionService.js';
 import { matchmakingService } from '../services/matchmakingService.js';
 import { GameService } from '../services/gameService.js';
 import { makeAIDecision } from '../ai/aiPlayer.js';
+import { gameStateBufferService } from '../services/gameStateBuffer.js';
 
 // Store game instances
 const gameInstances = new Map<string, GameService>();
@@ -15,6 +16,13 @@ const gameInstances = new Map<string, GameService>();
 export function setupWebSocketHandlers(io: Server): void {
   io.on('connection', (socket: Socket) => {
     console.log(`Client connected: ${socket.id}`);
+
+    // Handle ping/pong for heartbeat monitoring
+    socket.on('ping', (data, callback) => {
+      // Respond immediately to measure latency
+      if (callback) callback({ timestamp: Date.now() });
+      socket.emit('pong');
+    });
 
     // Handle room creation
     socket.on('room:create', async (data: { playerName: string; maxPlayers?: number }) => {
@@ -221,6 +229,9 @@ export function setupWebSocketHandlers(io: Server): void {
 
         console.log(`[Game Start] Broadcasting game state to room ${roomCode}, status: ${updatedGameState.gameStatus}`);
 
+        // Buffer the game state for reconnection support
+        gameStateBufferService.addUpdate(gameId, updatedGameState);
+
         // Broadcast game state to all players in the room
         io.to(roomCode).emit('game:state', { gameState: updatedGameState });
       } catch (error: any) {
@@ -264,7 +275,12 @@ export function setupWebSocketHandlers(io: Server): void {
 
       try {
         const gameState = gameService.hit(data.playerId);
-        
+
+        // Buffer the game state
+        if (room.gameId) {
+          gameStateBufferService.addUpdate(room.gameId, gameState);
+        }
+
         // Broadcast updated game state
         io.to(roomCode).emit('game:state', { gameState });
 
@@ -305,7 +321,12 @@ export function setupWebSocketHandlers(io: Server): void {
 
       try {
         const gameState = gameService.stay(data.playerId);
-        
+
+        // Buffer the game state
+        if (room.gameId) {
+          gameStateBufferService.addUpdate(room.gameId, gameState);
+        }
+
         // Broadcast updated game state
         io.to(roomCode).emit('game:state', { gameState });
 
@@ -346,7 +367,12 @@ export function setupWebSocketHandlers(io: Server): void {
 
       try {
         const gameState = gameService.playActionCard(data.playerId, data.cardId, data.targetPlayerId);
-        
+
+        // Buffer the game state
+        if (room.gameId) {
+          gameStateBufferService.addUpdate(room.gameId, gameState);
+        }
+
         // Broadcast updated game state
         io.to(roomCode).emit('game:state', { gameState });
 
@@ -388,7 +414,12 @@ export function setupWebSocketHandlers(io: Server): void {
 
       try {
         const gameState = gameService.startNextRound();
-        
+
+        // Buffer the game state
+        if (room.gameId) {
+          gameStateBufferService.addUpdate(room.gameId, gameState);
+        }
+
         // Broadcast updated game state
         io.to(roomCode).emit('game:state', { gameState });
 
@@ -438,6 +469,37 @@ export function setupWebSocketHandlers(io: Server): void {
 
         const room = roomService.getRoom(roomCode);
         if (room) {
+          const disconnectedPlayer = room.players.find(p => p.sessionId === sessionId);
+          const wasHost = disconnectedPlayer?.isHost || false;
+
+          console.log(`[Disconnect] Player ${sessionId} disconnected from room ${roomCode}, wasHost: ${wasHost}`);
+
+          // If host disconnected and there are other connected players, migrate host
+          if (wasHost && room.players.length > 1) {
+            const connectedPlayers = room.players.filter(p => p.connected && p.sessionId !== sessionId);
+
+            if (connectedPlayers.length > 0) {
+              // Promote first connected player to host
+              const newHost = connectedPlayers[0];
+              console.log(`[Host Migration] Promoting ${newHost.name} (${newHost.sessionId}) to host`);
+
+              roomService.migrateHost(roomCode, newHost.sessionId);
+              const updatedRoom = roomService.getRoom(roomCode);
+
+              if (updatedRoom) {
+                // Notify all players about host migration
+                io.to(roomCode).emit('host:migrated', {
+                  newHostId: newHost.sessionId,
+                  newHostName: newHost.name,
+                  message: `${newHost.name} is now the host`
+                });
+                io.to(roomCode).emit('room:updated', { room: updatedRoom });
+              }
+            } else {
+              console.log(`[Disconnect] No connected players to migrate host to, room will be cleaned up`);
+            }
+          }
+
           // Broadcast player disconnected
           io.to(roomCode).emit('player:disconnected', { sessionId, playerId: socket.data.playerId });
           io.to(roomCode).emit('room:updated', { room });
@@ -451,6 +513,8 @@ export function setupWebSocketHandlers(io: Server): void {
       const sessionId = socket.data.sessionId;
 
       if (roomCode && sessionId) {
+        console.log(`[Reconnect] Player ${sessionId} reconnecting to room ${roomCode}`);
+
         socket.join(roomCode);
         roomService.updatePlayerConnection(roomCode, sessionId, true);
         sessionService.updateConnectionStatus(sessionId, true);
@@ -466,10 +530,58 @@ export function setupWebSocketHandlers(io: Server): void {
             if (gameService) {
               const gameState = gameService.getGameState();
               if (gameState) {
+                console.log(`[Reconnect] Sending current game state to ${sessionId}`);
                 socket.emit('game:state', { gameState });
               }
             }
           }
+        }
+      }
+    });
+
+    // Handle manual reconnection with session restoration
+    socket.on('session:restore', (data: { sessionId: string; roomCode: string }) => {
+      console.log(`[Session Restore] Restoring session ${data.sessionId} in room ${data.roomCode}`);
+
+      const room = roomService.getRoom(data.roomCode);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      const player = room.players.find(p => p.sessionId === data.sessionId);
+      if (!player) {
+        socket.emit('error', { message: 'Session not found in room' });
+        return;
+      }
+
+      // Restore socket data
+      socket.join(data.roomCode);
+      socket.data.sessionId = data.sessionId;
+      socket.data.playerId = player.playerId;
+      socket.data.roomCode = data.roomCode;
+
+      // Update connection status
+      roomService.updatePlayerConnection(data.roomCode, data.sessionId, true);
+      sessionService.updateConnectionStatus(data.sessionId, true);
+
+      // Send room state
+      socket.emit('room:joined', {
+        room,
+        sessionId: data.sessionId,
+        playerId: player.playerId,
+      });
+
+      // Broadcast reconnection
+      io.to(data.roomCode).emit('player:connected', { sessionId: data.sessionId });
+      io.to(data.roomCode).emit('room:updated', { room });
+
+      // Send buffered game state if game is active
+      if (room.gameId) {
+        const latestState = gameStateBufferService.getLatestState(room.gameId);
+        if (latestState) {
+          console.log(`[Session Restore] Sending buffered game state to ${data.sessionId}`);
+          socket.emit('game:state', { gameState: latestState });
         }
       }
     });
@@ -509,20 +621,23 @@ async function processAITurns(
         decision.actionCard.cardId,
         decision.actionCard.targetPlayerId
       );
+      gameStateBufferService.addUpdate(gameId, updatedState);
       io.to(roomCode).emit('game:state', { gameState: updatedState });
-      
+
       // Recursively process next AI turn if needed
       await processAITurns(io, roomCode, gameId, gameService);
     } else if (decision.action === 'hit') {
       const updatedState = gameService.hit(currentPlayer.id);
+      gameStateBufferService.addUpdate(gameId, updatedState);
       io.to(roomCode).emit('game:state', { gameState: updatedState });
-      
+
       // Recursively process next AI turn if needed
       await processAITurns(io, roomCode, gameId, gameService);
     } else if (decision.action === 'stay') {
       const updatedState = gameService.stay(currentPlayer.id);
+      gameStateBufferService.addUpdate(gameId, updatedState);
       io.to(roomCode).emit('game:state', { gameState: updatedState });
-      
+
       // Recursively process next AI turn if needed
       await processAITurns(io, roomCode, gameId, gameService);
     }

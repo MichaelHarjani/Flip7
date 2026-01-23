@@ -201,6 +201,29 @@ export class RoomService {
   }
 
   /**
+   * Migrate host to a new player
+   */
+  migrateHost(roomCode: string, newHostSessionId: string): void {
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      return;
+    }
+
+    // Remove host status from all players
+    room.players.forEach(p => {
+      p.isHost = false;
+    });
+
+    // Set new host
+    const newHost = room.players.find(p => p.sessionId === newHostSessionId);
+    if (newHost) {
+      newHost.isHost = true;
+      room.hostId = newHostSessionId;
+      sessionService.updateSession(newHostSessionId, { isHost: true });
+    }
+  }
+
+  /**
    * Get all waiting rooms (for matchmaking)
    */
   getWaitingRooms(maxPlayers?: number): GameRoom[] {

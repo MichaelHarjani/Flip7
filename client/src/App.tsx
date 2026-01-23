@@ -10,6 +10,7 @@ import RoomLobby from './components/RoomLobby';
 import RoomCodeInput from './components/RoomCodeInput';
 import MatchmakingQueue from './components/MatchmakingQueue';
 import CreateRoomForm from './components/CreateRoomForm';
+import ConnectionIndicator from './components/ConnectionIndicator';
 
 type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' | null;
 
@@ -155,6 +156,7 @@ function App() {
   if (!gameStarted && !gameMode && !multiplayerMode) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
@@ -166,6 +168,7 @@ function App() {
   if (multiplayerMode === 'create') {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <CreateRoomForm onBack={() => setMultiplayerMode(null)} />
         </div>
@@ -177,8 +180,9 @@ function App() {
   if (multiplayerMode === 'join') {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <RoomCodeInput 
+          <RoomCodeInput
             initialCode={urlRoomCode || undefined}
             onJoin={(_code) => {
               // Room joined, will show lobby via useEffect
@@ -200,6 +204,7 @@ function App() {
   if (multiplayerMode === 'matchmaking') {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <MatchmakingQueue onCancel={() => setMultiplayerMode(null)} />
         </div>
@@ -211,6 +216,7 @@ function App() {
   if (multiplayerMode === 'lobby' && roomState && !gameStarted) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <RoomLobby onBack={() => {
             setMultiplayerMode(null);
@@ -227,9 +233,10 @@ function App() {
   if (!gameStarted && gameMode && ['single', 'local'].includes(gameMode)) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <GameSettings 
-            mode={gameMode === 'single' ? 'single' : 'local'} 
+          <GameSettings
+            mode={gameMode === 'single' ? 'single' : 'local'}
             onStart={handleGameStart}
             onBack={() => setGameMode(null)}
           />
@@ -240,6 +247,7 @@ function App() {
 
   return (
     <div className={`${screenClass} ${bgGradient} p-1 sm:p-2 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+      <ConnectionIndicator />
       <div className="container mx-auto flex-1 flex flex-col min-h-0">
         <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-0.5 flex-shrink-0 text-white">Flip 7</h1>
         {error && (
