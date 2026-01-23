@@ -58,7 +58,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
       }
 
       socket = io(wsUrl, {
-        transports: ['polling', 'websocket'],
+        transports: ['websocket', 'polling'], // Prefer WebSocket but fallback to polling
         upgrade: true,
         reconnection: true,
         reconnectionDelay: 1000,
@@ -66,8 +66,6 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
         reconnectionAttempts: Infinity,
         timeout: 20000,
         forceNew: false,
-        // Mobile-specific optimizations
-        transports: ['websocket', 'polling'], // Prefer WebSocket but fallback to polling
         closeOnBeforeunload: false, // Don't close connection on page unload (mobile background)
       });
 
@@ -79,7 +77,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
           if (!socket?.connected) return;
 
           const startTime = Date.now();
-          socket.emit('ping', {}, (response: any) => {
+          socket.emit('ping', {}, () => {
             const latency = Date.now() - startTime;
             const quality = latency < 100 ? 'good' : latency < 300 ? 'poor' : 'offline';
             set({ latency, connectionQuality: quality });
@@ -120,7 +118,7 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
         const sessionId = sessionStorage.getItem('flip7_sessionId');
         const roomCode = sessionStorage.getItem('flip7_roomCode');
 
-        if (sessionId && roomCode) {
+        if (sessionId && roomCode && socket) {
           console.log(`[WebSocket] Restoring session ${sessionId} in room ${roomCode}`);
           socket.emit('session:restore', { sessionId, roomCode });
         }
