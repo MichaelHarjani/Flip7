@@ -3,7 +3,7 @@ import { useGameStore } from './stores/gameStore';
 import { useRoomStore } from './stores/roomStore';
 import { useWebSocketStore } from './stores/websocketStore';
 import { useThemeStore } from './stores/themeStore';
-import { useAuthStore } from './stores/authStore';
+import { useAuthStore, type AuthStore } from './stores/authStore';
 import TitleScreen from './components/TitleScreen';
 import GameSettings from './components/GameSettings';
 import GameBoard from './components/GameBoard';
@@ -57,7 +57,7 @@ function App() {
   const { gameState, startRound, error, clearError, loading, gameId } = useGameStore();
   const { room: roomState } = useRoomStore();
   const { getThemeConfig, reduceMotion } = useThemeStore();
-  const checkSession = useAuthStore((state) => state.checkSession);
+  const checkSession = useAuthStore((state: AuthStore) => state.checkSession);
   const themeConfig = getThemeConfig();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
