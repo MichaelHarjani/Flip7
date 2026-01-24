@@ -3,5 +3,21 @@ dist/
 *.log
 .DS_Store
 server/src/shared/
-server/src/shared/
 .vercel
+
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+server/.env
+client/.env
+client/.env.local
+client/.env.development
+client/.env.production
+client/.env.test
+
+# Keep example files
+!.env.example
+!**/.env.example
