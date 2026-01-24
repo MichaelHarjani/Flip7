@@ -3,6 +3,7 @@ import { useGameStore } from './stores/gameStore';
 import { useRoomStore } from './stores/roomStore';
 import { useWebSocketStore } from './stores/websocketStore';
 import { useThemeStore } from './stores/themeStore';
+import { useAuthStore } from './stores/authStore';
 import TitleScreen from './components/TitleScreen';
 import GameSettings from './components/GameSettings';
 import GameBoard from './components/GameBoard';
@@ -56,12 +57,18 @@ function App() {
   const { gameState, startRound, error, clearError, loading, gameId } = useGameStore();
   const { room: roomState } = useRoomStore();
   const { getThemeConfig, reduceMotion } = useThemeStore();
+  const checkSession = useAuthStore((state) => state.checkSession);
   const themeConfig = getThemeConfig();
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [roundStarted, setRoundStarted] = useState(false);
   const [multiplayerMode, setMultiplayerMode] = useState<'lobby' | 'create' | 'join' | 'matchmaking' | null>(null);
   const [urlRoomCode, setUrlRoomCode] = useState<string | null>(null);
+
+  // Check for existing auth session on app load
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
 
   // Always apply dark mode class to document
   useEffect(() => {
@@ -233,7 +240,6 @@ function App() {
   if (!gameStarted && gameMode && ['single', 'local'].includes(gameMode)) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
-        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <GameSettings
             mode={gameMode === 'single' ? 'single' : 'local'}
@@ -247,7 +253,8 @@ function App() {
 
   return (
     <div className={`${screenClass} ${bgGradient} p-1 sm:p-2 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
-      <ConnectionIndicator />
+      {/* Only show connection indicator for multiplayer modes */}
+      {multiplayerMode && <ConnectionIndicator />}
       <div className="container mx-auto flex-1 flex flex-col min-h-0">
         <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-0.5 flex-shrink-0 text-white">Flip 7</h1>
         {error && (
