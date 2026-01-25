@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { GameRoom, PlayerSession } from '../shared/types/index.js';
 import { sessionService } from './sessionService.js';
+import { supabase, isSupabaseAvailable } from '../config/supabase.js';
 
 /**
  * Service for managing game rooms
+ * Supports dual-mode: in-memory (guests) + database (authenticated hosts)
  */
 export class RoomService {
   private rooms = new Map<string, GameRoom>();
@@ -35,13 +37,13 @@ export class RoomService {
   /**
    * Create a new room
    */
-  createRoom(hostName: string, maxPlayers: number = 4): { room: GameRoom; sessionId: string; playerId: string } {
+  createRoom(hostName: string, maxPlayers: number = 4, userId?: string): { room: GameRoom; sessionId: string; playerId: string } {
     const roomCode = this.generateRoomCode();
     const sessionId = uuidv4();
     const playerId = `player-${uuidv4()}`;
 
-    // Create host session
-    const hostSession = sessionService.createSession(sessionId, playerId, hostName, true);
+    // Create host session (with optional userId for authenticated users)
+    const hostSession = sessionService.createSession(sessionId, playerId, hostName, true, userId);
 
     const room: GameRoom = {
       roomCode,
@@ -55,15 +57,27 @@ export class RoomService {
 
     this.rooms.set(roomCode, room);
 
+    // Persist to database if host is authenticated (async, fire and forget)
+    if (this.shouldPersistRoom(sessionId)) {
+      this.persistRoom(roomCode).catch(err => {
+        console.error('[RoomService] Failed to persist room:', err);
+      });
+
+      // Persist host session
+      sessionService.persistSession(sessionId, roomCode).catch(err => {
+        console.error('[RoomService] Failed to persist host session:', err);
+      });
+    }
+
     return { room, sessionId, playerId };
   }
 
   /**
    * Join a room by code
    */
-  joinRoom(roomCode: string, playerName: string): { room: GameRoom; sessionId: string; playerId: string } | null {
+  joinRoom(roomCode: string, playerName: string, userId?: string): { room: GameRoom; sessionId: string; playerId: string } | null {
     const room = this.rooms.get(roomCode);
-    
+
     if (!room) {
       return null;
     }
@@ -82,13 +96,27 @@ export class RoomService {
     const sessionId = uuidv4();
     const playerId = `player-${uuidv4()}`;
 
-    // Create player session
-    const playerSession = sessionService.createSession(sessionId, playerId, playerName, false);
+    // Create player session (with optional userId for authenticated users)
+    const playerSession = sessionService.createSession(sessionId, playerId, playerName, false, userId);
     room.players.push(playerSession);
 
     // Associate session with room (via gameId if exists, or we'll set it when game starts)
     if (room.gameId) {
       sessionService.setGameId(sessionId, room.gameId);
+    }
+
+    // Persist session and participant if authenticated (async, fire and forget)
+    if (userId) {
+      sessionService.persistSession(sessionId, roomCode, room.gameId || undefined).catch(err => {
+        console.error('[RoomService] Failed to persist player session:', err);
+      });
+    }
+
+    // Add participant to room in DB if room or player is authenticated
+    if (this.shouldPersistRoom(room.hostId) || userId) {
+      this.addParticipant(roomCode, sessionId).catch(err => {
+        console.error('[RoomService] Failed to add participant:', err);
+      });
     }
 
     return { room, sessionId, playerId };
@@ -165,10 +193,24 @@ export class RoomService {
     if (room) {
       room.gameId = gameId;
       this.roomCodeToGameId.set(roomCode, gameId);
-      
+
       // Associate all player sessions with the game
       for (const player of room.players) {
         sessionService.setGameId(player.sessionId, gameId);
+      }
+
+      // Update room in database if persisted
+      if (this.shouldPersistRoom(room.hostId)) {
+        this.persistRoom(roomCode).catch(err => {
+          console.error('[RoomService] Failed to update room gameId:', err);
+        });
+
+        // Update all player sessions in DB
+        for (const player of room.players) {
+          sessionService.persistSession(player.sessionId, roomCode, gameId).catch(err => {
+            console.error('[RoomService] Failed to update player session gameId:', err);
+          });
+        }
       }
     }
   }
@@ -274,6 +316,147 @@ export class RoomService {
       this.rooms.delete(roomCode);
       this.roomCodeToGameId.delete(roomCode);
     }
+  }
+
+  /**
+   * Check if room should persist to database (host is authenticated)
+   */
+  shouldPersistRoom(hostSessionId: string): boolean {
+    if (!isSupabaseAvailable()) {
+      return false;
+    }
+    return sessionService.isAuthenticatedSession(hostSessionId);
+  }
+
+  /**
+   * Persist room to database (authenticated hosts only)
+   */
+  async persistRoom(roomCode: string): Promise<void> {
+    if (!isSupabaseAvailable()) {
+      return;
+    }
+
+    const room = this.rooms.get(roomCode);
+    if (!room) {
+      return;
+    }
+
+    // Only persist if host is authenticated
+    if (!this.shouldPersistRoom(room.hostId)) {
+      return;
+    }
+
+    // Get host's userId from session
+    const hostSession = sessionService.getSession(room.hostId);
+    if (!hostSession || !('userId' in hostSession) || !hostSession.userId) {
+      return;
+    }
+
+    await supabase!.from('rooms').upsert({
+      room_code: roomCode,
+      game_id: room.gameId || null,
+      host_user_id: hostSession.userId,
+      max_players: room.maxPlayers,
+      status: room.status,
+      created_at: room.createdAt.toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+    });
+  }
+
+  /**
+   * Load room from database
+   */
+  async loadRoom(roomCode: string): Promise<GameRoom | null> {
+    if (!isSupabaseAvailable()) {
+      return null;
+    }
+
+    const { data, error } = await supabase!
+      .from('rooms')
+      .select('*')
+      .eq('room_code', roomCode)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    // Check if room is expired
+    if (new Date(data.expires_at) < new Date()) {
+      return null;
+    }
+
+    // Load room participants
+    const { data: participants } = await supabase!
+      .from('room_participants')
+      .select('*')
+      .eq('room_code', roomCode);
+
+    // Reconstruct room with sessions
+    const players: PlayerSession[] = [];
+    if (participants) {
+      for (const participant of participants) {
+        // Try to load session from DB
+        const session = await sessionService.loadSession(participant.session_id);
+        if (session) {
+          players.push(session);
+        }
+      }
+    }
+
+    const room: GameRoom = {
+      roomCode: data.room_code,
+      gameId: data.game_id,
+      hostId: participants?.find(p => p.is_host)?.session_id || '',
+      players,
+      maxPlayers: data.max_players,
+      status: data.status,
+      createdAt: new Date(data.created_at),
+    };
+
+    // Store in memory
+    this.rooms.set(roomCode, room);
+    if (data.game_id) {
+      this.roomCodeToGameId.set(roomCode, data.game_id);
+    }
+
+    return room;
+  }
+
+  /**
+   * Add participant to room in database
+   */
+  async addParticipant(roomCode: string, sessionId: string): Promise<void> {
+    if (!isSupabaseAvailable()) {
+      return;
+    }
+
+    const room = this.rooms.get(roomCode);
+    const session = sessionService.getSession(sessionId);
+
+    if (!room || !session) {
+      return;
+    }
+
+    // Only persist if session is authenticated OR room host is authenticated
+    const isSessionAuthenticated = sessionService.isAuthenticatedSession(sessionId);
+    const isRoomPersisted = this.shouldPersistRoom(room.hostId);
+
+    if (!isSessionAuthenticated && !isRoomPersisted) {
+      return;
+    }
+
+    // Get userId if authenticated, otherwise null for guest participants
+    const userId = ('userId' in session && session.userId) ? session.userId : null;
+
+    await supabase!.from('room_participants').upsert({
+      room_code: roomCode,
+      user_id: userId,
+      session_id: sessionId,
+      player_name: session.name,
+      is_host: session.isHost,
+      joined_at: new Date().toISOString(),
+    });
   }
 }
 

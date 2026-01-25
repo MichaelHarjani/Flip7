@@ -6,6 +6,7 @@ import { matchmakingService } from '../services/matchmakingService.js';
 import { GameService } from '../services/gameService.js';
 import { makeAIDecision } from '../ai/aiPlayer.js';
 import { gameStateBufferService } from '../services/gameStateBuffer.js';
+import { extractUserFromSocket } from '../middleware/authMiddleware.js';
 
 // Store game instances
 const gameInstances = new Map<string, GameService>();
@@ -14,8 +15,19 @@ const gameInstances = new Map<string, GameService>();
  * Setup WebSocket event handlers
  */
 export function setupWebSocketHandlers(io: Server): void {
-  io.on('connection', (socket: Socket) => {
+  io.on('connection', async (socket: Socket) => {
     console.log(`Client connected: ${socket.id}`);
+
+    // Extract and verify authentication token
+    const user = await extractUserFromSocket(socket);
+    socket.data.user = user;
+    socket.data.isAuthenticated = !!user;
+
+    if (user) {
+      console.log(`[Auth] Authenticated connection: ${user.id} (${user.email})`);
+    } else {
+      console.log(`[Auth] Guest connection: ${socket.id}`);
+    }
 
     // Handle ping/pong for heartbeat monitoring
     socket.on('ping', (data, callback) => {
@@ -27,9 +39,13 @@ export function setupWebSocketHandlers(io: Server): void {
     // Handle room creation
     socket.on('room:create', async (data: { playerName: string; maxPlayers?: number }) => {
       try {
+        // Get userId if authenticated
+        const userId = socket.data.user?.id;
+
         const { room, sessionId, playerId } = roomService.createRoom(
           data.playerName,
-          data.maxPlayers || 4
+          data.maxPlayers || 4,
+          userId
         );
 
         // Join socket room
@@ -47,6 +63,10 @@ export function setupWebSocketHandlers(io: Server): void {
 
         // Broadcast to room that player joined
         io.to(room.roomCode).emit('room:updated', { room });
+
+        if (userId) {
+          console.log(`[Room Create] Authenticated user ${userId} created room ${room.roomCode}`);
+        }
       } catch (error: any) {
         socket.emit('error', { message: error.message || 'Failed to create room' });
       }
@@ -55,7 +75,10 @@ export function setupWebSocketHandlers(io: Server): void {
     // Handle room join
     socket.on('room:join', async (data: { roomCode: string; playerName: string }) => {
       try {
-        const result = roomService.joinRoom(data.roomCode, data.playerName);
+        // Get userId if authenticated
+        const userId = socket.data.user?.id;
+
+        const result = roomService.joinRoom(data.roomCode, data.playerName, userId);
         if (!result) {
           socket.emit('error', { message: 'Room not found' });
           return;
@@ -81,6 +104,10 @@ export function setupWebSocketHandlers(io: Server): void {
 
         // Broadcast to room that player joined
         io.to(room.roomCode).emit('room:updated', { room });
+
+        if (userId) {
+          console.log(`[Room Join] Authenticated user ${userId} joined room ${data.roomCode}`);
+        }
       } catch (error: any) {
         socket.emit('error', { message: error.message || 'Failed to join room' });
       }
@@ -540,16 +567,33 @@ export function setupWebSocketHandlers(io: Server): void {
     });
 
     // Handle manual reconnection with session restoration
-    socket.on('session:restore', (data: { sessionId: string; roomCode: string }) => {
+    socket.on('session:restore', async (data: { sessionId: string; roomCode: string }) => {
       console.log(`[Session Restore] Restoring session ${data.sessionId} in room ${data.roomCode}`);
 
-      const room = roomService.getRoom(data.roomCode);
+      // Try to load room from database first (for authenticated hosts)
+      let room = await roomService.loadRoom(data.roomCode);
+
+      // Fallback to in-memory
+      if (!room) {
+        room = roomService.getRoom(data.roomCode);
+      }
+
       if (!room) {
         socket.emit('error', { message: 'Room not found' });
         return;
       }
 
-      const player = room.players.find(p => p.sessionId === data.sessionId);
+      // Try to load session from database (for authenticated users)
+      let player = await sessionService.loadSession(data.sessionId);
+
+      // Fallback to in-memory room players
+      if (!player) {
+        const foundPlayer = room.players.find(p => p.sessionId === data.sessionId);
+        if (foundPlayer) {
+          player = foundPlayer;
+        }
+      }
+
       if (!player) {
         socket.emit('error', { message: 'Session not found in room' });
         return;
@@ -564,6 +608,13 @@ export function setupWebSocketHandlers(io: Server): void {
       // Update connection status
       roomService.updatePlayerConnection(data.roomCode, data.sessionId, true);
       sessionService.updateConnectionStatus(data.sessionId, true);
+
+      // Update last_seen for authenticated sessions
+      if (socket.data.isAuthenticated) {
+        await sessionService.updateSessionActivity(data.sessionId).catch(err => {
+          console.error('[Session Restore] Failed to update session activity:', err);
+        });
+      }
 
       // Send room state
       socket.emit('room:joined', {
@@ -584,6 +635,8 @@ export function setupWebSocketHandlers(io: Server): void {
           socket.emit('game:state', { gameState: latestState });
         }
       }
+
+      console.log(`[Session Restore] Successfully restored session ${data.sessionId} in room ${data.roomCode}`);
     });
   });
 }
