@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from './authStore';
 
 interface WebSocketStore {
   socket: Socket | null;
@@ -57,7 +58,12 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => {
         socket.disconnect();
       }
 
+      // Get auth token from authStore if user is signed in
+      const authStore = useAuthStore.getState();
+      const token = authStore.session?.access_token;
+
       socket = io(wsUrl, {
+        auth: token ? { token } : {}, // Pass token if authenticated, empty object for guests
         transports: ['websocket', 'polling'], // Prefer WebSocket but fallback to polling
         upgrade: true,
         reconnection: true,
