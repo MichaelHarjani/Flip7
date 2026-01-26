@@ -244,7 +244,12 @@ export function setupWebSocketHandlers(io: Server): void {
         gameInstances.set(gameId, gameService);
 
         // Set gameId for room
-        roomService.setGameId(roomCode, gameId);
+        try {
+          roomService.setGameId(roomCode, gameId);
+        } catch (setGameIdError) {
+          console.error('[Game Start] Non-fatal error setting gameId:', setGameIdError);
+          // Continue anyway - this is just for persistence
+        }
         roomService.updateRoomStatus(roomCode, 'starting');
 
         // Start first round
