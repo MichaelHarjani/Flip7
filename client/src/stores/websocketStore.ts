@@ -34,7 +34,7 @@ interface WebSocketStore {
 const WS_URL = import.meta.env.VITE_WS_URL || (
   import.meta.env.DEV
     ? 'http://localhost:5001'
-    : 'https://flip7-server-production.up.railway.app'
+    : 'https://flip7-production-31f9.up.railway.app'
 );
 
 export const useWebSocketStore = create<WebSocketStore>((set, get) => {
