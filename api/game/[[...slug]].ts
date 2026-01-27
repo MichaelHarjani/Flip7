@@ -67,7 +67,15 @@ export default async function handler(
 
     // No matching route
     console.error('[API] No matching route for slug:', slug);
-    return res.status(404).json({ error: 'Not found' });
+    return res.status(404).json({
+      error: 'Not found',
+      debug: {
+        slug,
+        slugParam,
+        url: req.url,
+        query: req.query
+      }
+    });
   } catch (error: any) {
     console.error('[API] Unhandled error:', error);
     return res.status(500).json({
