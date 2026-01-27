@@ -34,8 +34,9 @@ export default async function handler(
   }
 
   // Parse slug from catch-all route
-  // In Vercel, [[...slug]] routes put segments in req.query.slug
-  const slugParam = req.query.slug;
+  // Vercel puts the path segments in req.query.slug for [[...slug]].ts files
+  // But the key might be 'slug' or '[...slug]' depending on Vercel version
+  const slugParam = req.query.slug ?? req.query['[...slug]'] ?? req.query['[[...slug]]'];
   let slug: string[];
 
   if (Array.isArray(slugParam)) {
