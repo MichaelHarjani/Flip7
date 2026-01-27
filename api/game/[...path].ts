@@ -53,9 +53,23 @@ export default async function handler(
     }
 
     const gameId = path[0];
-    const action = path.length === 3 && path[1] === 'ai' ? 'ai-decision' : path[1];
-    
-    console.log('[API] GameId:', gameId, 'Action:', action);
+    // Handle multi-segment actions like "round/start" or "ai/decision"
+    let action: string;
+    if (path.length === 3) {
+      if (path[1] === 'ai' && path[2] === 'decision') {
+        action = 'ai-decision';
+      } else if (path[1] === 'round' && path[2] === 'start') {
+        action = 'round-begin';
+      } else if (path[1] === 'round' && path[2] === 'next') {
+        action = 'round-next';
+      } else {
+        action = path[1];
+      }
+    } else {
+      action = path[1];
+    }
+
+    console.log('[API] GameId:', gameId, 'Action:', action, 'Path:', path);
     
     const { gameState: incomingState, playerId, cardId, targetPlayerId } = req.body;
     
