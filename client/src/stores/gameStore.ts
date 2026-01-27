@@ -3,6 +3,7 @@ import type { GameState, Player } from '@shared/types/index';
 import { getActivePlayers, calculateScore } from '../utils/gameLogic';
 import { useWebSocketStore } from './websocketStore';
 import { useRoomStore } from './roomStore';
+// Game state management for single and multiplayer modes
 
 interface GameStore {
   gameId: string | null;
