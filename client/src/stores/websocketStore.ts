@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from './authStore';
 
+// WebSocket connection management for multiplayer functionality
 interface WebSocketStore {
   socket: Socket | null;
   connected: boolean;
