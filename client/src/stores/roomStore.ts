@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { GameRoom } from '@shared/types/index';
 import { useWebSocketStore } from './websocketStore';
+import { useGameStore } from './gameStore';
 
 interface RoomStore {
   roomCode: string | null;
@@ -127,8 +128,22 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     // Game state received (game started)
     on('game:state', (data: { gameState: any }) => {
       console.log('game:state received in roomStore', data);
+
+      // Update gameStore with the received state
+      const gameStore = useGameStore.getState();
+      gameStore.setGameState(data.gameState);
+
       // Reset loading state when game starts
       set({ loading: false, error: null });
+    });
+
+    // Listen for game start errors
+    on('game:start:error', (data: { message: string; roomCode: string }) => {
+      console.error('[Room] Game start failed:', data.message);
+      set({
+        loading: false,
+        error: data.message
+      });
     });
 
     // Host migrated

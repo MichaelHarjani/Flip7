@@ -274,6 +274,12 @@ export function setupWebSocketHandlers(io: Server): void {
 
         // Broadcast error to ALL players in the room, not just the host
         io.to(roomCode).emit('error', { message: error.message || 'Failed to start game' });
+
+        // ALSO emit a specific game:start:error event that clients can listen for
+        io.to(roomCode).emit('game:start:error', {
+          message: error.message || 'Failed to start game',
+          roomCode
+        });
       }
     });
 
