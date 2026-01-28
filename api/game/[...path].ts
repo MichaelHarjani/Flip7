@@ -33,32 +33,32 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Parse slug from catch-all route
-  // Vercel puts the path segments in req.query.slug for [[...slug]].ts files
-  // But the key might be 'slug' or '[...slug]' depending on Vercel version
-  const slugParam = req.query.slug ?? req.query['[...slug]'] ?? req.query['[[...slug]]'];
-  let slug: string[];
+  // Parse path from catch-all route
+  // Vercel puts the path segments in req.query.path for [...path].ts files
+  // The key might vary depending on Vercel version
+  const pathParam = req.query.path ?? req.query['[...path]'];
+  let path: string[];
 
-  if (Array.isArray(slugParam)) {
-    slug = slugParam.filter((p): p is string => typeof p === 'string');
-  } else if (typeof slugParam === 'string') {
-    slug = slugParam.split('/').filter(p => p.length > 0);
+  if (Array.isArray(pathParam)) {
+    path = pathParam.filter((p): p is string => typeof p === 'string');
+  } else if (typeof pathParam === 'string') {
+    path = pathParam.split('/').filter(p => p.length > 0);
   } else {
-    slug = [];
+    path = [];
   }
 
-  console.log('[API] Slug:', slug, 'Raw query.slug:', slugParam);
+  console.log('[API] Path:', path, 'Raw query.path:', pathParam, 'Full query:', req.query);
 
   try {
     // Route: POST /api/game/start
-    if (slug.length === 1 && slug[0] === 'start') {
+    if (path.length === 1 && path[0] === 'start') {
       return handleStartGame(req, res);
     }
 
     // Route: POST /api/game/{gameId}/{action...}
-    if (slug.length >= 2) {
-      const gameId = slug[0];
-      const actionParts = slug.slice(1);
+    if (path.length >= 2) {
+      const gameId = path[0];
+      const actionParts = path.slice(1);
       const action = mapActionParts(actionParts);
 
       console.log('[API] GameId:', gameId, 'Action:', action, 'ActionParts:', actionParts);
@@ -67,12 +67,12 @@ export default async function handler(
     }
 
     // No matching route
-    console.error('[API] No matching route for slug:', slug);
+    console.error('[API] No matching route for path:', path);
     return res.status(404).json({
       error: 'Not found',
       debug: {
-        slug,
-        slugParam,
+        path,
+        pathParam,
         url: req.url,
         query: req.query
       }
