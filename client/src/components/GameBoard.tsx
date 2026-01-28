@@ -523,7 +523,7 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   const humanPlayers = gameState.players?.filter(p => !p.isAI) || [];
 
   return (
-    <div className={`max-w-6xl mx-auto flex-1 flex flex-col p-0.5 sm:p-1 md:p-2 min-h-0 relative no-select overflow-hidden ${screenShake ? 'screen-shake' : ''}`}>
+    <div className={`max-w-6xl mx-auto flex flex-col p-0.5 sm:p-1 md:p-2 relative no-select h-full ${screenShake ? 'screen-shake' : ''}`}>
       {/* Back Button */}
       {onBack && (
         <button
@@ -537,7 +537,7 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
         </button>
       )}
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
-      <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden" style={{ maxHeight: '100%' }}>
+      <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden">
         {/* Compact header with scores and game state indicators */}
         <div className={`mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
           <div className="flex justify-between items-center gap-1 mb-0.5">
