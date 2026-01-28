@@ -35,8 +35,8 @@ export default async function handler(
 
   // Parse path from catch-all route
   // Vercel puts the path segments in req.query.path for [...path].ts files
-  // The key might vary depending on Vercel version
-  const pathParam = req.query.path ?? req.query['[...path]'];
+  // The key might vary depending on Vercel version (path, ...path, or [...path])
+  const pathParam = req.query.path ?? req.query['...path'] ?? req.query['[...path]'];
   let path: string[];
 
   if (Array.isArray(pathParam)) {
