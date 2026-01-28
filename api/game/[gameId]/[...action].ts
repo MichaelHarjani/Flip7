@@ -34,7 +34,8 @@ export default async function handler(
   const gameId = req.query.gameId as string;
 
   // Get action segments from catch-all
-  const actionParam = req.query.action ?? req.query['...action'] ?? req.query['[...action]'];
+  // The parameter might be 'action', '...action', '[...action]', or 'path' (from rewrite)
+  const actionParam = req.query.action ?? req.query['...action'] ?? req.query['[...action]'] ?? req.query.path;
   let actionParts: string[];
 
   if (Array.isArray(actionParam)) {
