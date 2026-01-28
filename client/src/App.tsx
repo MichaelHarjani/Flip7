@@ -163,7 +163,6 @@ function App() {
   if (!gameStarted && !gameMode && !multiplayerMode) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
-        <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
