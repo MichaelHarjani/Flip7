@@ -62,11 +62,14 @@ import { setupWebSocketHandlers } from './websocket/handlers.js';
 import roomsRouter from './api/rooms.js';
 import gameActionsRouter from './api/game-actions.js';
 import sseRouter from './api/sse.js';
+import sessionsRouter from './api/sessions.js';
+import usernameRouter from './api/username.js';
 
 // Services for cleanup
 import { roomService } from './services/roomService.js';
 import { sessionService } from './services/sessionService.js';
 import { gameStateBufferService } from './services/gameStateBuffer.js';
+import { supabase, isSupabaseAvailable } from './config/supabase.js';
 
 console.log('=== All imports successful, starting server ===');
 
@@ -95,6 +98,8 @@ app.use('/api/game', gameRoutes);
 app.use('/api/rooms', roomsRouter);
 app.use('/api/game-mp', gameActionsRouter);
 app.use('/api/sse', sseRouter);
+app.use('/api/sessions', sessionsRouter);
+app.use('/api/username', usernameRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -105,7 +110,7 @@ setupWebSocketHandlers(io);
 
 // Setup periodic cleanup tasks
 const CLEANUP_INTERVAL = 60000; // Run cleanup every 60 seconds
-setInterval(() => {
+setInterval(async () => {
   console.log('[Cleanup] Running periodic cleanup...');
 
   // Clean up old sessions (disconnected for more than 5 minutes)
@@ -116,6 +121,31 @@ setInterval(() => {
 
   // Clean up old game state buffers
   gameStateBufferService.cleanupOldBuffers();
+
+  // Clean up expired database sessions (for authenticated users)
+  if (isSupabaseAvailable() && supabase) {
+    try {
+      const { error: sessionsError } = await supabase
+        .from('user_sessions')
+        .delete()
+        .lt('expires_at', new Date().toISOString());
+
+      if (sessionsError) {
+        console.error('[Cleanup] Error cleaning expired sessions:', sessionsError);
+      }
+
+      const { error: roomsError } = await supabase
+        .from('rooms')
+        .delete()
+        .lt('expires_at', new Date().toISOString());
+
+      if (roomsError) {
+        console.error('[Cleanup] Error cleaning expired rooms:', roomsError);
+      }
+    } catch (error) {
+      console.error('[Cleanup] Database cleanup error:', error);
+    }
+  }
 
   console.log('[Cleanup] Cleanup complete');
 }, CLEANUP_INTERVAL);

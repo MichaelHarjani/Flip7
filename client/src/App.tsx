@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from './stores/gameStore';
 import { useRoomStore } from './stores/roomStore';
 import { useWebSocketStore } from './stores/websocketStore';
@@ -12,6 +12,8 @@ import RoomCodeInput from './components/RoomCodeInput';
 import MatchmakingQueue from './components/MatchmakingQueue';
 import CreateRoomForm from './components/CreateRoomForm';
 import ConnectionIndicator from './components/ConnectionIndicator';
+import RejoinGameDialog, { type ActiveSession } from './components/RejoinGameDialog';
+import UsernameSetup from './components/UsernameSetup';
 
 type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' | null;
 
@@ -57,6 +59,7 @@ function App() {
   const { gameState, startRound, error, clearError, loading, gameId } = useGameStore();
   const { room: roomState } = useRoomStore();
   const { getThemeConfig, reduceMotion } = useThemeStore();
+  const { session, isGuest, needsUsername, setProfile, profile } = useAuthStore();
   const checkSession = useAuthStore((state: AuthStore) => state.checkSession);
   const themeConfig = getThemeConfig();
   const [gameStarted, setGameStarted] = useState(false);
@@ -65,10 +68,53 @@ function App() {
   const [multiplayerMode, setMultiplayerMode] = useState<'lobby' | 'create' | 'join' | 'matchmaking' | null>(null);
   const [urlRoomCode, setUrlRoomCode] = useState<string | null>(null);
 
+  // Rejoin game state
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [showRejoinDialog, setShowRejoinDialog] = useState(false);
+  const [rejoinLoading, setRejoinLoading] = useState(false);
+  const [checkingActiveSessions, setCheckingActiveSessions] = useState(false);
+
+  // Fetch active sessions for authenticated users
+  const fetchActiveSessions = useCallback(async () => {
+    if (isGuest || !session?.access_token) {
+      return;
+    }
+
+    setCheckingActiveSessions(true);
+    try {
+      const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:5001';
+      const response = await fetch(`${wsUrl}/api/sessions/active`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.sessions && data.sessions.length > 0) {
+          console.log('[App] Found active sessions:', data.sessions);
+          setActiveSessions(data.sessions);
+          setShowRejoinDialog(true);
+        }
+      }
+    } catch (error) {
+      console.error('[App] Error fetching active sessions:', error);
+    } finally {
+      setCheckingActiveSessions(false);
+    }
+  }, [isGuest, session?.access_token]);
+
   // Check for existing auth session on app load
   useEffect(() => {
     checkSession();
   }, [checkSession]);
+
+  // Check for active sessions after auth is loaded
+  useEffect(() => {
+    if (!isGuest && session?.access_token) {
+      fetchActiveSessions();
+    }
+  }, [isGuest, session?.access_token, fetchActiveSessions]);
 
   // Always apply dark mode class to document
   useEffect(() => {
@@ -149,6 +195,129 @@ function App() {
     }
   };
 
+  // Handle rejoining an active session
+  const handleRejoinSession = async (activeSession: ActiveSession) => {
+    setRejoinLoading(true);
+
+    try {
+      // Store session info for WebSocket restoration
+      sessionStorage.setItem('flip7_sessionId', activeSession.sessionId);
+      sessionStorage.setItem('flip7_roomCode', activeSession.roomCode);
+      if (activeSession.playerId) {
+        sessionStorage.setItem('flip7_playerId', activeSession.playerId);
+      }
+
+      // Connect to WebSocket and restore session
+      const wsStore = useWebSocketStore.getState();
+      wsStore.connect();
+
+      // Wait for connection with timeout
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Connection timeout')), 10000);
+
+        const checkConnection = setInterval(() => {
+          if (wsStore.connected || useWebSocketStore.getState().connected) {
+            clearInterval(checkConnection);
+            clearTimeout(timeout);
+            resolve();
+          }
+        }, 100);
+      });
+
+      // Set up a listener for session restore response
+      const restorePromise = new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          useWebSocketStore.getState().off('room:joined');
+          useWebSocketStore.getState().off('error');
+          reject(new Error('Session restore timeout'));
+        }, 10000);
+
+        useWebSocketStore.getState().on('room:joined', () => {
+          clearTimeout(timeout);
+          useWebSocketStore.getState().off('room:joined');
+          useWebSocketStore.getState().off('error');
+          resolve();
+        });
+
+        useWebSocketStore.getState().on('error', (data: { message: string }) => {
+          clearTimeout(timeout);
+          useWebSocketStore.getState().off('room:joined');
+          useWebSocketStore.getState().off('error');
+          reject(new Error(data.message || 'Session restore failed'));
+        });
+      });
+
+      // Emit session restore event
+      useWebSocketStore.getState().emit('session:restore', {
+        sessionId: activeSession.sessionId,
+        roomCode: activeSession.roomCode,
+      });
+
+      // Wait for restore to complete
+      await restorePromise;
+
+      // Close the dialog and set multiplayer mode
+      setShowRejoinDialog(false);
+      setActiveSessions([]);
+      setMultiplayerMode('lobby');
+
+    } catch (error) {
+      console.error('[App] Error rejoining session:', error);
+
+      // Show error and remove the failed session from the list
+      const errorMessage = error instanceof Error ? error.message : 'Failed to rejoin session';
+      alert(`Could not rejoin game: ${errorMessage}\n\nThe session may have expired.`);
+
+      // Remove the failed session from the list
+      const remaining = activeSessions.filter(s => s.sessionId !== activeSession.sessionId);
+      setActiveSessions(remaining);
+
+      // Close dialog if no more sessions
+      if (remaining.length === 0) {
+        setShowRejoinDialog(false);
+      }
+
+      // Clean up sessionStorage
+      sessionStorage.removeItem('flip7_sessionId');
+      sessionStorage.removeItem('flip7_roomCode');
+      sessionStorage.removeItem('flip7_playerId');
+    } finally {
+      setRejoinLoading(false);
+    }
+  };
+
+  // Handle dismissing a single session (remove from list)
+  const handleDismissSession = async (sessionId: string) => {
+    if (!session?.access_token) return;
+
+    try {
+      const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:5001';
+      await fetch(`${wsUrl}/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      // Remove from local state
+      const remaining = activeSessions.filter(s => s.sessionId !== sessionId);
+      setActiveSessions(remaining);
+
+      // Close dialog if no more sessions
+      if (remaining.length === 0) {
+        setShowRejoinDialog(false);
+      }
+    } catch (error) {
+      console.error('[App] Error dismissing session:', error);
+    }
+  };
+
+  // Handle dismissing the entire rejoin dialog
+  const handleDismissRejoinDialog = () => {
+    setShowRejoinDialog(false);
+    setActiveSessions([]);
+  };
+
   // Show room lobby when room is created/joined
   useEffect(() => {
     if (roomState && !gameStarted) {
@@ -166,6 +335,38 @@ function App() {
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
+
+        {/* Rejoin Game Dialog */}
+        {showRejoinDialog && activeSessions.length > 0 && (
+          <RejoinGameDialog
+            activeSessions={activeSessions}
+            onRejoin={handleRejoinSession}
+            onDismiss={handleDismissRejoinDialog}
+            onDismissSession={handleDismissSession}
+            loading={rejoinLoading}
+          />
+        )}
+
+        {/* Username Setup for new authenticated users */}
+        {!isGuest && needsUsername && (
+          <UsernameSetup
+            onComplete={async (username) => {
+              // Fetch the updated profile after setting username
+              const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:5001';
+              const response = await fetch(`${wsUrl}/api/username/profile`, {
+                headers: {
+                  'Authorization': `Bearer ${session?.access_token}`,
+                },
+              });
+              if (response.ok) {
+                const data = await response.json();
+                if (data.profile) {
+                  setProfile(data.profile);
+                }
+              }
+            }}
+          />
+        )}
       </div>
     );
   }
