@@ -3,6 +3,7 @@ import type { GameState, Player } from '@shared/types/index';
 import { getActivePlayers, calculateScore } from '../utils/gameLogic';
 import { useWebSocketStore } from './websocketStore';
 import { useRoomStore } from './roomStore';
+import logger from '../utils/logger';
 // Game state management for single and multiplayer modes
 
 interface GameStore {
@@ -106,7 +107,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const url = `${API_BASE}/start`;
-      console.log('Starting game, API_BASE:', API_BASE, 'URL:', url);
+      logger.log('Starting game, API_BASE:', API_BASE, 'URL:', url);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -114,24 +115,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
         body: JSON.stringify({ playerNames, aiDifficulties }),
       });
       
-      console.log('Response status:', response.status, response.statusText);
+      logger.log('Response status:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to start game' }));
-        console.error('Start game error response:', JSON.stringify(errorData, null, 2));
-        console.error('Response status:', response.status, response.statusText);
+        logger.error('Start game error response:', JSON.stringify(errorData, null, 2));
+        logger.error('Response status:', response.status, response.statusText);
         throw new Error(errorData.details || errorData.error || `Failed to start game (${response.status})`);
       }
       
       const data = await response.json();
-      console.log('Game started successfully:', data.gameId);
+      logger.log('Game started successfully:', data.gameId);
       set({
         gameId: data.gameId,
         gameState: data.gameState,
         loading: false
       });
     } catch (error: any) {
-      console.error('Start game exception:', error);
+      logger.error('Start game exception:', error);
       const errorMessage = error.message || 'Failed to start game. Please check your connection.';
       set({ error: errorMessage, loading: false });
     }
@@ -155,7 +156,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     try {
       const url = `${API_BASE}/start`;
-      console.log('Restarting game with same players:', playerNames);
+      logger.log('Restarting game with same players:', playerNames);
 
       const response = await fetch(url, {
         method: 'POST',
@@ -169,14 +170,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       const data = await response.json();
-      console.log('Game restarted successfully:', data.gameId);
+      logger.log('Game restarted successfully:', data.gameId);
       set({
         gameId: data.gameId,
         gameState: data.gameState,
         loading: false
       });
     } catch (error: any) {
-      console.error('Restart game exception:', error);
+      logger.error('Restart game exception:', error);
       const errorMessage = error.message || 'Failed to restart game. Please check your connection.';
       set({ error: errorMessage, loading: false });
     }
@@ -196,32 +197,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     set({ loading: true, error: null });
     try {
-      console.log('Starting round for game:', gameId);
+      logger.log('Starting round for game:', gameId);
       const response = await fetch(`${API_BASE}/${gameId}/round/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameState: currentState }),
       });
       
-      console.log('Round start response status:', response.status);
+      logger.log('Round start response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to start round' }));
-        console.error('Round start error:', errorData);
+        logger.error('Round start error:', errorData);
         throw new Error(errorData.error || 'Failed to start round');
       }
       
       const data = await response.json();
-      console.log('Round start data:', data);
+      logger.log('Round start data:', data);
       
       if (!data.gameState) {
-        console.error('No gameState in response:', data);
+        logger.error('No gameState in response:', data);
         throw new Error('Invalid response from server');
       }
       
       set({ gameState: data.gameState, loading: false });
     } catch (error: any) {
-      console.error('Error starting round:', error);
+      logger.error('Error starting round:', error);
       // Preserve current gameState if it exists, so we don't lose the game
       set({ 
         error: error.message || 'Failed to start round', 
@@ -423,28 +424,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
               // Find the card in the player's hand
               const card = currentPlayer.actionCards.find(c => c.id === pendingActionCard.cardId);
               if (card) {
-                console.warn(`AI decision timeout for ${playerId}, resolving pending action card`);
+                logger.warn(`AI decision timeout for ${playerId}, resolving pending action card`);
                 // Use proper target selection logic to prevent freezing
                 const targetId = selectActionCardTarget(currentPlayer, currentState, pendingActionCard.actionType);
                 get().playActionCard(playerId, pendingActionCard.cardId, targetId)
                   .then(() => resolve())
                   .catch((error) => {
-                    console.error(`Error resolving pending action card in timeout:`, error);
+                    logger.error(`Error resolving pending action card in timeout:`, error);
                     resolve(); // Resolve anyway to prevent hanging
                   });
               } else {
                 // Card not found, default to Hit
-                console.warn(`AI decision timeout for ${playerId}, card not found, defaulting to Hit`);
+                logger.warn(`AI decision timeout for ${playerId}, card not found, defaulting to Hit`);
                 get().hit(playerId).then(() => resolve()).catch((error) => {
-                  console.error(`Error hitting in timeout:`, error);
+                  logger.error(`Error hitting in timeout:`, error);
                   resolve(); // Resolve anyway to prevent hanging
                 });
               }
             } else {
               // No pending action card, default to Hit
-              console.warn(`AI decision timeout for ${playerId}, defaulting to Hit`);
+              logger.warn(`AI decision timeout for ${playerId}, defaulting to Hit`);
               get().hit(playerId).then(() => resolve()).catch((error) => {
-                console.error(`Error hitting in timeout:`, error);
+                logger.error(`Error hitting in timeout:`, error);
                 resolve(); // Resolve anyway to prevent hanging
               });
             }
@@ -543,12 +544,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
           if (pendingActionCard && pendingActionCard.playerId === playerId) {
             const card = currentPlayer.actionCards.find(c => c.id === pendingActionCard.cardId);
             if (card) {
-              console.warn(`AI decision error for ${playerId}, attempting to resolve pending action card`);
+              logger.warn(`AI decision error for ${playerId}, attempting to resolve pending action card`);
               try {
                 const targetId = selectActionCardTarget(currentPlayer, currentState, pendingActionCard.actionType);
                 await get().playActionCard(playerId, pendingActionCard.cardId, targetId);
               } catch (actionError) {
-                console.error(`Error resolving pending action card in error handler:`, actionError);
+                logger.error(`Error resolving pending action card in error handler:`, actionError);
                 // Fallback to Hit if action card resolution fails
                 try {
                   await get().hit(playerId);
@@ -558,7 +559,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
               }
             } else {
               // Card not found, default to Hit
-              console.warn(`AI decision error for ${playerId}, card not found, defaulting to Hit`);
+              logger.warn(`AI decision error for ${playerId}, card not found, defaulting to Hit`);
               try {
                 await get().hit(playerId);
               } catch (hitError) {
@@ -567,7 +568,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             }
           } else {
             // No pending action card, default to Hit
-            console.warn(`AI decision error for ${playerId}, defaulting to Hit`);
+            logger.warn(`AI decision error for ${playerId}, defaulting to Hit`);
             try {
               await get().hit(playerId);
             } catch (hitError) {

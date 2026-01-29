@@ -11,6 +11,9 @@ import GameStats from './GameStats';
 import confetti from 'canvas-confetti';
 import { hasFlip7 } from '../utils/gameLogic';
 import { playSound } from '../utils/sounds';
+import logger from '../utils/logger';
+import ConfirmDialog from './ConfirmDialog';
+import { GameBoardSkeleton } from './Skeleton';
 
 interface GameBoardProps {
   onNewGame?: () => void;
@@ -20,6 +23,7 @@ interface GameBoardProps {
 
 export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const { roomCode } = useRoomStore();
   const { getThemeConfig } = useThemeStore();
   const themeConfig = getThemeConfig();
@@ -56,7 +60,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
   // Debug logging for player identity - CRITICAL for debugging cross-tab issue
   if (isMultiplayer && gameState) {
-    console.log('[GameBoard] Player identity lookup:', {
+    logger.log('[GameBoard] Player identity lookup:', {
       myPlayerId: localPlayerId,
       allPlayers: gameState.players?.map(p => ({ id: p.id, name: p.name })),
       foundMyPlayer: localPlayer ? { id: localPlayer.id, name: localPlayer.name } : null,
@@ -71,7 +75,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
   // Debug logging for multiplayer turn detection
   if (isMultiplayer && gameState) {
-    console.log('[GameBoard] Multiplayer turn check:', {
+    logger.log('[GameBoard] Multiplayer turn check:', {
       localPlayerId,
       currentPlayerId: currentPlayer?.id,
       currentPlayerName: currentPlayer?.name,
@@ -86,7 +90,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
     if (roomCode) {
       const wsStore = useWebSocketStore.getState();
       const handleGameState = (data: { gameState: any }) => {
-        console.log('[GameBoard] Received game:state from server:', {
+        logger.log('[GameBoard] Received game:state from server:', {
           players: data.gameState.players?.map((p: any) => ({ id: p.id, name: p.name })),
           myStoredPlayerId: getPlayerId(),
         });
@@ -106,7 +110,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
     // If current player is not active or has busted, clear any processing state
     if (currentPlayer && (!currentPlayer.isActive || currentPlayer.hasBusted)) {
       if (aiProcessingRef.current === currentPlayer.id) {
-        console.log(`[AI Turn] Player ${currentPlayer.id} is inactive or busted, clearing processing state`);
+        logger.log(`[AI Turn] Player ${currentPlayer.id} is inactive or busted, clearing processing state`);
         aiProcessingRef.current = null;
         setAiThinkingPlayerId(null);
       }
@@ -148,7 +152,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       if (aiProcessingRef.current && aiProcessingRef.current !== currentPlayer.id) {
         // We were processing a different player, but now it's a new player's turn
         // Clear the ref to allow processing the new player
-        console.log(`[AI Turn] Switching from player ${aiProcessingRef.current} to ${currentPlayer.id}`);
+        logger.log(`[AI Turn] Switching from player ${aiProcessingRef.current} to ${currentPlayer.id}`);
         aiProcessingRef.current = null;
         lastProcessedStateRef.current = ''; // Reset signature to force processing
       }
@@ -195,7 +199,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       
       // Set a maximum timeout to ensure we don't get stuck (3 seconds total)
       maxProcessingTimeoutRef.current = setTimeout(() => {
-        console.warn(`AI decision taking too long for ${currentPlayer.id}, clearing processing state`);
+        logger.warn(`AI decision taking too long for ${currentPlayer.id}, clearing processing state`);
         setAiThinkingPlayerId(null);
         aiProcessingRef.current = null;
         maxProcessingTimeoutRef.current = null;
@@ -211,7 +215,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
         makeAIDecision(playerIdAtStart)
           .catch((error) => {
             // Log error but don't let it hang the game
-            console.error(`[AI Decision Error] Error making AI decision for ${playerIdAtStart}:`, error);
+            logger.error(`[AI Decision Error] Error making AI decision for ${playerIdAtStart}:`, error);
             // Force clear processing state so game can continue
             if (aiProcessingRef.current === playerIdAtStart) {
               aiProcessingRef.current = null;
@@ -419,22 +423,15 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
   }, [gameState?.gameStatus, gameState]);
 
   if (!gameState) {
+    if (loading) {
+      return <GameBoardSkeleton />;
+    }
     return (
       <div className="max-w-4xl mx-auto p-6 text-center rounded-lg shadow-lg border-4 bg-gray-800 border-gray-600 text-white animate-scale-in">
-        <h2 className="text-2xl font-bold mb-4 text-white flex items-center justify-center gap-2">
-          {loading && <span className="animate-spin text-3xl">⟳</span>}
-          <span>Loading Game...</span>
-        </h2>
-        <div className="mb-4 text-gray-300">
-          {loading ? (
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-700 rounded shimmer w-3/4 mx-auto"></div>
-              <div className="h-4 bg-gray-700 rounded shimmer w-1/2 mx-auto"></div>
-            </div>
-          ) : (
-            'No game state available'
-          )}
-        </div>
+        <h2 className="text-xl font-bold mb-4 text-white">No Game Found</h2>
+        <p className="mb-4 text-gray-300">
+          The game could not be loaded. Please start a new game.
+        </p>
         {error && (
           <div className="border-2 px-4 py-3 rounded mb-4 bg-red-900 border-red-600 text-red-100 animate-shake">
             {error}
@@ -553,11 +550,18 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
   const humanPlayers = gameState.players?.filter(p => !p.isAI) || [];
 
   return (
-    <div className={`max-w-6xl mx-auto flex flex-col p-0.5 sm:p-1 md:p-2 relative no-select h-full ${screenShake ? 'screen-shake' : ''}`}>
+    <div className={`w-full max-w-[100vw] lg:max-w-[90vw] xl:max-w-[85vw] 2xl:max-w-[80vw] mx-auto flex flex-col p-0.5 sm:p-1 md:p-2 lg:p-4 relative no-select h-full ${screenShake ? 'screen-shake' : ''}`}>
       {/* Back Button */}
       {onBack && (
         <button
-          onClick={onBack}
+          onClick={() => {
+            // Show confirmation if game is in progress
+            if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
+              setShowLeaveConfirm(true);
+            } else {
+              onBack();
+            }
+          }}
           className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 border-2 border-gray-600 text-white transition-colors"
           aria-label="Back to main menu"
         >
@@ -565,6 +569,22 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
+      )}
+
+      {/* Leave game confirmation dialog */}
+      {showLeaveConfirm && onBack && (
+        <ConfirmDialog
+          title="Leave Game?"
+          message="Are you sure you want to leave? Your progress in this game will be lost."
+          confirmText="Leave"
+          cancelText="Stay"
+          confirmColor="red"
+          onConfirm={() => {
+            setShowLeaveConfirm(false);
+            onBack();
+          }}
+          onCancel={() => setShowLeaveConfirm(false)}
+        />
       )}
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
       <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden">
@@ -638,8 +658,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             }}>
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-1 sm:mb-2">
-                <div className="flex gap-1 sm:gap-2">
+              <div className="flex-shrink-0 mb-1 sm:mb-2 lg:mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -647,9 +667,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                       player.isAI &&
                       player.isActive &&
                       !player.hasBusted;
-                    const widthClass = aiPlayers.length === 3 ? 'flex-1' : aiPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[200px]';
                     return (
-                      <div key={player.id || `player-${originalIndex}`} className={`flex flex-col ${widthClass}`}>
+                      <div key={player.id || `player-${originalIndex}`} className="flex flex-col">
                         <PlayerArea
                           player={player}
                           isCurrentPlayer={!isRoundEnd && originalIndex === gameState.currentPlayerIndex}
@@ -671,15 +690,14 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-2 sm:border-t-4 pt-1 sm:pt-2 mt-1 sm:mt-2">
+              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-1 sm:pt-2 lg:pt-4 mt-1 sm:mt-2 lg:mt-4 border-yellow-600/50">
                 {humanPlayers.length > 1 ? (
-                  // Multiple human players (Local mode) - show in a row like AI players
-                  <div className="flex gap-1 sm:gap-2">
+                  // Multiple human players (Local mode) - show in a grid
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                     {humanPlayers.map((player) => {
                       const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
-                      const widthClass = humanPlayers.length === 3 ? 'flex-1' : humanPlayers.length === 2 ? 'flex-1' : 'flex-shrink-0 min-w-[200px]';
                       return (
-                        <div key={player.id || `player-${originalIndex}`} className={`flex flex-col ${widthClass}`}>
+                        <div key={player.id || `player-${originalIndex}`} className="flex flex-col">
                           <PlayerArea
                             player={player}
                             isCurrentPlayer={!isRoundEnd && originalIndex === gameState.currentPlayerIndex}
@@ -694,8 +712,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                     })}
                   </div>
                 ) : (
-                  // Single human player - show full size
-                  <>
+                  // Single human player - show larger on desktop
+                  <div className="lg:max-w-2xl lg:mx-auto">
                     <PlayerArea
                       player={humanPlayers[0]}
                       isCurrentPlayer={!isRoundEnd && gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.currentPlayerIndex}
@@ -705,7 +723,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                     <div className="mt-1 text-center text-xs italic h-4 text-transparent">
                       {'\u00A0'}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             )}

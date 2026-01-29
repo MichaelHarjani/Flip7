@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Settings from './Settings';
 import Tutorial from './Tutorial';
 import PracticeTool from './PracticeTool';
+import Footer from './Footer';
 import { useAuthStore } from '../stores/authStore';
 
 interface TitleScreenProps {
@@ -14,9 +15,28 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showPractice, setShowPractice] = useState(false);
   const [showAuthMenu, setShowAuthMenu] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Check if first-time user and show welcome/tutorial prompt
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('flip7_hasSeenWelcome');
+    if (!hasSeenWelcome) {
+      setShowWelcome(true);
+    }
+  }, []);
+
+  const handleDismissWelcome = (openTutorial: boolean) => {
+    localStorage.setItem('flip7_hasSeenWelcome', 'true');
+    setShowWelcome(false);
+    if (openTutorial) {
+      setShowTutorial(true);
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 py-2 no-select relative">
+    <div className="flex flex-col flex-1 no-select relative">
+      {/* Main content area */}
+      <div className="flex flex-col items-center justify-center flex-1 py-2 relative">
       {/* Top Left - Auth Section */}
       <div className="absolute top-4 left-4">
         {!loading && isGuest && (
@@ -184,6 +204,38 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
       {showPractice && <PracticeTool onClose={() => setShowPractice(false)} />}
+
+      {/* First-time welcome modal */}
+      {showWelcome && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-scale-in">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl border-4 border-blue-500 max-w-md w-full p-6 animate-scale-in text-center">
+            <div className="text-5xl mb-4">🎴</div>
+            <h2 className="text-2xl font-bold text-white mb-2">Welcome to Flip 7!</h2>
+            <p className="text-gray-300 mb-6">
+              A press-your-luck card game where you try to collect 7 cards without busting.
+              First player to 200 points wins!
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => handleDismissWelcome(true)}
+                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors"
+              >
+                Learn How to Play
+              </button>
+              <button
+                onClick={() => handleDismissWelcome(false)}
+                className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                I know the rules, let's go!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+
+      {/* Footer */}
+      <Footer onShowTutorial={() => setShowTutorial(true)} />
     </div>
   );
 }
