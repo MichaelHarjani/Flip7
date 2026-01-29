@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useThemeStore, themeConfigs, type ThemeType } from '../stores/themeStore';
+import { getSoundEnabled, setSoundEnabled, playSound } from '../utils/sounds';
 
 interface SettingsProps {
   onClose: () => void;
@@ -6,6 +8,15 @@ interface SettingsProps {
 
 export default function Settings({ onClose }: SettingsProps) {
   const { theme, reduceMotion, setTheme, setReduceMotion } = useThemeStore();
+  const [soundEnabled, setSoundEnabledState] = useState(getSoundEnabled());
+
+  const handleSoundToggle = (enabled: boolean) => {
+    setSoundEnabled(enabled);
+    setSoundEnabledState(enabled);
+    if (enabled) {
+      playSound('click');
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-scale-in">
@@ -37,6 +48,21 @@ export default function Settings({ onClose }: SettingsProps) {
                 );
               })}
             </select>
+          </div>
+
+          <div>
+            <label className="flex items-center justify-between cursor-pointer">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-1">Sound Effects</h3>
+                <p className="text-sm text-gray-400">Play sounds for game actions</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={soundEnabled}
+                onChange={(e) => handleSoundToggle(e.target.checked)}
+                className="w-6 h-6 rounded border-2 border-gray-600 bg-gray-700 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
+              />
+            </label>
           </div>
 
           <div>

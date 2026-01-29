@@ -1,5 +1,7 @@
 import { useGameStore } from '../stores/gameStore';
 import { useThemeStore } from '../stores/themeStore';
+import Avatar from './Avatar';
+import AnimatedNumber from './AnimatedNumber';
 
 export default function ScoreDisplay() {
   const { gameState } = useGameStore();
@@ -42,9 +44,10 @@ export default function ScoreDisplay() {
               }`}
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className={`font-semibold text-[10px] truncate flex items-center gap-0.5 ${
+              <div className={`font-semibold text-[10px] truncate flex items-center gap-1 ${
                 isLeader ? 'text-yellow-200' : 'text-gray-200'
               }`}>
+                <Avatar name={player.name} size="sm" isAI={player.isAI} />
                 {isLeader && <span className="text-xs">👑</span>}
                 <span className="truncate">{player.name}</span>
               </div>
@@ -52,7 +55,7 @@ export default function ScoreDisplay() {
                 <div className={`text-xs font-extrabold ${
                   isLeader ? 'text-yellow-100' : 'text-white'
                 }`}>
-                  {player.score}
+                  <AnimatedNumber value={player.score} duration={600} />
                 </div>
                 {hasRoundScore && (
                   <div className={`text-[10px] font-semibold animate-bounce-soft ${

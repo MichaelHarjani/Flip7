@@ -10,13 +10,15 @@ import ScoreDisplay from './ScoreDisplay';
 import GameStats from './GameStats';
 import confetti from 'canvas-confetti';
 import { hasFlip7 } from '../utils/gameLogic';
+import { playSound } from '../utils/sounds';
 
 interface GameBoardProps {
   onNewGame?: () => void;
+  onRematch?: () => void;
   onBack?: () => void;
 }
 
-export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
+export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
   const { roomCode } = useRoomStore();
   const { getThemeConfig } = useThemeStore();
@@ -29,6 +31,7 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
   const maxProcessingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [flip7Player, setFlip7Player] = useState<string | null>(null);
   const flip7ShownRef = useRef(false);
+  const winSoundPlayedRef = useRef(false);
   const previousGameStateRef = useRef<typeof gameState>(null);
   const confettiIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedStateRef = useRef<string>(''); // Track last processed game state to detect changes
@@ -282,18 +285,29 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.currentPlayerIndex, gameState?.gameStatus, currentPlayer?.id, gameState?.pendingActionCard, gameState]);
 
-  // Check for bust and trigger screen shake
+  // Check for bust and trigger screen shake + sound
   useEffect(() => {
     if (gameState?.players) {
       const anyPlayerBusted = gameState.players.some(p => p.hasBusted);
       const previouslyBusted = previousGameStateRef.current?.players?.some(p => p.hasBusted) || false;
-      
+
       if (anyPlayerBusted && !previouslyBusted) {
         setScreenShake(true);
+        playSound('bust');
         setTimeout(() => setScreenShake(false), 500);
       }
     }
   }, [gameState?.players]);
+
+  // Play win sound when game ends
+  useEffect(() => {
+    if (gameState?.gameStatus === 'gameEnd' && !winSoundPlayedRef.current) {
+      winSoundPlayedRef.current = true;
+      playSound('win');
+    } else if (gameState?.gameStatus !== 'gameEnd') {
+      winSoundPlayedRef.current = false;
+    }
+  }, [gameState?.gameStatus]);
 
   // Check for Flip 7 achievement when round ends - ENHANCED
   useEffect(() => {
@@ -308,7 +322,8 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
       if (flip7Achiever) {
         setFlip7Player(flip7Achiever.name);
         flip7ShownRef.current = true;
-        
+        playSound('flip7');
+
         // Clear any existing confetti interval
         if (confettiIntervalRef.current) {
           clearInterval(confettiIntervalRef.current);
@@ -494,21 +509,36 @@ export default function GameBoard({ onNewGame, onBack }: GameBoardProps) {
             <GameStats />
           </div>
           
-          {/* New Game Button - Fixed at bottom */}
-          {onNewGame && (
+          {/* Game Over Buttons - Fixed at bottom */}
+          {(onNewGame || onRematch) && (
             <div className="flex-shrink-0 pt-1 sm:pt-2 pb-safe mt-1 sm:mt-2 border-t-2 border-gray-600 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent">
               <div className="flex gap-2 sm:gap-3 justify-center pb-1 sm:pb-2">
-                <button
-                  onClick={onNewGame}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 hover:scale-105 active:bg-blue-700 active:scale-95 transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
-                  style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <span>🔄</span>
-                    <span>New Game</span>
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                </button>
+                {onRematch && (
+                  <button
+                    onClick={onRematch}
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-green-700 hover:scale-105 active:bg-green-800 active:scale-95 transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
+                    style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <span>🔁</span>
+                      <span>Rematch</span>
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  </button>
+                )}
+                {onNewGame && (
+                  <button
+                    onClick={onNewGame}
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 hover:scale-105 active:bg-blue-700 active:scale-95 transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
+                    style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <span>🏠</span>
+                      <span>New Game</span>
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  </button>
+                )}
               </div>
             </div>
           )}

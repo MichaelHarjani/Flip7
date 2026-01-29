@@ -14,6 +14,8 @@ import CreateRoomForm from './components/CreateRoomForm';
 import ConnectionIndicator from './components/ConnectionIndicator';
 import RejoinGameDialog, { type ActiveSession } from './components/RejoinGameDialog';
 import UsernameSetup from './components/UsernameSetup';
+import ToastContainer from './components/Toast';
+import { toast } from './stores/toastStore';
 
 type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' | null;
 
@@ -183,6 +185,12 @@ function App() {
     useGameStore.getState().reset();
   };
 
+  const handleRematch = async () => {
+    // Reset round started so it auto-starts again
+    setRoundStarted(false);
+    await useGameStore.getState().restartGame();
+  };
+
   const handleSelectMode = (mode: GameMode) => {
     if (mode === 'createRoom') {
       setMultiplayerMode('create');
@@ -266,7 +274,7 @@ function App() {
 
       // Show error and remove the failed session from the list
       const errorMessage = error instanceof Error ? error.message : 'Failed to rejoin session';
-      alert(`Could not rejoin game: ${errorMessage}\n\nThe session may have expired.`);
+      toast.error(`Could not rejoin game: ${errorMessage}. The session may have expired.`);
 
       // Remove the failed session from the list
       const remaining = activeSessions.filter(s => s.sessionId !== activeSession.sessionId);
@@ -332,6 +340,7 @@ function App() {
   if (!gameStarted && !gameMode && !multiplayerMode) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ToastContainer />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
@@ -375,6 +384,7 @@ function App() {
   if (multiplayerMode === 'create') {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <CreateRoomForm onBack={() => setMultiplayerMode(null)} />
@@ -387,6 +397,7 @@ function App() {
   if (multiplayerMode === 'join') {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <RoomCodeInput
@@ -411,6 +422,7 @@ function App() {
   if (multiplayerMode === 'matchmaking') {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <MatchmakingQueue onCancel={() => setMultiplayerMode(null)} />
@@ -423,6 +435,7 @@ function App() {
   if (multiplayerMode === 'lobby' && roomState && !gameStarted) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <RoomLobby onBack={() => {
@@ -440,6 +453,7 @@ function App() {
   if (!gameStarted && gameMode && ['single', 'local'].includes(gameMode)) {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+        <ToastContainer />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <GameSettings
             mode={gameMode === 'single' ? 'single' : 'local'}
@@ -453,6 +467,7 @@ function App() {
 
   return (
     <div className={`${screenClass} ${bgGradient} p-1 sm:p-2 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
+      <ToastContainer />
       {/* Only show connection indicator for multiplayer modes */}
       {multiplayerMode && <ConnectionIndicator />}
       <div className="container mx-auto flex-1 flex flex-col min-h-0">
@@ -470,7 +485,7 @@ function App() {
         )}
         {gameState ? (
           <div className="flex-1 min-h-0 flex flex-col">
-            <GameBoard onNewGame={handleNewGame} onBack={handleNewGame} />
+            <GameBoard onNewGame={handleNewGame} onRematch={handleRematch} onBack={handleNewGame} />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto p-6 text-center rounded-lg shadow-lg border-4 bg-gray-800 border-gray-600 text-white">

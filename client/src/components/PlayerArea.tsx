@@ -1,5 +1,7 @@
 import type { Player } from '@shared/types/index';
 import Card from './Card';
+import Avatar from './Avatar';
+import AnimatedNumber from './AnimatedNumber';
 import { calculateScore, hasFlip7 } from '../utils/gameLogic';
 import { useGameStore } from '../stores/gameStore';
 import { getAICharacterIconPath } from '../utils/aiPlayerNames';
@@ -38,26 +40,8 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;
 
-  // Player avatar - use character icon for AI players, emoji for human players
-  const getPlayerAvatar = () => {
-    if (player.isAI) {
-      // Try to get character icon path
-      const iconPath = getAICharacterIconPath(player.name);
-      if (iconPath) {
-        // Return JSX for image (will be handled in render)
-        return iconPath;
-      }
-      // Fallback to robot emoji
-      return '🤖';
-    }
-    // Use first letter as basis for emoji
-    const firstLetter = player.name.charAt(0).toUpperCase();
-    const avatars = ['👤', '🎮', '🎯', '⭐', '🎲', '🃏'];
-    return avatars[firstLetter.charCodeAt(0) % avatars.length];
-  };
-
-  const playerAvatar = getPlayerAvatar();
-  const isIconPath = player.isAI && typeof playerAvatar === 'string' && playerAvatar.endsWith('.png');
+  // Player avatar - use character icon for AI players, Avatar component for human players
+  const aiIconPath = player.isAI ? getAICharacterIconPath(player.name) : null;
 
   return (
     <div
@@ -84,23 +68,18 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
       <div className={`flex flex-col ${headerMarginClass} relative`}>
         {/* Name and tags on first line with avatar */}
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap mb-0.5 sm:mb-1">
-          {isIconPath ? (
-            <img 
-              src={playerAvatar as string} 
+          {aiIconPath ? (
+            <img
+              src={aiIconPath}
               alt={player.name}
-              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover"
+              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-purple-400/50"
               onError={(e) => {
-                // Fallback to emoji if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                const fallback = document.createElement('span');
-                fallback.className = 'text-lg sm:text-2xl';
-                fallback.textContent = '🤖';
-                target.parentNode?.insertBefore(fallback, target);
               }}
             />
           ) : (
-            <span className="text-lg sm:text-2xl">{playerAvatar}</span>
+            <Avatar name={player.name} size={isCompact ? 'sm' : 'md'} isAI={player.isAI} />
           )}
           <h3 className={`font-bold ${titleSizeClass} text-white`}>{player.name}</h3>
           {player.isAI && (
@@ -116,7 +95,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         {/* Scores on second line - Enhanced with larger display */}
         <div className="flex items-center justify-between">
           <div className="text-left">
-            <div className={`${isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'} font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-xs sm:text-sm' : 'text-base sm:text-lg'} font-bold text-white`}>{player.score}</span></div>
+            <div className={`${isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'} font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-xs sm:text-sm' : 'text-base sm:text-lg'} font-bold text-white`}><AnimatedNumber value={player.score} duration={600} /></span></div>
             <div className={`font-bold ${scoreSizeClass} text-white flex items-center gap-1 sm:gap-2`}>
               <span>Round:</span> 
               <span className={`${isCompact ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-extrabold ${

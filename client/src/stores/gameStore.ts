@@ -10,9 +10,10 @@ interface GameStore {
   gameState: GameState | null;
   loading: boolean;
   error: string | null;
-  
+
   // Actions
   startGame: (playerNames: string[], aiDifficulties: Array<'conservative' | 'moderate' | 'aggressive'>) => Promise<void>;
+  restartGame: () => Promise<void>;
   startRound: () => Promise<void>;
   hit: (playerId: string) => Promise<void>;
   stay: (playerId: string) => Promise<void>;
@@ -124,14 +125,59 @@ export const useGameStore = create<GameStore>((set, get) => ({
       
       const data = await response.json();
       console.log('Game started successfully:', data.gameId);
-      set({ 
-        gameId: data.gameId, 
-        gameState: data.gameState, 
-        loading: false 
+      set({
+        gameId: data.gameId,
+        gameState: data.gameState,
+        loading: false
       });
     } catch (error: any) {
       console.error('Start game exception:', error);
       const errorMessage = error.message || 'Failed to start game. Please check your connection.';
+      set({ error: errorMessage, loading: false });
+    }
+  },
+
+  restartGame: async () => {
+    const { gameState } = get();
+    if (!gameState || !gameState.players) {
+      set({ error: 'No game to restart', loading: false });
+      return;
+    }
+
+    // Extract player names and AI difficulties from current game state
+    const playerNames = gameState.players.map(p => p.name);
+    const aiDifficulties = gameState.players.map(p =>
+      p.isAI ? (p.aiDifficulty || 'moderate') : 'moderate'
+    ) as Array<'conservative' | 'moderate' | 'aggressive'>;
+
+    // Reset and start a new game with the same configuration
+    set({ gameId: null, gameState: null, loading: true, error: null });
+
+    try {
+      const url = `${API_BASE}/start`;
+      console.log('Restarting game with same players:', playerNames);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerNames, aiDifficulties }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to restart game' }));
+        throw new Error(errorData.details || errorData.error || `Failed to restart game (${response.status})`);
+      }
+
+      const data = await response.json();
+      console.log('Game restarted successfully:', data.gameId);
+      set({
+        gameId: data.gameId,
+        gameState: data.gameState,
+        loading: false
+      });
+    } catch (error: any) {
+      console.error('Restart game exception:', error);
+      const errorMessage = error.message || 'Failed to restart game. Please check your connection.';
       set({ error: errorMessage, loading: false });
     }
   },

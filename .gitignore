@@ -18,6 +18,9 @@ client/.env.development
 client/.env.production
 client/.env.test
 
+# Sensitive documentation
+RAILWAY_ENV_VARS.md
+
 # Keep example files
 !.env.example
 !**/.env.example

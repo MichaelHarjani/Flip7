@@ -1,4 +1,5 @@
 import { useGameStore } from '../stores/gameStore';
+import { playSound } from '../utils/sounds';
 
 interface ActionButtonsProps {
   playerId: string;
@@ -11,10 +12,20 @@ export default function ActionButtons({ playerId, disabled }: ActionButtonsProps
   // Check if there's a pending action card that must be resolved first
   const hasPendingActionCard = gameState?.pendingActionCard?.playerId === playerId;
 
+  const handleHit = () => {
+    playSound('cardDraw');
+    hit(playerId);
+  };
+
+  const handleStay = () => {
+    playSound('click');
+    stay(playerId);
+  };
+
   return (
     <div className="flex gap-1.5 sm:gap-2 md:gap-3 justify-center">
       <button
-        onClick={() => hit(playerId)}
+        onClick={handleHit}
         disabled={disabled || loading || hasPendingActionCard}
         className="px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 text-white rounded-lg font-bold text-xs sm:text-sm md:text-base hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/50 hover:scale-105 active:bg-green-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 min-w-[60px] sm:min-w-[70px] md:min-w-[90px] relative overflow-hidden group"
       >
@@ -34,7 +45,7 @@ export default function ActionButtons({ playerId, disabled }: ActionButtonsProps
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
       </button>
       <button
-        onClick={() => stay(playerId)}
+        onClick={handleStay}
         disabled={disabled || loading || hasPendingActionCard}
         className="px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-red-500 text-white rounded-lg font-bold text-xs sm:text-sm md:text-base hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/50 hover:scale-105 active:bg-red-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 min-w-[60px] sm:min-w-[70px] md:min-w-[90px] relative overflow-hidden group"
       >
