@@ -24,7 +24,7 @@ interface GameBoardProps {
 export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const { roomCode } = useRoomStore();
+  const { roomCode, isHost } = useRoomStore();
   const { getThemeConfig } = useThemeStore();
   const themeConfig = getThemeConfig();
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
@@ -40,6 +40,11 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
   const confettiIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedStateRef = useRef<string>(''); // Track last processed game state to detect changes
   const [screenShake, setScreenShake] = useState(false);
+
+  // Round end countdown for multiplayer (3 seconds)
+  const [roundEndCountdown, setRoundEndCountdown] = useState<number>(0);
+  const roundEndTimestampRef = useRef<number | null>(null);
+  const ROUND_END_DELAY_MS = 3000;
 
   // Get the local player's ID from room store (for multiplayer)
   const { roomCode: multiplayerRoomCode, getPlayerId } = useRoomStore();
@@ -84,6 +89,54 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       allPlayerIds: gameState.players?.map(p => ({ id: p.id, name: p.name }))
     });
   }
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const { hit, stay } = useGameStore.getState();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Only allow shortcuts during active play
+      if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) {
+        // Esc to go back still works
+        if (e.key === 'Escape' && onBack) {
+          if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
+            setShowLeaveConfirm(true);
+          } else {
+            onBack();
+          }
+        }
+        return;
+      }
+
+      // Check for pending action card
+      const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
+      if (hasPendingActionCard) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'h':
+          playSound('cardDraw');
+          hit(currentHumanPlayer.id);
+          break;
+        case 's':
+          playSound('click');
+          stay(currentHumanPlayer.id);
+          break;
+        case 'escape':
+          if (onBack) {
+            setShowLeaveConfirm(true);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentHumanPlayer, gameState?.pendingActionCard, gameState?.gameStatus, onBack]);
 
   // Listen for WebSocket game state updates in multiplayer mode
   useEffect(() => {
@@ -313,6 +366,21 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
     }
   }, [gameState?.gameStatus]);
 
+  // Play notification sound when it's the local player's turn in multiplayer
+  const wasLocalPlayerTurnRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (isMultiplayer && gameState?.gameStatus === 'playing') {
+      const isNowMyTurn = isLocalPlayerTurn && currentPlayer?.isActive && !currentPlayer?.hasBusted;
+
+      // Only play sound when it BECOMES my turn (transition from not-my-turn to my-turn)
+      if (isNowMyTurn && !wasLocalPlayerTurnRef.current) {
+        playSound('yourTurn');
+      }
+
+      wasLocalPlayerTurnRef.current = !!isNowMyTurn;
+    }
+  }, [isMultiplayer, isLocalPlayerTurn, currentPlayer?.id, gameState?.gameStatus, currentPlayer?.isActive, currentPlayer?.hasBusted]);
+
   // Check for Flip 7 achievement when round ends - ENHANCED
   useEffect(() => {
     // Check if status changed from 'playing' to 'roundEnd'
@@ -421,6 +489,34 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       }
     };
   }, [gameState?.gameStatus, gameState]);
+
+  // Multiplayer round end countdown timer
+  useEffect(() => {
+    if (!isMultiplayer || gameState?.gameStatus !== 'roundEnd') {
+      // Reset when not in round end or not multiplayer
+      roundEndTimestampRef.current = null;
+      setRoundEndCountdown(0);
+      return;
+    }
+
+    // Start countdown when round ends in multiplayer
+    if (roundEndTimestampRef.current === null) {
+      roundEndTimestampRef.current = Date.now();
+    }
+
+    const updateCountdown = () => {
+      if (roundEndTimestampRef.current === null) return;
+
+      const elapsed = Date.now() - roundEndTimestampRef.current;
+      const remaining = Math.max(0, Math.ceil((ROUND_END_DELAY_MS - elapsed) / 1000));
+      setRoundEndCountdown(remaining);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 100);
+
+    return () => clearInterval(interval);
+  }, [isMultiplayer, gameState?.gameStatus]);
 
   if (!gameState) {
     if (loading) {
@@ -595,7 +691,12 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             <div className={`text-[9px] sm:text-[10px] ${themeConfig.textSecondary} flex items-center gap-1`}>
               <span className="font-semibold">R{gameState.round || 1}</span>
               <span>•</span>
-              <span className="flex items-center gap-0.5">
+              <span className="flex items-center gap-0.5" title="Cards remaining in deck">
+                <span className="text-sm">🃏</span>
+                <span>{gameState.deck?.length || 0}</span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5" title="Dealer">
                 <span className="text-sm">🎴</span>
                 <span>{gameState.players?.[gameState.dealerIndex]?.name || '?'}</span>
               </span>
@@ -749,27 +850,46 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
               </button>
             </div>
           ) : isRoundEnd ? (
-            <div className="flex gap-2 sm:gap-3 justify-center">
-              <button
-                onClick={startNextRound}
-                disabled={loading}
-                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 active:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
-              >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  {loading ? (
-                    <>
-                      <span className="animate-spin">⟳</span>
-                      <span>Loading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>▶️</span>
-                      <span>Next Round</span>
-                    </>
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              </button>
+            <div className="flex flex-col items-center gap-2 sm:gap-3">
+              {/* In multiplayer, show countdown for non-host players */}
+              {isMultiplayer && !isHost && roundEndCountdown > 0 ? (
+                <div className="text-center">
+                  <div className="text-gray-400 text-sm sm:text-base mb-2">
+                    Next round in <span className="font-bold text-white text-lg">{roundEndCountdown}</span>s
+                  </div>
+                  <div className="text-gray-500 text-xs sm:text-sm">
+                    Waiting for host to continue...
+                  </div>
+                </div>
+              ) : isMultiplayer && !isHost ? (
+                <div className="text-center">
+                  <div className="flex items-center justify-center text-gray-400 text-sm sm:text-base py-2">
+                    <span className="animate-pulse">⏳</span>
+                    <span className="ml-2">Waiting for host to start next round...</span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={startNextRound}
+                  disabled={loading}
+                  className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-bold text-sm sm:text-base hover:bg-blue-600 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 active:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-[120px] sm:min-w-[160px] relative overflow-hidden group"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {loading ? (
+                      <>
+                        <span className="animate-spin">⟳</span>
+                        <span>Loading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>▶️</span>
+                        <span>Next Round</span>
+                      </>
+                    )}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                </button>
+              )}
             </div>
           ) : currentHumanPlayer &&
             currentHumanPlayer.isActive &&

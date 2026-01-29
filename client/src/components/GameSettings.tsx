@@ -8,10 +8,48 @@ interface GameSettingsProps {
   onBack: () => void;
 }
 
+// Load saved settings from localStorage
+const getSavedSettings = (mode: 'single' | 'local') => {
+  try {
+    const saved = localStorage.getItem(`flip7_settings_${mode}`);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+};
+
+// Save settings to localStorage
+const saveSettings = (mode: 'single' | 'local', playerCount: number, playerName: string) => {
+  try {
+    localStorage.setItem(`flip7_settings_${mode}`, JSON.stringify({
+      playerCount,
+      playerName,
+    }));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
+// Auto-capitalize first letter of each word
+const capitalizeWords = (str: string): string => {
+  return str.replace(/\b\w/g, char => char.toUpperCase());
+};
+
 export default function GameSettings({ onStart, mode, onBack }: GameSettingsProps) {
   const { startGame, loading } = useGameStore();
-  const [playerCount, setPlayerCount] = useState(mode === 'single' ? 3 : 2);
-  const [playerNames, setPlayerNames] = useState<string[]>(mode === 'single' ? ['You'] : ['Player 1', 'Player 2']);
+
+  // Load saved settings
+  const savedSettings = getSavedSettings(mode);
+  const defaultCount = savedSettings?.playerCount || (mode === 'single' ? 3 : 2);
+  const defaultName = savedSettings?.playerName || (mode === 'single' ? 'You' : 'Player 1');
+
+  const [playerCount, setPlayerCount] = useState(defaultCount);
+  const [playerNames, setPlayerNames] = useState<string[]>(
+    mode === 'single' ? [defaultName] : [defaultName, 'Player 2']
+  );
   const [_aiDifficulties, setAiDifficulties] = useState<Array<'conservative' | 'moderate' | 'aggressive'>>(['moderate']);
 
   // Update player names array when player count changes
@@ -46,6 +84,9 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
 
   const handleStart = async () => {
     try {
+      // Save settings before starting
+      saveSettings(mode, playerCount, playerNames[0] || '');
+
       if (mode === 'single') {
         // Use default 'moderate' difficulty for all AI players
         const difficulties: Array<'conservative' | 'moderate' | 'aggressive'> = [];
@@ -69,6 +110,14 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
     const newNames = [...playerNames];
     newNames[index] = name;
     setPlayerNames(newNames);
+  };
+
+  const capitalizePlayerName = (index: number) => {
+    const newNames = [...playerNames];
+    if (newNames[index]) {
+      newNames[index] = capitalizeWords(newNames[index]);
+      setPlayerNames(newNames);
+    }
   };
 
   const allNamesValid = playerNames.every(name => name.trim().length > 0);
@@ -98,6 +147,7 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
                 type="text"
                 value={playerNames[0] || ''}
                 onChange={(e) => updatePlayerName(0, e.target.value)}
+                onBlur={() => capitalizePlayerName(0)}
                 className="w-full px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
                 placeholder="Enter your name"
               />
@@ -136,6 +186,7 @@ export default function GameSettings({ onStart, mode, onBack }: GameSettingsProp
                       type="text"
                       value={name}
                       onChange={(e) => updatePlayerName(index, e.target.value)}
+                      onBlur={() => capitalizePlayerName(index)}
                       className="flex-1 px-3 py-2 border-2 rounded-md bg-gray-700 border-gray-500 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none"
                       placeholder={`Player ${index + 1}`}
                     />

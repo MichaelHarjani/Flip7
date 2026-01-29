@@ -1,6 +1,6 @@
 // Sound effects using Web Audio API - no external files needed
 
-type SoundType = 'cardDraw' | 'cardPlace' | 'bust' | 'win' | 'click' | 'error' | 'flip7';
+type SoundType = 'cardDraw' | 'cardPlace' | 'bust' | 'win' | 'click' | 'error' | 'flip7' | 'yourTurn';
 
 // Audio context singleton
 let audioContext: AudioContext | null = null;
@@ -131,6 +131,14 @@ const sounds: Record<SoundType, () => void> = {
       { freq: 784, duration: 0.1, delay: 0.32 },
       { freq: 1047, duration: 0.3, delay: 0.4 },
     ], 'sine', 0.3);
+  },
+
+  yourTurn: () => {
+    // Pleasant notification chime - gentle alert
+    playSequence([
+      { freq: 880, duration: 0.1, delay: 0 },     // A5
+      { freq: 1047, duration: 0.15, delay: 0.1 }, // C6
+    ], 'sine', 0.25);
   },
 };
 
