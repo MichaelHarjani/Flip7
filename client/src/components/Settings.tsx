@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useThemeStore, themeConfigs, type ThemeType } from '../stores/themeStore';
 import { getSoundEnabled, setSoundEnabled, playSound } from '../utils/sounds';
 import { Modal, Button } from './ui';
+import KeyBindingSettings from './settings/KeyBindingSettings';
 
 interface SettingsProps {
   onClose: () => void;
@@ -68,6 +69,10 @@ export default function Settings({ onClose }: SettingsProps) {
               className="w-6 h-6 rounded border-2 border-gray-600 bg-gray-700 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
             />
           </label>
+        </div>
+
+        <div className="border-t border-gray-600 pt-6">
+          <KeyBindingSettings />
         </div>
       </div>
 

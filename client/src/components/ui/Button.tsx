@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { getKeyDisplayName } from '../../config/keyBindings';
 
 type ButtonVariant = 'primary' | 'success' | 'danger' | 'secondary' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -76,8 +77,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         <span className={loading ? 'opacity-70' : ''}>{children}</span>
         {shortcut && !loading && (
-          <span className="absolute top-1 right-1.5 text-[10px] font-medium opacity-60 bg-black/20 px-1 rounded">
-            {shortcut}
+          <span className="absolute top-1 right-1.5 text-[10px] font-medium opacity-60 bg-black/20 px-1.5 py-0.5 rounded border border-white/10 font-mono">
+            {getKeyDisplayName(shortcut)}
           </span>
         )}
       </motion.button>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { useWebSocketStore } from '../stores/websocketStore';
 import { useRoomStore } from '../stores/roomStore';
@@ -17,6 +17,8 @@ import logger from '../utils/logger';
 import ConfirmDialog from './ConfirmDialog';
 import { GameBoardSkeleton } from './Skeleton';
 import { BustRiskIndicator } from './game';
+import { useKeyBindings } from '../hooks/useKeyBindings';
+import { getStoredProfile, KEY_BINDING_PROFILES, KeyBindingProfile } from '../config/keyBindings';
 
 interface GameBoardProps {
   onNewGame?: () => void;
@@ -43,6 +45,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
   const confettiIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedStateRef = useRef<string>(''); // Track last processed game state to detect changes
   const [screenShake, setScreenShake] = useState(false);
+  const [keyProfile] = useState<KeyBindingProfile>(() => getStoredProfile());
 
   // Round end countdown for multiplayer (3 seconds)
   const [roundEndCountdown, setRoundEndCountdown] = useState<number>(0);
@@ -93,53 +96,59 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
     });
   }
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts using the key bindings hook
+  const handleHit = useCallback(() => {
+    if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) return;
+    const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
+    if (hasPendingActionCard) return;
+
+    playSound('cardDraw');
+    useGameStore.getState().hit(currentHumanPlayer.id);
+  }, [currentHumanPlayer, gameState?.pendingActionCard]);
+
+  const handleStay = useCallback(() => {
+    if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) return;
+    const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
+    if (hasPendingActionCard) return;
+
+    playSound('click');
+    useGameStore.getState().stay(currentHumanPlayer.id);
+  }, [currentHumanPlayer, gameState?.pendingActionCard]);
+
+  const handleNextRoundKey = useCallback(() => {
+    if (gameState?.gameStatus === 'roundEnd') {
+      startNextRound();
+    }
+  }, [gameState?.gameStatus, startNextRound]);
+
+  // Use the key bindings hook
+  const currentBindings = useKeyBindings(
+    {
+      onHit: handleHit,
+      onStay: handleStay,
+      onNextRound: handleNextRoundKey,
+    },
+    keyProfile,
+    // Enable when player can act or round is over
+    (!!currentHumanPlayer && currentHumanPlayer.isActive && !currentHumanPlayer.hasBusted) ||
+    gameState?.gameStatus === 'roundEnd'
+  );
+
+  // Escape key handler (separate from game actions)
   useEffect(() => {
-    const { hit, stay } = useGameStore.getState();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      // Only allow shortcuts during active play
-      if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) {
-        // Esc to go back still works
-        if (e.key === 'Escape' && onBack) {
-          if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
-            setShowLeaveConfirm(true);
-          } else {
-            onBack();
-          }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onBack) {
+        if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
+          setShowLeaveConfirm(true);
+        } else {
+          onBack();
         }
-        return;
-      }
-
-      // Check for pending action card
-      const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
-      if (hasPendingActionCard) return;
-
-      switch (e.key.toLowerCase()) {
-        case 'h':
-          playSound('cardDraw');
-          hit(currentHumanPlayer.id);
-          break;
-        case 's':
-          playSound('click');
-          stay(currentHumanPlayer.id);
-          break;
-        case 'escape':
-          if (onBack) {
-            setShowLeaveConfirm(true);
-          }
-          break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentHumanPlayer, gameState?.pendingActionCard, gameState?.gameStatus, onBack]);
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onBack, gameState?.gameStatus]);
 
   // Listen for WebSocket game state updates in multiplayer mode
   useEffect(() => {
@@ -987,7 +996,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                 </div>
               )}
               <div className="flex items-start gap-1 sm:gap-2 md:gap-4 justify-center flex-wrap">
-                <ActionButtons playerId={currentHumanPlayer.id} />
+                <ActionButtons playerId={currentHumanPlayer.id} bindings={currentBindings} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
               </div>
             </div>

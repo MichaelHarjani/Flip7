@@ -2,16 +2,18 @@ import { useState, useRef, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { playSound } from '../utils/sounds';
 import { Button } from './ui';
+import { KeyBinding } from '../config/keyBindings';
 
 interface ActionButtonsProps {
   playerId: string;
   disabled?: boolean;
+  bindings?: KeyBinding;
 }
 
 // Minimum delay between button presses (ms)
 const DEBOUNCE_MS = 300;
 
-export default function ActionButtons({ playerId, disabled }: ActionButtonsProps) {
+export default function ActionButtons({ playerId, disabled, bindings }: ActionButtonsProps) {
   const { hit, stay, loading, gameState } = useGameStore();
   const [localProcessing, setLocalProcessing] = useState(false);
   const lastClickRef = useRef<number>(0);
@@ -57,7 +59,7 @@ export default function ActionButtons({ playerId, disabled }: ActionButtonsProps
         onClick={handleHit}
         disabled={isDisabled}
         loading={loading}
-        shortcut="H"
+        shortcut={bindings?.hit || 'h'}
         className="min-w-[100px] sm:min-w-[120px]"
       >
         <span className="mr-1">🎴</span>
@@ -69,7 +71,7 @@ export default function ActionButtons({ playerId, disabled }: ActionButtonsProps
         onClick={handleStay}
         disabled={isDisabled}
         loading={loading}
-        shortcut="S"
+        shortcut={bindings?.stay || 's'}
         className="min-w-[100px] sm:min-w-[120px]"
       >
         <span className="mr-1">✋</span>
