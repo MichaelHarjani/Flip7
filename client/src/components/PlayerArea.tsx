@@ -4,6 +4,7 @@ import Avatar from './Avatar';
 import AnimatedNumber from './AnimatedNumber';
 import { calculateScore, hasFlip7 } from '../utils/gameLogic';
 import { useGameStore } from '../stores/gameStore';
+import { useThemeStore } from '../stores/themeStore';
 import { getAICharacterIconPath } from '../utils/aiPlayerNames';
 
 interface PlayerAreaProps {
@@ -15,9 +16,11 @@ interface PlayerAreaProps {
 
 export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompact = false }: PlayerAreaProps) {
   const { gameState } = useGameStore();
-  
+  const { theme } = useThemeStore();
+  const isVintageTheme = theme === 'vintage-flip7';
+
   // Find the player who froze this player
-  const frozenByPlayer = player.frozenBy 
+  const frozenByPlayer = player.frozenBy
     ? gameState?.players?.find(p => p.id === player.frozenBy)
     : null;
 
@@ -43,27 +46,77 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
   // Player avatar - use character icon for AI players, Avatar component for human players
   const aiIconPath = player.isAI ? getAICharacterIconPath(player.name) : null;
 
+  // Vintage theme specific styling
+  const getContainerStyle = () => {
+    if (isVintageTheme) {
+      if (isFrozen) {
+        return {
+          className: 'border-flip7-freeze bg-gradient-to-br from-cyan-900/80 via-blue-900/80 to-cyan-900/80 animate-pulse-soft backdrop-blur-sm',
+          style: {
+            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(135, 206, 235, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(135, 206, 235, 0.3) 0%, transparent 50%)',
+          },
+        };
+      }
+      if (isCurrentPlayer) {
+        return {
+          className: 'border-flip7-gold shadow-gold-glow',
+          style: {
+            background: 'linear-gradient(135deg, #4d3520 0%, #3d2518 100%)',
+            boxShadow: '0 0 20px rgba(212,175,55,0.5), 0 0 40px rgba(212,175,55,0.3), inset 0 2px 4px rgba(212,175,55,0.2)',
+          },
+        };
+      }
+      if (player.hasBusted) {
+        return {
+          className: 'border-flip7-danger opacity-60 animate-shake',
+          style: { background: 'linear-gradient(135deg, #3d2518 0%, #2d1810 100%)' },
+        };
+      }
+      if (!player.isActive) {
+        return {
+          className: 'border-flip7-vintage',
+          style: { background: 'linear-gradient(135deg, #3d2518 0%, #2d1810 100%)' },
+        };
+      }
+      return {
+        className: 'border-flip7-border',
+        style: { background: 'linear-gradient(135deg, #4d3520 0%, #3d2518 100%)' },
+      };
+    }
+
+    // Default theme styling
+    let className = '';
+    if (isFrozen) {
+      className = 'border-cyan-400 bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 animate-pulse-soft backdrop-blur-sm';
+    } else if (isCurrentPlayer) {
+      className = 'border-yellow-500 bg-yellow-900 shadow-2xl animate-border-glow';
+    } else {
+      className = 'border-gray-500 bg-gray-800 shadow-md';
+    }
+    if (player.hasBusted) {
+      className += ' opacity-60 animate-shake';
+    }
+    if (!player.isActive && !isFrozen) {
+      className = 'border-gray-600 bg-gray-900';
+    }
+    return { className, style: isFrozen ? {
+      backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(147, 197, 253, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(186, 230, 253, 0.3) 0%, transparent 50%)',
+    } : undefined };
+  };
+
+  const containerStyle = getContainerStyle();
+
+  // Vintage theme text colors
+  const textColorPrimary = isVintageTheme ? 'text-flip7-card-base' : 'text-white';
+  const textColorSecondary = isVintageTheme ? 'text-flip7-vintage' : 'text-gray-300';
+  const textColorMuted = isVintageTheme ? 'text-flip7-vintage/70' : 'text-gray-400';
+
   return (
     <div
       data-player-area
       data-player-id={player.id}
-      className={`relative ${paddingClass} rounded-lg border-2 sm:border-4 transition-all duration-300 overflow-hidden
-        ${isFrozen
-          ? 'border-cyan-400 bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 animate-pulse-soft'
-          : isCurrentPlayer 
-            ? 'border-yellow-500 bg-yellow-900 shadow-2xl animate-border-glow'
-            : 'border-gray-500 bg-gray-800 shadow-md'
-        }
-        ${player.hasBusted ? 'opacity-60 animate-shake' : ''}
-        ${!player.isActive && !isFrozen
-          ? 'border-gray-600 bg-gray-900'
-          : ''
-        }
-        ${isFrozen ? 'backdrop-blur-sm' : ''}
-      `}
-      style={isFrozen ? {
-        backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(147, 197, 253, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(186, 230, 253, 0.3) 0%, transparent 50%)',
-      } : undefined}
+      className={`relative ${paddingClass} rounded-lg border-2 sm:border-4 transition-all duration-300 overflow-hidden ${containerStyle.className}`}
+      style={containerStyle.style}
     >
       <div className={`flex flex-col ${headerMarginClass} relative`}>
         {/* Name and tags on first line with avatar */}
@@ -81,31 +134,31 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
           ) : (
             <Avatar name={player.name} size={isCompact ? 'sm' : 'md'} isAI={player.isAI} />
           )}
-          <h3 className={`font-bold ${titleSizeClass} text-white`}>{player.name}</h3>
+          <h3 className={`font-bold ${titleSizeClass} ${textColorPrimary} ${isVintageTheme ? 'font-display' : ''}`}>{player.name}</h3>
           {player.isAI && (
-            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-gray-600 border-gray-400 text-gray-200 animate-scale-in">AI</span>
+            <span className={`text-xs font-semibold border px-1.5 py-0.5 rounded animate-scale-in ${isVintageTheme ? 'bg-flip7-wood-dark border-flip7-vintage text-flip7-vintage' : 'bg-gray-600 border-gray-400 text-gray-200'}`}>AI</span>
           )}
           {isDealer && (
-            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-blue-700 border-blue-500 text-blue-100 animate-scale-in">🎴 Dealer</span>
+            <span className={`text-xs font-semibold border px-1.5 py-0.5 rounded animate-scale-in ${isVintageTheme ? 'bg-flip7-info border-flip7-gold text-flip7-card-base' : 'bg-blue-700 border-blue-500 text-blue-100'}`}>🎴 Dealer</span>
           )}
           {player.hasSecondChance && (
-            <span className="text-xs font-semibold border px-1.5 py-0.5 rounded bg-orange-700 border-orange-500 text-orange-100 animate-bounce-soft">❤️ 2nd Chance</span>
+            <span className={`text-xs font-semibold border px-1.5 py-0.5 rounded animate-bounce-soft ${isVintageTheme ? 'bg-flip7-second-chance/30 border-flip7-second-chance text-flip7-card-base' : 'bg-orange-700 border-orange-500 text-orange-100'}`}>❤️ 2nd Chance</span>
           )}
         </div>
         {/* Scores on second line - Enhanced with larger display */}
         <div className="flex items-center justify-between">
           <div className="text-left">
-            <div className={`${isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'} font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-xs sm:text-sm' : 'text-base sm:text-lg'} font-bold text-white`}><AnimatedNumber value={player.score} duration={600} /></span></div>
-            <div className={`font-bold ${scoreSizeClass} text-white flex items-center gap-1 sm:gap-2`}>
-              <span>Round:</span> 
+            <div className={`${isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'} font-semibold ${textColorSecondary}`}>Total: <span className={`${isCompact ? 'text-xs sm:text-sm' : 'text-base sm:text-lg'} font-bold ${textColorPrimary}`}><AnimatedNumber value={player.score} duration={600} /></span></div>
+            <div className={`font-bold ${scoreSizeClass} ${textColorPrimary} flex items-center gap-1 sm:gap-2`}>
+              <span>Round:</span>
               <span className={`${isCompact ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-extrabold ${
-                score > 7 ? 'text-red-400' : score === 7 ? 'text-green-400' : 'text-white'
+                score > 7 ? (isVintageTheme ? 'text-flip7-danger' : 'text-red-400') : score === 7 ? (isVintageTheme ? 'text-flip7-success' : 'text-green-400') : (isVintageTheme ? 'text-flip7-gold' : 'text-white')
               }`}>{score}</span>
               {hasFlip7Bonus && (
-                <span className="ml-0.5 sm:ml-1 font-extrabold text-[10px] sm:text-sm text-green-300 animate-bounce-soft">+15 🎉</span>
+                <span className={`ml-0.5 sm:ml-1 font-extrabold text-[10px] sm:text-sm animate-bounce-soft ${isVintageTheme ? 'text-flip7-gold' : 'text-green-300'}`}>+15 🎉</span>
               )}
               {/* Card count indicator */}
-              <span className={`${isCompact ? 'text-[8px] sm:text-xs' : 'text-xs'} text-gray-400 ml-auto`}>
+              <span className={`${isCompact ? 'text-[8px] sm:text-xs' : 'text-xs'} ${textColorMuted} ml-auto`}>
                 ({player.numberCards.length} cards)
               </span>
             </div>
@@ -114,16 +167,16 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
         {/* Status badge in top right - Enhanced */}
         {player.hasBusted && (
-          <div className={`absolute top-0 right-0 font-extrabold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 text-red-200 bg-red-900 border-red-600 shadow-lg animate-shake`}>💥 BUST!</div>
+          <div className={`absolute top-0 right-0 font-extrabold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 shadow-lg animate-shake ${isVintageTheme ? 'text-flip7-card-base bg-flip7-danger border-flip7-danger' : 'text-red-200 bg-red-900 border-red-600'}`}>💥 BUST!</div>
         )}
 
         {!player.isActive && !player.hasBusted && (
           <div className={`absolute top-0 right-0 font-semibold ${isCompact ? 'text-xs' : 'text-sm'} border-2 rounded px-2 py-1 shadow-lg ${
             isFrozen
-              ? 'text-cyan-100 bg-cyan-900/50 border-cyan-400 shadow-cyan-500/50 animate-pulse-soft'
-              : 'text-gray-300 bg-gray-700 border-gray-500'
+              ? (isVintageTheme ? 'text-flip7-card-base bg-flip7-freeze/50 border-flip7-freeze shadow-flip7-freeze/50 animate-pulse-soft' : 'text-cyan-100 bg-cyan-900/50 border-cyan-400 shadow-cyan-500/50 animate-pulse-soft')
+              : (isVintageTheme ? 'text-flip7-vintage bg-flip7-wood-dark border-flip7-vintage' : 'text-gray-300 bg-gray-700 border-gray-500')
           }`}>
-            {isFrozen 
+            {isFrozen
               ? `🧊 Frozen${frozenByPlayer ? ` by ${frozenByPlayer.id === player.id ? 'self' : frozenByPlayer.name}` : ''}`
               : '✋ Stayed'
             }
@@ -132,7 +185,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
         {/* Current player indicator - Pulse animation */}
         {isCurrentPlayer && !player.hasBusted && player.isActive && (
-          <div className="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 rounded-full animate-pulse shadow-lg shadow-yellow-500/50"></div>
+          <div className={`absolute -top-2 -left-2 w-4 h-4 rounded-full animate-pulse shadow-lg ${isVintageTheme ? 'bg-flip7-gold shadow-flip7-gold/50' : 'bg-yellow-400 shadow-yellow-500/50'}`}></div>
         )}
       </div>
 

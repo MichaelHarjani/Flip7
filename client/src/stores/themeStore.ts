@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ThemeType = 'classic-casino' | 'cyberpunk-neon' | 'minimalist' | 'dark-luxury';
+export type ThemeType = 'vintage-flip7' | 'classic-casino' | 'cyberpunk-neon' | 'minimalist' | 'dark-luxury';
 
 interface ThemeConfig {
   name: string;
@@ -12,9 +12,28 @@ interface ThemeConfig {
   textSecondary: string;
   accentPrimary: string;
   accentSecondary: string;
+  // Extended properties for vintage theme
+  playerAreaBg?: string;
+  playerAreaBorder?: string;
+  currentPlayerBorder?: string;
+  buttonBorder?: string;
 }
 
 export const themeConfigs: Record<ThemeType, ThemeConfig> = {
+  'vintage-flip7': {
+    name: 'Vintage Flip 7',
+    bgGradient: 'bg-flip7-gradient',
+    cardBg: 'bg-flip7-wood-medium',
+    cardBorder: 'border-flip7-gold',
+    textPrimary: 'text-flip7-card-base',
+    textSecondary: 'text-flip7-vintage',
+    accentPrimary: 'bg-flip7-success hover:bg-flip7-success/90',
+    accentSecondary: 'bg-flip7-danger hover:bg-flip7-danger/90',
+    playerAreaBg: 'bg-gradient-to-br from-flip7-wood-light to-flip7-wood-medium',
+    playerAreaBorder: 'border-flip7-gold',
+    currentPlayerBorder: 'border-flip7-gold shadow-gold-glow',
+    buttonBorder: 'border-flip7-gold',
+  },
   'classic-casino': {
     name: 'Classic Casino',
     bgGradient: 'bg-gradient-to-br from-felt-dark via-felt to-felt-light',
@@ -68,7 +87,7 @@ interface ThemeStore {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      theme: 'dark-luxury',
+      theme: 'vintage-flip7',
       reduceMotion: false,
       setTheme: (theme: ThemeType) => set({ theme }),
       setReduceMotion: (reduceMotion: boolean) => set({ reduceMotion }),

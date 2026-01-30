@@ -16,17 +16,63 @@ export default {
         '30': '7.5rem',
       },
       colors: {
-        // Card type colors
+        // Flip 7 authentic theme colors
+        flip7: {
+          // Backgrounds - warm wood tones
+          'wood-dark': '#2d1810',
+          'wood-medium': '#3d2518',
+          'wood-light': '#4d3520',
+          'card-base': '#f5f1e8',
+
+          // Decorative elements
+          'border': '#8b4513',
+          'gold': '#d4af37',
+          'vintage': '#c19a6b',
+          'copper': '#cd853f',
+
+          // Number card colors (0-12)
+          'num-0': '#1e90ff',
+          'num-1': '#6b8e23',
+          'num-2': '#daa520',
+          'num-3': '#8b1a3d',
+          'num-4': '#4682b4',
+          'num-5': '#2e8b57',
+          'num-6': '#8b4789',
+          'num-7': '#a0522d',
+          'num-8': '#9acd32',
+          'num-9': '#ff8c00',
+          'num-10': '#dc143c',
+          'num-11': '#4169e1',
+          'num-12': '#708090',
+
+          // Modifier colors
+          'mod-base': '#f4a460',
+          'mod-gold': '#daa520',
+          'mod-bronze': '#cd853f',
+          'mod-chocolate': '#d2691e',
+
+          // Action card colors
+          'freeze': '#87ceeb',
+          'flip-three': '#ffd700',
+          'second-chance': '#ff1493',
+
+          // UI colors
+          'success': '#2e8b57',
+          'danger': '#8b1a3d',
+          'warning': '#daa520',
+          'info': '#4682b4',
+        },
+        // Card type colors (legacy)
         card: {
-          number: '#1d4ed8',      // blue-700
-          modifier: '#15803d',    // green-700
-          multiplier: '#7e22ce',  // purple-700
-          freeze: '#0891b2',      // cyan-600
-          flipThree: '#ea580c',   // orange-600
-          secondChance: '#ca8a04', // yellow-600
+          number: '#1d4ed8',
+          modifier: '#15803d',
+          multiplier: '#7e22ce',
+          freeze: '#0891b2',
+          flipThree: '#ea580c',
+          secondChance: '#ca8a04',
         },
         accent: {
-          gold: '#fbbf24',        // amber-400
+          gold: '#fbbf24',
         },
         // Casino luxury theme
         felt: {
@@ -54,6 +100,21 @@ export default {
           dark: '#adb5bd',
           darker: '#495057',
         },
+      },
+      fontFamily: {
+        'display': ['Georgia', 'Times New Roman', 'serif'],
+        'card': ['Courier New', 'monospace'],
+      },
+      backgroundImage: {
+        'card-texture': 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px)',
+        'wood-grain': 'linear-gradient(90deg, rgba(0,0,0,0.1) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)',
+        'flip7-gradient': 'linear-gradient(135deg, #2d1810 0%, #3d2518 50%, #2d1810 100%)',
+      },
+      boxShadow: {
+        'card': '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
+        'card-hover': '0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.4)',
+        'vintage': '0 1px 3px rgba(139,69,19,0.5), 0 0 0 1px rgba(212,175,55,0.3)',
+        'gold-glow': '0 0 20px rgba(212,175,55,0.5), 0 0 40px rgba(212,175,55,0.3)',
       },
       animation: {
         'flip': 'flip 0.6s ease-in-out',
