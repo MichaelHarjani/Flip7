@@ -59,8 +59,7 @@ export default function Card({
   const isUsedSecondChance =
     card.type === 'action' &&
     card.actionType === 'secondChance' &&
-    player?.secondChanceUsedBy?.secondChanceCardId === card.id;
-  const usedByInfo = isUsedSecondChance ? player?.secondChanceUsedBy : null;
+    (player?.usedSecondChanceCardIds?.includes(card.id) ?? false);
 
   // Get card display content - supports vintage theme with authentic colors
   const getCardContent = () => {
@@ -306,39 +305,22 @@ export default function Card({
     back: { rotateY: 180 },
   };
 
-  // For used Second Chance, show overlap display
-  if (isUsedSecondChance && usedByInfo) {
+  // For used Second Chance, show dimmed card with "USED" indicator
+  if (isUsedSecondChance) {
     return (
       <div className={`relative ${className}`} style={{ perspective: 1000 }}>
         <motion.div
           initial={animateEntry ? 'hidden' : 'visible'}
           animate="visible"
           variants={entryVariants}
-          className="relative inline-flex items-center"
+          className="relative"
         >
-          {/* Second Chance card (dimmed) */}
+          {/* Second Chance card (dimmed) with USED overlay */}
           <div className="opacity-50">
             <CardFront />
           </div>
-          {/* The duplicate card that was blocked */}
-          <div className="absolute left-1/2 z-10">
-            <div
-              className={`
-                ${sizeClasses[size]}
-                bg-white
-                border-blue-600
-                text-blue-900
-                rounded-lg
-                border-4
-                flex
-                items-center
-                justify-center
-                font-bold
-                shadow-lg
-              `}
-            >
-              <span className={fontSizeClasses[size]}>{usedByInfo.value}</span>
-            </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+            <span className="text-white font-bold text-xs">USED</span>
           </div>
         </motion.div>
       </div>

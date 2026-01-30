@@ -22,9 +22,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
   const player = playerId ? gameState?.players?.find(p => p.id === playerId) : null;
   const isUsedSecondChance = card.type === 'action' &&
     card.actionType === 'secondChance' &&
-    player?.secondChanceUsedBy?.secondChanceCardId === card.id;
-
-  const usedByInfo = isUsedSecondChance ? player?.secondChanceUsedBy : null;
+    (player?.usedSecondChanceCardIds?.includes(card.id) ?? false);
 
   const sizeClasses = {
     xs: 'w-7 h-10 sm:w-8 sm:h-11 text-[8px] sm:text-[9px]',
@@ -65,7 +63,6 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
         showTooltip={showTooltip}
         getTooltipContent={getTooltipContent}
         isUsedSecondChance={isUsedSecondChance}
-        usedByInfo={usedByInfo}
         sizeClasses={sizeClasses}
       />
     );
@@ -183,25 +180,6 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
             </div>
           </div>
 
-          {usedByInfo && (
-            <div className={`absolute ${sizeClasses[size]} z-10`} style={{ left: overlapOffset[size] }}>
-              {usedByInfo.type === 'number' && usedByInfo.value !== undefined ? (
-                <div className={`
-                  ${sizeClasses[size]} rounded-lg border-4 border-blue-600 bg-white text-blue-900 shadow-lg
-                  flex flex-col items-center justify-center font-bold
-                `}>
-                  <div className={`${size === 'xs' ? 'text-xl' : size === 'sm' ? 'text-2xl' : size === 'md' ? 'text-2xl' : 'text-3xl'} font-extrabold`}>{usedByInfo.value}</div>
-                </div>
-              ) : usedByInfo.type === 'modifier' ? (
-                <div className={`
-                  ${sizeClasses[size]} rounded-lg border-4 border-green-700 bg-green-300 text-green-950 shadow-lg
-                  flex flex-col items-center justify-center font-bold
-                `}>
-                  <div className={`${size === 'xs' ? 'text-lg' : size === 'sm' ? 'text-xl' : size === 'md' ? 'text-xl' : 'text-2xl'} font-extrabold`}>+?</div>
-                </div>
-              ) : null}
-            </div>
-          )}
         </div>
       );
     }
@@ -234,7 +212,6 @@ interface VintageCardProps {
   showTooltip: boolean;
   getTooltipContent: () => string;
   isUsedSecondChance: boolean;
-  usedByInfo: any;
   sizeClasses: Record<string, string>;
 }
 
@@ -248,7 +225,6 @@ function VintageCard({
   showTooltip,
   getTooltipContent,
   isUsedSecondChance,
-  usedByInfo,
   sizeClasses,
 }: VintageCardProps) {
   const fontSizes = {
@@ -312,20 +288,6 @@ function VintageCard({
           </div>
         </div>
 
-        {usedByInfo && (
-          <div className={`absolute ${sizeClasses[size]} z-10`} style={{ left: overlapOffset[size] }}>
-            {usedByInfo.type === 'number' && usedByInfo.value !== undefined ? (
-              <VintageCardFace
-                value={usedByInfo.value}
-                bgColor={getNumberCardColor(usedByInfo.value)}
-                textColor={getNumberCardTextColor(usedByInfo.value)}
-                size={size}
-                sizeClasses={sizeClasses}
-                fontSizes={fontSizes}
-              />
-            ) : null}
-          </div>
-        )}
       </div>
     );
   }

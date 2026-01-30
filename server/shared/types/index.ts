@@ -21,11 +21,7 @@ export interface Player {
   isActive: boolean;
   hasBusted: boolean;
   hasSecondChance: boolean;
-  secondChanceUsedBy?: { 
-    type: string; 
-    value?: number;
-    secondChanceCardId?: string; // ID of the specific Second Chance card that was used
-  }; // Info about the card that triggered Second Chance usage
+  usedSecondChanceCardIds?: string[]; // IDs of Second Chance cards that have been used this round
   frozenBy?: string; // ID of player who froze this player
   aiDifficulty?: 'conservative' | 'moderate' | 'aggressive';
 }
