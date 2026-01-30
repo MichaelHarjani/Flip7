@@ -8,6 +8,7 @@ import TitleScreen from './components/TitleScreen';
 import ConnectionIndicator from './components/ConnectionIndicator';
 import ToastContainer from './components/Toast';
 import LoadingSpinner from './components/LoadingSpinner';
+import AchievementNotification from './components/AchievementNotification';
 import { toast } from './stores/toastStore';
 import type { ActiveSession } from './components/RejoinGameDialog';
 
@@ -345,6 +346,7 @@ function App() {
     return (
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
         <ToastContainer />
+        <AchievementNotification />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
           <TitleScreen onSelectMode={(mode) => handleSelectMode(mode as GameMode)} />
         </div>
@@ -486,6 +488,7 @@ function App() {
   return (
     <div className={`${screenClass} ${bgGradient} p-1 sm:p-2 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
       <ToastContainer />
+      <AchievementNotification />
       {/* Only show connection indicator for multiplayer modes */}
       {multiplayerMode && <ConnectionIndicator />}
       <div className="container mx-auto flex-1 flex flex-col min-h-0">

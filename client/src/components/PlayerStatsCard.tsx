@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Trophy,
@@ -7,10 +7,13 @@ import {
   Sparkles,
   TrendingUp,
   Award,
-  BarChart3
+  BarChart3,
+  Medal
 } from 'lucide-react';
 import { useStatsStore } from '../stores/statsStore';
+import { useAchievementStore, calculateLevel } from '../stores/achievementStore';
 import { ProgressBar } from './ui';
+import AchievementsModal from './AchievementsModal';
 
 interface PlayerStatsCardProps {
   compact?: boolean;
@@ -18,10 +21,14 @@ interface PlayerStatsCardProps {
 
 export default function PlayerStatsCard({ compact = false }: PlayerStatsCardProps) {
   const { stats, loading, fetchStats } = useStatsStore();
+  const { xp, level, fetchAchievements } = useAchievementStore();
+  const [showAchievements, setShowAchievements] = useState(false);
+  const levelInfo = calculateLevel(xp);
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    fetchAchievements();
+  }, [fetchStats, fetchAchievements]);
 
   if (loading && !stats) {
     return (
@@ -59,23 +66,60 @@ export default function PlayerStatsCard({ compact = false }: PlayerStatsCardProp
 
   if (compact) {
     return (
-      <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-        <h3 className="text-lg font-bold text-white mb-3">Your Stats</h3>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <div className="text-2xl font-bold text-green-400">{stats.gamesWon}</div>
-            <div className="text-xs text-gray-500">Wins</div>
+      <>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
+          {/* Level badge */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-white">Your Stats</h3>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm shadow-lg">
+                {level}
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-blue-400">{winRate}%</div>
-            <div className="text-xs text-gray-500">Win Rate</div>
+
+          {/* XP Progress bar */}
+          <div className="mb-3">
+            <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                initial={{ width: 0 }}
+                animate={{ width: `${levelInfo.progress}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <div className="text-xs text-gray-500 mt-1 text-center">
+              {levelInfo.currentXp} / {levelInfo.nextLevelXp} XP to Level {level + 1}
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-yellow-400">{stats.flip7Count}</div>
-            <div className="text-xs text-gray-500">Flip 7s</div>
+
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <div className="text-2xl font-bold text-green-400">{stats.gamesWon}</div>
+              <div className="text-xs text-gray-500">Wins</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-blue-400">{winRate}%</div>
+              <div className="text-xs text-gray-500">Win Rate</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-400">{stats.flip7Count}</div>
+              <div className="text-xs text-gray-500">Flip 7s</div>
+            </div>
           </div>
+
+          {/* View Achievements button */}
+          <button
+            onClick={() => setShowAchievements(true)}
+            className="w-full mt-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <Medal size={14} />
+            View Achievements
+          </button>
         </div>
-      </div>
+
+        {showAchievements && <AchievementsModal onClose={() => setShowAchievements(false)} />}
+      </>
     );
   }
 
@@ -203,6 +247,17 @@ export default function PlayerStatsCard({ compact = false }: PlayerStatsCardProp
           <span className="text-red-400 font-medium">{stats.bustCount}</span>
         </div>
       </div>
+
+      {/* View Achievements button */}
+      <button
+        onClick={() => setShowAchievements(true)}
+        className="w-full mt-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
+      >
+        <Medal size={16} />
+        View All Achievements
+      </button>
+
+      {showAchievements && <AchievementsModal onClose={() => setShowAchievements(false)} />}
     </div>
   );
 }

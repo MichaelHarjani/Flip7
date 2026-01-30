@@ -4,12 +4,14 @@ import { useWebSocketStore } from '../stores/websocketStore';
 import { useRoomStore } from '../stores/roomStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useStatsStore, type MatchParticipant, type GameMode } from '../stores/statsStore';
+import { useAchievementStore } from '../stores/achievementStore';
 import { useAuthStore } from '../stores/authStore';
 import PlayerArea from './PlayerArea';
 import ActionButtons from './ActionButtons';
 import ActionCardButtons from './ActionCardButtons';
 import ScoreDisplay from './ScoreDisplay';
 import GameStats from './GameStats';
+import Settings from './Settings';
 import confetti from 'canvas-confetti';
 import { hasFlip7 } from '../utils/gameLogic';
 import { playSound } from '../utils/sounds';
@@ -17,8 +19,10 @@ import logger from '../utils/logger';
 import ConfirmDialog from './ConfirmDialog';
 import { GameBoardSkeleton } from './Skeleton';
 import { BustRiskIndicator } from './game';
+import { Flip7Logo } from './ui';
 import { useKeyBindings } from '../hooks/useKeyBindings';
 import { getStoredProfile, KEY_BINDING_PROFILES, KeyBindingProfile } from '../config/keyBindings';
+import { Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 
 interface GameBoardProps {
   onNewGame?: () => void;
@@ -29,9 +33,11 @@ interface GameBoardProps {
 export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { roomCode, isHost } = useRoomStore();
-  const { getThemeConfig } = useThemeStore();
+  const { theme, getThemeConfig } = useThemeStore();
   const themeConfig = getThemeConfig();
+  const isVintageTheme = theme === 'vintage-flip7';
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
   const [lastAction, _setLastAction] = useState<string | null>(null);
   const maxThinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -381,6 +387,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
   // Record match stats when game ends
   const matchRecordedRef = useRef(false);
   const { recordMatch } = useStatsStore();
+  const { processGameEnd, checkAndUnlockAchievements } = useAchievementStore();
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -450,10 +457,32 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       });
 
       logger.log('[GameBoard] Match recorded:', { winner: winner.name, rounds: gameState.round });
+
+      // Process achievements and XP
+      const humanParticipant = participants.find(p => !p.isAI && (p.userId === user?.id || p.id === localPlayerId));
+      if (humanParticipant) {
+        const isWin = winner.id === humanParticipant.id;
+        const { xpEarned, leveledUp, newLevel } = processGameEnd(
+          isWin,
+          humanParticipant.flip7Count,
+          isWin ? (useStatsStore.getState().stats?.currentWinStreak || 0) + 1 : 0
+        );
+
+        // Check for new achievement unlocks
+        const stats = useStatsStore.getState().stats;
+        if (stats) {
+          checkAndUnlockAchievements({
+            ...stats,
+            highestRoundScore: Math.max(stats.highestRoundScore, ...humanParticipant.roundScores),
+          });
+        }
+
+        logger.log('[GameBoard] XP earned:', xpEarned, 'Level up:', leveledUp, 'New level:', newLevel);
+      }
     } else if (gameState?.gameStatus !== 'gameEnd') {
       matchRecordedRef.current = false;
     }
-  }, [gameState?.gameStatus, gameState?.players, gameState?.round, gameState?.roundHistory, localPlayerId, user?.id, recordMatch, multiplayerRoomCode]);
+  }, [gameState?.gameStatus, gameState?.players, gameState?.round, gameState?.roundHistory, localPlayerId, user?.id, recordMatch, multiplayerRoomCode, processGameEnd, checkAndUnlockAchievements]);
 
   // Play notification sound when it's the local player's turn in multiplayer
   const wasLocalPlayerTurnRef = useRef<boolean>(false);
@@ -736,26 +765,6 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
   return (
     <div className={`w-full max-w-[100vw] lg:max-w-[90vw] xl:max-w-[85vw] 2xl:max-w-[80vw] mx-auto flex flex-col p-0.5 sm:p-1 md:p-2 lg:p-4 relative no-select h-full ${screenShake ? 'screen-shake' : ''}`}>
-      {/* Back Button */}
-      {onBack && (
-        <button
-          onClick={() => {
-            // Show confirmation if game is in progress
-            if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
-              setShowLeaveConfirm(true);
-            } else {
-              onBack();
-            }
-          }}
-          className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 border-2 border-gray-600 text-white transition-colors"
-          aria-label="Back to main menu"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-      )}
-
       {/* Leave game confirmation dialog */}
       {showLeaveConfirm && onBack && (
         <ConfirmDialog
@@ -771,31 +780,134 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           onCancel={() => setShowLeaveConfirm(false)}
         />
       )}
+      {/* Settings Modal */}
+      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
       <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden">
-        {/* Compact header with scores and game state indicators */}
-        <div className={`mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
-          <div className="flex justify-between items-center gap-1 mb-0.5">
-            <h1 className={`text-sm sm:text-lg md:text-xl font-bold ${themeConfig.textPrimary} ${onBack ? 'ml-10 sm:ml-12' : ''}`}>Flip 7</h1>
-            <div className={`text-[9px] sm:text-[10px] ${themeConfig.textSecondary} flex items-center gap-1`}>
-              <span className="font-semibold">R{gameState.round || 1}</span>
-              <span>•</span>
-              <span className="flex items-center gap-0.5" title="Cards remaining in deck">
-                <span className="text-sm">🃏</span>
-                <span>{gameState.deck?.length || 0}</span>
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-0.5" title="Dealer">
-                <span className="text-sm">🎴</span>
-                <span>{gameState.players?.[gameState.dealerIndex]?.name || '?'}</span>
-              </span>
+        {/* Game Header with Logo, Stats, and Settings */}
+        <div
+          className="mb-1 sm:mb-2 rounded-lg shadow-lg flex-shrink-0 border-2"
+          style={{
+            borderColor: isVintageTheme ? '#8b4513' : undefined,
+            background: isVintageTheme
+              ? 'linear-gradient(180deg, rgba(45,24,16,0.95) 0%, rgba(61,37,24,0.9) 100%)'
+              : undefined,
+            boxShadow: isVintageTheme ? '0 2px 8px rgba(0,0,0,0.3)' : undefined,
+          }}
+        >
+          {/* Top row: Back, Logo, Round/Deck/Settings */}
+          <div className="flex items-center justify-between p-1.5 sm:p-2">
+            {/* Left: Back button */}
+            <div className="w-20 sm:w-24">
+              {onBack && (
+                <button
+                  onClick={() => {
+                    if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
+                      setShowLeaveConfirm(true);
+                    } else {
+                      onBack();
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all hover:scale-105"
+                  style={isVintageTheme ? {
+                    backgroundColor: 'rgba(139,69,19,0.6)',
+                    border: '2px solid #d4af37',
+                    color: '#f5f1e8',
+                  } : {
+                    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+                    border: '2px solid rgb(75, 85, 99)',
+                    color: 'white',
+                  }}
+                  aria-label="Back to main menu"
+                >
+                  <ArrowLeft size={16} />
+                  <span className="hidden sm:inline text-xs font-semibold">Back</span>
+                </button>
+              )}
+            </div>
+
+            {/* Center: Logo */}
+            <div className="flex-1 flex justify-center">
+              <Flip7Logo size="xs" />
+            </div>
+
+            {/* Right: Game info and settings */}
+            <div className="flex items-center gap-1 sm:gap-2 w-20 sm:w-24 justify-end">
+              {/* Round indicator */}
+              <div
+                className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-card"
+                style={isVintageTheme ? {
+                  backgroundColor: 'rgba(139,69,19,0.6)',
+                  border: '1px solid #d4af37',
+                  color: '#f5f1e8',
+                } : {
+                  backgroundColor: 'rgba(55, 65, 81, 0.8)',
+                  border: '1px solid rgb(75, 85, 99)',
+                  color: 'white',
+                }}
+              >
+                <span className={isVintageTheme ? 'text-flip7-vintage' : 'text-gray-400'}>R</span>
+                <span className={`font-bold ${isVintageTheme ? 'text-flip7-gold' : 'text-yellow-400'}`}>{gameState.round || 1}</span>
+              </div>
+
+              {/* Deck count */}
+              <div
+                className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-card"
+                style={isVintageTheme ? {
+                  backgroundColor: 'rgba(139,69,19,0.6)',
+                  border: '1px solid #d4af37',
+                  color: '#f5f1e8',
+                } : {
+                  backgroundColor: 'rgba(55, 65, 81, 0.8)',
+                  border: '1px solid rgb(75, 85, 99)',
+                  color: 'white',
+                }}
+                title="Cards remaining in deck"
+              >
+                <span className="text-xs">🃏</span>
+                <span className={`font-bold ml-0.5 ${isVintageTheme ? 'text-flip7-gold' : 'text-yellow-400'}`}>{gameState.deck?.length || 0}</span>
+              </div>
+
+              {/* Settings button */}
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-1 sm:p-1.5 rounded-lg transition-all hover:scale-105"
+                style={isVintageTheme ? {
+                  backgroundColor: 'rgba(139,69,19,0.6)',
+                  border: '2px solid #d4af37',
+                  color: '#d4af37',
+                } : {
+                  backgroundColor: 'rgba(55, 65, 81, 0.8)',
+                  border: '2px solid rgb(75, 85, 99)',
+                  color: 'rgb(156, 163, 175)',
+                }}
+                aria-label="Settings"
+              >
+                <SettingsIcon size={14} className="sm:w-4 sm:h-4" />
+              </button>
             </div>
           </div>
-          <ScoreDisplay />
-          
+
+          {/* Score tracker row */}
+          <div className="px-1.5 pb-1.5 sm:px-2 sm:pb-2">
+            <ScoreDisplay />
+          </div>
+
           {/* Last action indicator */}
           {lastAction && (
-            <div className="mt-1 text-[9px] sm:text-xs text-center bg-blue-900/50 border border-blue-600 rounded px-2 py-0.5 text-blue-200 animate-scale-in">
+            <div
+              className="mx-1.5 mb-1.5 sm:mx-2 sm:mb-2 text-[9px] sm:text-xs text-center rounded px-2 py-0.5 animate-scale-in"
+              style={isVintageTheme ? {
+                backgroundColor: 'rgba(70,130,180,0.3)',
+                border: '1px solid #4682b4',
+                color: '#87ceeb',
+              } : {
+                backgroundColor: 'rgba(30, 58, 138, 0.5)',
+                border: '1px solid rgb(37, 99, 235)',
+                color: 'rgb(191, 219, 254)',
+              }}
+            >
               {lastAction}
             </div>
           )}
