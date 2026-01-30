@@ -17,10 +17,10 @@ interface CardProps {
 }
 
 const sizeClasses = {
-  xs: 'w-8 h-12 text-xs',
-  sm: 'w-12 h-16 text-sm',
-  md: 'w-16 h-22 text-base',
-  lg: 'w-20 h-28 text-lg',
+  xs: 'w-9 h-13 text-xs',
+  sm: 'w-13 h-18 text-sm',
+  md: 'w-18 h-24 text-base',
+  lg: 'w-22 h-30 text-lg',
 };
 
 const fontSizeClasses = {

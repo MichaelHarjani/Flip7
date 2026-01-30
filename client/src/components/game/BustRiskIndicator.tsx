@@ -80,7 +80,7 @@ export default function BustRiskIndicator({
           ${risk.bg}
           border
           ${bustProbability >= 25 ? 'border-red-600/50' : bustProbability >= 10 ? 'border-yellow-600/50' : 'border-green-600/50'}
-          p-3
+          p-3 sm:p-4
         `}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

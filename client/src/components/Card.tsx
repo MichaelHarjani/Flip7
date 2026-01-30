@@ -24,10 +24,10 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
   // Get info about the card that triggered the Second Chance usage
   const usedByInfo = isUsedSecondChance ? player?.secondChanceUsedBy : null;
   const sizeClasses = {
-    xs: 'w-6 h-8 sm:w-7 sm:h-9 text-[8px] sm:text-[9px]',
-    sm: 'w-8 h-11 sm:w-10 sm:h-14 text-[9px] sm:text-[10px]',
-    md: 'w-12 h-16 sm:w-14 sm:h-20 text-[10px] sm:text-xs',
-    lg: 'w-16 h-22 sm:w-18 sm:h-28 text-xs sm:text-sm',
+    xs: 'w-7 h-10 sm:w-8 sm:h-11 text-[8px] sm:text-[9px]',
+    sm: 'w-9 h-12 sm:w-11 sm:h-16 text-[9px] sm:text-[10px]',
+    md: 'w-14 h-20 sm:w-16 sm:h-22 text-[10px] sm:text-xs',
+    lg: 'w-18 h-24 sm:w-20 sm:h-28 text-xs sm:text-sm',
   };
 
   // Animation classes

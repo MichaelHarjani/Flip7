@@ -848,8 +848,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             }}>
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-1 sm:mb-2 lg:mb-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+              <div className="flex-shrink-0 mb-2 sm:mb-3 lg:mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -880,10 +880,10 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-1 sm:pt-2 lg:pt-4 mt-1 sm:mt-2 lg:mt-4 border-yellow-600/50">
+              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-2 sm:pt-3 lg:pt-6 mt-2 sm:mt-3 lg:mt-6 border-yellow-600/50">
                 {humanPlayers.length > 1 ? (
                   // Multiple human players (Local mode) - show in a grid
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                     {humanPlayers.map((player) => {
                       const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                       return (
@@ -903,14 +903,14 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                   </div>
                 ) : (
                   // Single human player - show larger on desktop
-                  <div className="lg:max-w-2xl lg:mx-auto">
+                  <div className="lg:max-w-3xl xl:max-w-4xl lg:mx-auto px-2 sm:px-4">
                     <PlayerArea
                       player={humanPlayers[0]}
                       isCurrentPlayer={!isRoundEnd && gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.currentPlayerIndex}
                       isDealer={gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.dealerIndex}
                       isCompact={false}
                     />
-                    <div className="mt-1 text-center text-xs italic h-4 text-transparent">
+                    <div className="mt-2 text-center text-xs italic h-4 text-transparent">
                       {'\u00A0'}
                     </div>
                   </div>
@@ -924,10 +924,10 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
       {/* Action Buttons - Fixed at bottom, always visible (outside scale) */}
       {(localPlayer || humanPlayer || currentHumanPlayer) && (
-        <div 
+        <div
           data-action-buttons
-          className="flex-shrink-0 pt-1 sm:pt-2 border-t-2 border-gray-600 space-y-0.5 sm:space-y-1 md:space-y-2 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[60px] sm:min-h-[80px] md:min-h-[100px]" 
-          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
+          className="flex-shrink-0 pt-2 sm:pt-3 border-t-2 border-gray-600 space-y-1 sm:space-y-2 md:space-y-3 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[70px] sm:min-h-[90px] md:min-h-[120px]"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
         >
           {false && onNewGame ? (
             <div className="flex gap-2 sm:gap-3 justify-center">
@@ -983,19 +983,19 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           ) : currentHumanPlayer &&
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
-            <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2">
+            <div className="flex flex-col gap-1 sm:gap-2 md:gap-3">
               {/* Bust Risk Indicator - shows above action buttons */}
               {gameState?.deck && (
-                <div className="flex justify-center mb-1 sm:mb-2">
+                <div className="flex justify-center mb-2 sm:mb-3">
                   <BustRiskIndicator
                     player={currentHumanPlayer}
                     deck={gameState.deck}
                     showDetails={false}
-                    className="w-full max-w-xs sm:max-w-sm"
+                    className="w-full max-w-xs sm:max-w-sm md:max-w-md"
                   />
                 </div>
               )}
-              <div className="flex items-start gap-1 sm:gap-2 md:gap-4 justify-center flex-wrap">
+              <div className="flex items-start gap-2 sm:gap-4 md:gap-6 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} bindings={currentBindings} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
               </div>
