@@ -1,4 +1,5 @@
 import type { Socket } from 'socket.io';
+import type { Request } from 'express';
 import { supabase, isSupabaseAvailable } from '../config/supabase.js';
 
 interface SupabaseUser {
@@ -65,4 +66,18 @@ export function getUserIdFromSocket(socket: Socket): string | undefined {
  */
 export function isAuthenticatedSocket(socket: Socket): boolean {
   return !!socket.data?.user;
+}
+
+/**
+ * Extract user from HTTP request Authorization header
+ */
+export async function getUserFromRequest(req: Request): Promise<SupabaseUser | null> {
+  // Try to get token from Authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  return verifyAuthToken(token);
 }

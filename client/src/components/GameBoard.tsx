@@ -3,6 +3,8 @@ import { useGameStore } from '../stores/gameStore';
 import { useWebSocketStore } from '../stores/websocketStore';
 import { useRoomStore } from '../stores/roomStore';
 import { useThemeStore } from '../stores/themeStore';
+import { useStatsStore, type MatchParticipant, type GameMode } from '../stores/statsStore';
+import { useAuthStore } from '../stores/authStore';
 import PlayerArea from './PlayerArea';
 import ActionButtons from './ActionButtons';
 import ActionCardButtons from './ActionCardButtons';
@@ -14,6 +16,7 @@ import { playSound } from '../utils/sounds';
 import logger from '../utils/logger';
 import ConfirmDialog from './ConfirmDialog';
 import { GameBoardSkeleton } from './Skeleton';
+import { BustRiskIndicator } from './game';
 
 interface GameBoardProps {
   onNewGame?: () => void;
@@ -365,6 +368,83 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       winSoundPlayedRef.current = false;
     }
   }, [gameState?.gameStatus]);
+
+  // Record match stats when game ends
+  const matchRecordedRef = useRef(false);
+  const { recordMatch } = useStatsStore();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (gameState?.gameStatus === 'gameEnd' && !matchRecordedRef.current && gameState.players) {
+      matchRecordedRef.current = true;
+
+      // Find winner
+      const winner = gameState.players.reduce((prev, current) =>
+        current.score > prev.score ? current : prev
+      );
+
+      // Determine game mode
+      let gameMode: GameMode = 'single';
+      if (multiplayerRoomCode) {
+        gameMode = 'online';
+      } else if (gameState.players.filter(p => !p.isAI).length > 1) {
+        gameMode = 'local';
+      }
+
+      // Build participants list with stats from round history
+      const participants: MatchParticipant[] = gameState.players.map(player => {
+        // Count flip 7s and busts from round history
+        let flip7Count = 0;
+        let bustCount = 0;
+        const roundScores: number[] = [];
+
+        gameState.roundHistory?.forEach(round => {
+          const roundScore = round.playerScores[player.id] || 0;
+          roundScores.push(roundScore);
+
+          // Check if player had 7+ number cards (Flip 7)
+          const playerCards = round.playerCards[player.id] || [];
+          const numberCards = playerCards.filter(c => c.type === 'number');
+          if (numberCards.length >= 7) {
+            flip7Count++;
+          }
+
+          // Check if player busted
+          if (round.playerBusts[player.id]) {
+            bustCount++;
+          }
+        });
+
+        return {
+          id: player.id,
+          name: player.name,
+          score: player.score,
+          userId: player.id === localPlayerId ? user?.id : null,
+          isAI: player.isAI,
+          flip7Count,
+          bustCount,
+          roundScores,
+        };
+      });
+
+      // Record the match
+      recordMatch({
+        gameId: `game-${Date.now()}`,
+        gameMode,
+        winnerId: winner.id,
+        winnerName: winner.name,
+        winnerScore: winner.score,
+        winnerUserId: winner.id === localPlayerId ? user?.id : null,
+        totalRounds: gameState.round,
+        targetScore: 200,
+        participants,
+      });
+
+      logger.log('[GameBoard] Match recorded:', { winner: winner.name, rounds: gameState.round });
+    } else if (gameState?.gameStatus !== 'gameEnd') {
+      matchRecordedRef.current = false;
+    }
+  }, [gameState?.gameStatus, gameState?.players, gameState?.round, gameState?.roundHistory, localPlayerId, user?.id, recordMatch, multiplayerRoomCode]);
 
   // Play notification sound when it's the local player's turn in multiplayer
   const wasLocalPlayerTurnRef = useRef<boolean>(false);
@@ -895,6 +975,17 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
             <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2">
+              {/* Bust Risk Indicator - shows above action buttons */}
+              {gameState?.deck && (
+                <div className="flex justify-center mb-1 sm:mb-2">
+                  <BustRiskIndicator
+                    player={currentHumanPlayer}
+                    deck={gameState.deck}
+                    showDetails={false}
+                    className="w-full max-w-xs sm:max-w-sm"
+                  />
+                </div>
+              )}
               <div className="flex items-start gap-1 sm:gap-2 md:gap-4 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />

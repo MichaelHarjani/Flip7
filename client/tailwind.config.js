@@ -7,6 +7,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Card type colors
+        card: {
+          number: '#1d4ed8',      // blue-700
+          modifier: '#15803d',    // green-700
+          multiplier: '#7e22ce',  // purple-700
+          freeze: '#0891b2',      // cyan-600
+          flipThree: '#ea580c',   // orange-600
+          secondChance: '#ca8a04', // yellow-600
+        },
+        accent: {
+          gold: '#fbbf24',        // amber-400
+        },
         // Casino luxury theme
         felt: {
           light: '#2d5a3d',

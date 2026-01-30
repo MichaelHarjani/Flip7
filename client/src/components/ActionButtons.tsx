@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { playSound } from '../utils/sounds';
+import { Button } from './ui';
 
 interface ActionButtonsProps {
   playerId: string;
@@ -49,48 +50,31 @@ export default function ActionButtons({ playerId, disabled }: ActionButtonsProps
   const isDisabled = disabled || loading || localProcessing || hasPendingActionCard;
 
   return (
-    <div className="flex gap-1.5 sm:gap-2 md:gap-3 justify-center">
-      <button
+    <div className="flex gap-2 sm:gap-3 justify-center">
+      <Button
+        variant="success"
+        size="lg"
         onClick={handleHit}
         disabled={isDisabled}
-        className="px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 text-white rounded-lg font-bold text-xs sm:text-sm md:text-base hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/50 hover:scale-105 active:bg-green-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 min-w-[60px] sm:min-w-[70px] md:min-w-[90px] relative overflow-hidden group"
+        loading={loading}
+        shortcut="H"
+        className="min-w-[100px] sm:min-w-[120px]"
       >
-        <span className="relative z-10 flex items-center justify-center gap-1">
-          {loading ? (
-            <>
-              <span className="animate-spin">⟳</span>
-              <span>Hit</span>
-            </>
-          ) : (
-            <>
-              <span>🎴</span>
-              <span>Hit</span>
-            </>
-          )}
-        </span>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-      </button>
-      <button
+        <span className="mr-1">🎴</span>
+        Hit
+      </Button>
+      <Button
+        variant="danger"
+        size="lg"
         onClick={handleStay}
         disabled={isDisabled}
-        className="px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-red-500 text-white rounded-lg font-bold text-xs sm:text-sm md:text-base hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/50 hover:scale-105 active:bg-red-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none transition-all duration-200 min-w-[60px] sm:min-w-[70px] md:min-w-[90px] relative overflow-hidden group"
+        loading={loading}
+        shortcut="S"
+        className="min-w-[100px] sm:min-w-[120px]"
       >
-        <span className="relative z-10 flex items-center justify-center gap-1">
-          {loading ? (
-            <>
-              <span className="animate-spin">⟳</span>
-              <span>Stay</span>
-            </>
-          ) : (
-            <>
-              <span>✋</span>
-              <span>Stay</span>
-            </>
-          )}
-        </span>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-      </button>
+        <span className="mr-1">✋</span>
+        Stay
+      </Button>
     </div>
   );
 }
-

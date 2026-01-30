@@ -64,6 +64,7 @@ import gameActionsRouter from './api/game-actions.js';
 import sseRouter from './api/sse.js';
 import sessionsRouter from './api/sessions.js';
 import usernameRouter from './api/username.js';
+import matchesRouter from './api/matches.js';
 
 // Services for cleanup
 import { roomService } from './services/roomService.js';
@@ -100,6 +101,7 @@ app.use('/api/game-mp', gameActionsRouter);
 app.use('/api/sse', sseRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/username', usernameRouter);
+app.use('/api/matches', matchesRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

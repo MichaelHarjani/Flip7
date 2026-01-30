@@ -95,3 +95,66 @@ export interface MatchmakingQueueEntry {
   joinedAt: Date;
 }
 
+// Match History Types
+export type GameMode = 'single' | 'local' | 'online' | 'ranked';
+
+export interface MatchParticipant {
+  id: string;
+  name: string;
+  score: number;
+  userId?: string | null;
+  isAI: boolean;
+  flip7Count: number;
+  bustCount: number;
+  roundScores: number[];
+}
+
+export interface MatchResult {
+  id?: string;
+  gameId: string;
+  gameMode: GameMode;
+  winnerId: string;
+  winnerName: string;
+  winnerScore: number;
+  winnerUserId?: string | null;
+  totalRounds: number;
+  targetScore: number;
+  durationSeconds?: number;
+  participants: MatchParticipant[];
+  startedAt?: Date;
+  completedAt: Date;
+}
+
+export interface PlayerStats {
+  userId: string;
+  gamesPlayed: number;
+  gamesWon: number;
+  gamesLost: number;
+  totalScore: number;
+  highestScore: number;
+  highestRoundScore: number;
+  flip7Count: number;
+  bustCount: number;
+  freezeUsedCount: number;
+  flipThreeUsedCount: number;
+  secondChanceSaves: number;
+  currentWinStreak: number;
+  bestWinStreak: number;
+  eloRating: number;
+  rankedGamesPlayed: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// For display purposes
+export interface RecentMatch {
+  id: string;
+  gameMode: GameMode;
+  isWin: boolean;
+  playerScore: number;
+  opponentName: string;
+  opponentScore: number;
+  flip7Achieved: boolean;
+  completedAt: Date;
+}
+

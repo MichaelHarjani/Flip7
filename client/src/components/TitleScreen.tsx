@@ -3,7 +3,10 @@ import Settings from './Settings';
 import Tutorial from './Tutorial';
 import PracticeTool from './PracticeTool';
 import Footer from './Footer';
+import RecentMatches from './RecentMatches';
+import PlayerStatsCard from './PlayerStatsCard';
 import { useAuthStore } from '../stores/authStore';
+import { useStatsStore } from '../stores/statsStore';
 
 interface TitleScreenProps {
   onSelectMode: (mode: 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking') => void;
@@ -11,11 +14,13 @@ interface TitleScreenProps {
 
 export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
   const { user, profile, isGuest, loading, signInWithGoogle, signOut } = useAuthStore();
+  const { stats, recentMatches } = useStatsStore();
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showPractice, setShowPractice] = useState(false);
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const hasStats = stats && stats.gamesPlayed > 0;
 
   // Check if first-time user and show welcome/tutorial prompt
   useEffect(() => {
@@ -199,6 +204,22 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
           🎯 Practice Mode
         </button>
       </div>
+
+      {/* Stats Section - shown on larger screens or when user has played games */}
+      {hasStats && (
+        <div className="hidden lg:flex flex-col gap-4 absolute right-4 top-20 w-80 max-h-[calc(100vh-10rem)] overflow-y-auto animate-scale-in" style={{ animationDelay: '0.8s' }}>
+          <PlayerStatsCard compact />
+          <RecentMatches maxItems={3} />
+        </div>
+      )}
+
+      {/* Stats Section - Mobile (below buttons) */}
+      {hasStats && (
+        <div className="lg:hidden w-full max-w-xs sm:max-w-sm md:max-w-md px-2 mt-4 space-y-3 animate-scale-in" style={{ animationDelay: '0.8s' }}>
+          <PlayerStatsCard compact />
+          <RecentMatches maxItems={3} />
+        </div>
+      )}
 
       {/* Modals */}
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
