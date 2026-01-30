@@ -24,8 +24,9 @@ export default function ScoreDisplay() {
 
   // Find the leader (including tentative scores)
   const playersWithTentative = gameState.players.map(player => {
-    const currentRoundScore = calculateScore(player);
-    const flip7Bonus = hasFlip7(player) ? 15 : 0;
+    // If player busted, round score is 0 and tentative is just committed score
+    const currentRoundScore = player.hasBusted ? 0 : calculateScore(player);
+    const flip7Bonus = (player.hasBusted || !hasFlip7(player)) ? 0 : 15;
     const tentativeTotal = player.score + currentRoundScore + flip7Bonus;
     return { player, currentRoundScore, flip7Bonus, tentativeTotal };
   });
@@ -68,6 +69,10 @@ export default function ScoreDisplay() {
           const committedPercentage = Math.min((player.score / targetScore) * 100, 100);
           const tentativePercentage = Math.min((tentativeTotal / targetScore) * 100, 100);
           const hasTentativeScore = currentRoundScore > 0 || flip7Bonus > 0;
+
+          // When player is not active (stayed or busted), animate the progress bar to fill
+          const shouldAnimateFill = !player.isActive && hasTentativeScore;
+          const displayPercentage = shouldAnimateFill ? tentativePercentage : committedPercentage;
 
           // Player-specific colors
           const playerColors = [
@@ -133,7 +138,7 @@ export default function ScoreDisplay() {
                 }}
               >
                 {/* Tentative score (greyed out) - rendered first so it's behind */}
-                {hasTentativeScore && tentativePercentage > committedPercentage && (
+                {hasTentativeScore && tentativePercentage > committedPercentage && !shouldAnimateFill && (
                   <div
                     className="absolute h-full transition-all duration-500 rounded-full"
                     style={{
@@ -142,11 +147,11 @@ export default function ScoreDisplay() {
                     }}
                   />
                 )}
-                {/* Committed score (solid) */}
+                {/* Committed score (solid) - animates to fill tentative when player is done */}
                 <div
-                  className="h-full transition-all duration-500 rounded-full relative"
+                  className="h-full transition-all duration-700 rounded-full relative"
                   style={{
-                    width: `${committedPercentage}%`,
+                    width: `${displayPercentage}%`,
                     backgroundColor: playerColor,
                   }}
                 />

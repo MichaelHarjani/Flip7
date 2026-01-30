@@ -32,8 +32,9 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
     );
   }
 
-  const score = calculateScore(player);
-  const hasFlip7Bonus = hasFlip7(player);
+  // When player busts, round score goes to 0
+  const score = player.hasBusted ? 0 : calculateScore(player);
+  const hasFlip7Bonus = player.hasBusted ? false : hasFlip7(player);
 
   const paddingClass = isCompact ? 'p-1 sm:p-1.5' : 'p-1.5 sm:p-2';
   const headerMarginClass = isCompact ? 'mb-0.5' : 'mb-1';
@@ -42,6 +43,23 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
   const cardsSpacingClass = isCompact ? 'space-y-0.5' : 'space-y-1';
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;
+
+  // Find duplicate number cards if player busted
+  const duplicateCardValues = new Set<number>();
+  if (player.hasBusted) {
+    const valueCounts = new Map<number, number>();
+    player.numberCards.forEach(card => {
+      if (card.type === 'number' && card.value !== undefined) {
+        const count = valueCounts.get(card.value) || 0;
+        valueCounts.set(card.value, count + 1);
+      }
+    });
+    valueCounts.forEach((count, value) => {
+      if (count > 1) {
+        duplicateCardValues.add(value);
+      }
+    });
+  }
 
   // Player avatar - use character icon for AI players, Avatar component for human players
   const aiIconPath = player.isAI ? getAICharacterIconPath(player.name) : null;
@@ -217,6 +235,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
                 animate="flip"
                 showTooltip={true}
                 className={`animation-delay-${index * 100}`}
+                isDuplicate={card.type === 'number' && card.value !== undefined && duplicateCardValues.has(card.value)}
               />
             ))
           ) : (

@@ -11,9 +11,10 @@ interface CardProps {
   animate?: 'flip' | 'slide-in' | 'scale-in' | 'glow' | 'shake' | 'none';
   showTooltip?: boolean;
   isPlayable?: boolean;
+  isDuplicate?: boolean; // Shows red slash overlay for duplicate cards that caused bust
 }
 
-export default function Card({ card, size = 'md', className = '', playerId, animate = 'none', showTooltip = false, isPlayable = false }: CardProps) {
+export default function Card({ card, size = 'md', className = '', playerId, animate = 'none', showTooltip = false, isPlayable = false, isDuplicate = false }: CardProps) {
   const { gameState } = useGameStore();
   const { theme } = useThemeStore();
   const isVintageTheme = theme === 'vintage-flip7';
@@ -64,6 +65,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
         getTooltipContent={getTooltipContent}
         isUsedSecondChance={isUsedSecondChance}
         sizeClasses={sizeClasses}
+        isDuplicate={isDuplicate}
       />
     );
   }
@@ -96,6 +98,13 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
         {showTooltip && (
           <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
             {getTooltipContent()}
+          </div>
+        )}
+        {/* Red slash overlay for duplicate cards */}
+        {isDuplicate && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="absolute w-full h-0.5 bg-red-600 rotate-45 transform scale-150 shadow-lg"></div>
+            <div className="absolute w-full h-0.5 bg-red-600 -rotate-45 transform scale-150 shadow-lg"></div>
           </div>
         )}
       </div>
@@ -213,6 +222,7 @@ interface VintageCardProps {
   getTooltipContent: () => string;
   isUsedSecondChance: boolean;
   sizeClasses: Record<string, string>;
+  isDuplicate?: boolean;
 }
 
 function VintageCard({
@@ -226,6 +236,7 @@ function VintageCard({
   getTooltipContent,
   isUsedSecondChance,
   sizeClasses,
+  isDuplicate = false,
 }: VintageCardProps) {
   const fontSizes = {
     xs: 'text-lg sm:text-xl',
@@ -349,6 +360,14 @@ function VintageCard({
             {/* Playable indicator */}
             {isPlayable && (
               <div className="absolute inset-0 rounded-sm ring-2 ring-flip7-gold animate-pulse" />
+            )}
+
+            {/* Red slash overlay for duplicate cards */}
+            {isDuplicate && card.type === 'number' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <div className="absolute w-full h-1 bg-flip7-danger rotate-45 transform scale-150 shadow-lg" style={{ boxShadow: '0 0 4px rgba(220,38,38,0.5)' }}></div>
+                <div className="absolute w-full h-1 bg-flip7-danger -rotate-45 transform scale-150 shadow-lg" style={{ boxShadow: '0 0 4px rgba(220,38,38,0.5)' }}></div>
+              </div>
             )}
           </div>
         </div>
