@@ -56,6 +56,7 @@ export interface GameState {
     playerId: string;
     cardId: string;
     actionType: 'freeze' | 'flipThree';
+    card?: Card; // The actual card object (not in player's hand, held for immediate resolution)
   }; // Action card that must be resolved immediately
 }
 

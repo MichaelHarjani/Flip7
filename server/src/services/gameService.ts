@@ -220,19 +220,21 @@ export class GameService {
     // This must happen BEFORE adding to hand to prevent them from being held
     if (!isInitialDeal && card.type === 'action') {
       if (card.actionType === 'flipThree' && !isResolvingFlipThree) {
-        // Flip3: Check if there are other players to target (if it's playable on others)
-        // For Flip3, it typically affects the player who picks it up, but let's allow targeting
+        // Flip3: Must be resolved IMMEDIATELY when drawn - never added to hand
+        // Check if there are other players to target
         const activePlayers = getActivePlayers(this.gameState.players);
         const otherActivePlayers = activePlayers.filter(p => p.id !== player.id);
-        
+
         if (otherActivePlayers.length > 0) {
-          // Other players exist - mark as pending for target selection
+          // Other players exist - mark as pending for IMMEDIATE target selection
+          // Card is NOT added to hand - it's held in pending state for target selection only
           this.gameState.pendingActionCard = {
             playerId: player.id,
             cardId: card.id,
-            actionType: 'flipThree'
+            actionType: 'flipThree',
+            card: card // Store the actual card so it can be resolved without being in hand
           };
-          // Continue to add card to hand below
+          return; // Don't add to hand - must be resolved immediately
         } else {
           // No other active players - auto-resolve on self (draw 3 cards immediately)
           this.gameState.discardPile.push(card);
@@ -261,18 +263,20 @@ export class GameService {
           return; // Card never added to hand - resolved immediately
         }
       } else if (card.actionType === 'freeze') {
-        // Freeze: Must be resolved immediately when picked up
+        // Freeze: Must be resolved IMMEDIATELY when drawn - never added to hand
         const activePlayers = getActivePlayers(this.gameState.players);
         const otherActivePlayers = activePlayers.filter(p => p.id !== player.id);
-        
+
         if (otherActivePlayers.length > 0) {
-          // Other players exist - add to hand AND mark as pending for immediate resolution
+          // Other players exist - mark as pending for IMMEDIATE target selection
+          // Card is NOT added to hand - it's held in pending state for target selection only
           this.gameState.pendingActionCard = {
             playerId: player.id,
             cardId: card.id,
-            actionType: 'freeze'
+            actionType: 'freeze',
+            card: card // Store the actual card so it can be resolved without being in hand
           };
-          // Continue to add card to hand below
+          return; // Don't add to hand - must be resolved immediately
         } else {
           // No other active players - auto-freeze self
           this.gameState.discardPile.push(card);
@@ -793,15 +797,23 @@ export class GameService {
       throw new Error('Player not found');
     }
 
-    const card = player.actionCards.find(c => c.id === cardId);
-    if (!card) {
-      throw new Error('Action card not found');
+    // Check if this is a pending action card (Freeze/Flip Three that must be resolved immediately)
+    let card: Card | undefined;
+    let isPendingCard = false;
+
+    if (this.gameState.pendingActionCard?.cardId === cardId &&
+        this.gameState.pendingActionCard?.playerId === playerId) {
+      // This is a pending action card - get it from the pending state
+      card = this.gameState.pendingActionCard.card;
+      isPendingCard = true;
+      this.gameState.pendingActionCard = undefined;
+    } else {
+      // Normal action card from player's hand (e.g., Second Chance)
+      card = player.actionCards.find(c => c.id === cardId);
     }
 
-    // Clear pending action card if this is the one that was pending
-    if (this.gameState.pendingActionCard?.cardId === cardId && 
-        this.gameState.pendingActionCard?.playerId === playerId) {
-      this.gameState.pendingActionCard = undefined;
+    if (!card) {
+      throw new Error('Action card not found');
     }
 
     // Get active players
@@ -825,9 +837,11 @@ export class GameService {
       }
     }
 
-    // Remove card from player's hand
-    player.actionCards = player.actionCards.filter(c => c.id !== cardId);
-    player.cards = player.cards.filter(c => c.id !== cardId);
+    // Remove card from player's hand (only if it was in their hand, not pending)
+    if (!isPendingCard) {
+      player.actionCards = player.actionCards.filter(c => c.id !== cardId);
+      player.cards = player.cards.filter(c => c.id !== cardId);
+    }
 
     // Apply the action card to the target
     // For FREEZE and FLIP THREE, handle them specially
