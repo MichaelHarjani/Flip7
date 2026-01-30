@@ -27,7 +27,7 @@ interface AchievementStore {
   // Actions
   fetchAchievements: () => Promise<void>;
   checkAndUnlockAchievements: (stats: AchievementStats) => void;
-  processGameEnd: (won: boolean, flip7Count: number, winStreak: number) => { xpEarned: number; leveledUp: boolean; newLevel: number };
+  processGameEnd: (score: number, won: boolean, flip7Count: number) => { xpEarned: number; leveledUp: boolean; newLevel: number };
   dismissNotification: () => void;
   clearAllNotifications: () => void;
 
@@ -193,12 +193,12 @@ export const useAchievementStore = create<AchievementStore>((set, get) => ({
     }
   },
 
-  processGameEnd: (won: boolean, flip7Count: number, winStreak: number) => {
+  processGameEnd: (score: number, won: boolean, flip7Count: number) => {
     const { xp, level } = get();
     const { user, isGuest } = useAuthStore.getState();
 
-    // Calculate XP earned
-    const xpEarned = calculateGameXp(won, flip7Count, winStreak);
+    // Calculate XP earned based on score and performance
+    const xpEarned = calculateGameXp(score, won, flip7Count);
     const newXp = xp + xpEarned;
     const newLevelInfo = calculateLevel(newXp);
     const leveledUp = newLevelInfo.level > level;
@@ -217,10 +217,7 @@ export const useAchievementStore = create<AchievementStore>((set, get) => ({
     // Check achievements based on updated stats
     const stats = useStatsStore.getState().stats;
     if (stats) {
-      get().checkAndUnlockAchievements({
-        ...stats,
-        currentWinStreak: winStreak,
-      });
+      get().checkAndUnlockAchievements(stats);
     }
 
     return { xpEarned, leveledUp, newLevel: newLevelInfo.level };

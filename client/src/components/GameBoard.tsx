@@ -463,9 +463,9 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       if (humanParticipant) {
         const isWin = winner.id === humanParticipant.id;
         const { xpEarned, leveledUp, newLevel } = processGameEnd(
+          humanParticipant.score,
           isWin,
-          humanParticipant.flip7Count,
-          isWin ? (useStatsStore.getState().stats?.currentWinStreak || 0) + 1 : 0
+          humanParticipant.flip7Count
         );
 
         // Check for new achievement unlocks

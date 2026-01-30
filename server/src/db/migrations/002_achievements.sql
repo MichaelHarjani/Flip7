@@ -139,7 +139,6 @@ DECLARE
   p_is_winner BOOLEAN;
   p_flip7_count INTEGER;
   p_bust_count INTEGER;
-  p_win_streak INTEGER;
   xp_earned INTEGER;
 BEGIN
   -- Loop through all participants with user IDs
@@ -157,20 +156,17 @@ BEGIN
     p_flip7_count := COALESCE((participant->>'flip7Count')::INTEGER, 0);
     p_bust_count := COALESCE((participant->>'bustCount')::INTEGER, 0);
 
-    -- Get current win streak for XP calculation
-    SELECT current_win_streak INTO p_win_streak
-    FROM player_stats
-    WHERE user_id = p_user_id;
+    -- Calculate XP earned based on score (rewards skill over volume)
+    -- Base XP = score * 0.5, minimum 10
+    xp_earned := GREATEST(10, ROUND(p_score * 0.5));
 
-    p_win_streak := COALESCE(p_win_streak, 0);
-
-    -- Calculate XP earned
-    xp_earned := 25; -- Base XP for playing
+    -- Win bonus: +100 XP
     IF p_is_winner THEN
-      xp_earned := xp_earned + 50; -- Win bonus
-      xp_earned := xp_earned + LEAST(p_win_streak + 1, 10) * 10; -- Streak bonus (capped)
+      xp_earned := xp_earned + 100;
     END IF;
-    xp_earned := xp_earned + p_flip7_count * 30; -- Flip 7 bonus
+
+    -- Flip 7 bonus: +25 XP each
+    xp_earned := xp_earned + p_flip7_count * 25;
 
     -- Insert or update player stats
     INSERT INTO player_stats (

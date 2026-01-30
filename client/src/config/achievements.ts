@@ -51,12 +51,11 @@ export interface UnlockedAchievement {
 
 // XP and Level configuration
 export const XP_CONFIG = {
-  // XP rewards
-  GAME_PLAYED: 25,
-  GAME_WON: 50,
-  FLIP7_ACHIEVED: 30,
-  DAILY_LOGIN: 15,
-  WIN_STREAK_BONUS: 10, // Per win in streak
+  // XP rewards - based on performance, not volume
+  SCORE_MULTIPLIER: 0.5,    // XP = points scored * 0.5 (so 200 pts = 100 XP)
+  WIN_BONUS: 100,           // Flat bonus for winning
+  FLIP7_BONUS: 25,          // Bonus per Flip 7 achieved
+  PARTICIPATION_MIN: 10,    // Minimum XP even if you score 0
 
   // Level thresholds (cumulative XP needed)
   LEVELS: [
@@ -112,16 +111,21 @@ export function calculateLevel(xp: number): { level: number; currentXp: number; 
   return { level: 1, currentXp: xp, nextLevelXp: XP_CONFIG.LEVELS[1], progress: (xp / XP_CONFIG.LEVELS[1]) * 100 };
 }
 
-// Calculate XP earned from a game
-export function calculateGameXp(won: boolean, flip7Count: number, winStreak: number): number {
-  let xp = XP_CONFIG.GAME_PLAYED;
+// Calculate XP earned from a game based on performance
+export function calculateGameXp(score: number, won: boolean, flip7Count: number): number {
+  // Base XP from score (reward playing well)
+  let xp = Math.max(
+    XP_CONFIG.PARTICIPATION_MIN,
+    Math.round(score * XP_CONFIG.SCORE_MULTIPLIER)
+  );
 
+  // Win bonus
   if (won) {
-    xp += XP_CONFIG.GAME_WON;
-    xp += Math.min(winStreak, 10) * XP_CONFIG.WIN_STREAK_BONUS; // Cap at 10x streak bonus
+    xp += XP_CONFIG.WIN_BONUS;
   }
 
-  xp += flip7Count * XP_CONFIG.FLIP7_ACHIEVED;
+  // Flip 7 bonus
+  xp += flip7Count * XP_CONFIG.FLIP7_BONUS;
 
   return xp;
 }
