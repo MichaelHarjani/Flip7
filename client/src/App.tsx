@@ -1,21 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useGameStore } from './stores/gameStore';
 import { useRoomStore } from './stores/roomStore';
 import { useWebSocketStore } from './stores/websocketStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAuthStore, type AuthStore } from './stores/authStore';
 import TitleScreen from './components/TitleScreen';
-import GameSettings from './components/GameSettings';
-import GameBoard from './components/GameBoard';
-import RoomLobby from './components/RoomLobby';
-import RoomCodeInput from './components/RoomCodeInput';
-import MatchmakingQueue from './components/MatchmakingQueue';
-import CreateRoomForm from './components/CreateRoomForm';
 import ConnectionIndicator from './components/ConnectionIndicator';
-import RejoinGameDialog, { type ActiveSession } from './components/RejoinGameDialog';
-import UsernameSetup from './components/UsernameSetup';
 import ToastContainer from './components/Toast';
+import LoadingSpinner from './components/LoadingSpinner';
 import { toast } from './stores/toastStore';
+import type { ActiveSession } from './components/RejoinGameDialog';
+
+// Lazy load heavy components that aren't needed on initial render
+const GameSettings = lazy(() => import('./components/GameSettings'));
+const GameBoard = lazy(() => import('./components/GameBoard'));
+const RoomLobby = lazy(() => import('./components/RoomLobby'));
+const RoomCodeInput = lazy(() => import('./components/RoomCodeInput'));
+const MatchmakingQueue = lazy(() => import('./components/MatchmakingQueue'));
+const CreateRoomForm = lazy(() => import('./components/CreateRoomForm'));
+const RejoinGameDialog = lazy(() => import('./components/RejoinGameDialog'));
+const UsernameSetup = lazy(() => import('./components/UsernameSetup'));
 
 type GameMode = 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking' | null;
 
@@ -347,34 +351,38 @@ function App() {
 
         {/* Rejoin Game Dialog */}
         {showRejoinDialog && activeSessions.length > 0 && (
-          <RejoinGameDialog
-            activeSessions={activeSessions}
-            onRejoin={handleRejoinSession}
-            onDismiss={handleDismissRejoinDialog}
-            onDismissSession={handleDismissSession}
-            loading={rejoinLoading}
-          />
+          <Suspense fallback={null}>
+            <RejoinGameDialog
+              activeSessions={activeSessions}
+              onRejoin={handleRejoinSession}
+              onDismiss={handleDismissRejoinDialog}
+              onDismissSession={handleDismissSession}
+              loading={rejoinLoading}
+            />
+          </Suspense>
         )}
 
         {/* Username Setup for new authenticated users */}
         {!isGuest && needsUsername && (
-          <UsernameSetup
-            onComplete={async (username) => {
-              // Fetch the updated profile after setting username
-              const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:5001';
-              const response = await fetch(`${wsUrl}/api/username/profile`, {
-                headers: {
-                  'Authorization': `Bearer ${session?.access_token}`,
-                },
-              });
-              if (response.ok) {
-                const data = await response.json();
-                if (data.profile) {
-                  setProfile(data.profile);
+          <Suspense fallback={null}>
+            <UsernameSetup
+              onComplete={async (username) => {
+                // Fetch the updated profile after setting username
+                const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:5001';
+                const response = await fetch(`${wsUrl}/api/username/profile`, {
+                  headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                  },
+                });
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data.profile) {
+                    setProfile(data.profile);
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </Suspense>
         )}
       </div>
     );
@@ -387,7 +395,9 @@ function App() {
         <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <CreateRoomForm onBack={() => setMultiplayerMode(null)} />
+          <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+            <CreateRoomForm onBack={() => setMultiplayerMode(null)} />
+          </Suspense>
         </div>
       </div>
     );
@@ -400,19 +410,21 @@ function App() {
         <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <RoomCodeInput
-            initialCode={urlRoomCode || undefined}
-            onJoin={(_code) => {
-              // Room joined, will show lobby via useEffect
-              clearRoomCodeFromUrl();
-              setUrlRoomCode(null);
-            }}
-            onCancel={() => {
-              setMultiplayerMode(null);
-              clearRoomCodeFromUrl();
-              setUrlRoomCode(null);
-            }}
-          />
+          <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+            <RoomCodeInput
+              initialCode={urlRoomCode || undefined}
+              onJoin={(_code) => {
+                // Room joined, will show lobby via useEffect
+                clearRoomCodeFromUrl();
+                setUrlRoomCode(null);
+              }}
+              onCancel={() => {
+                setMultiplayerMode(null);
+                clearRoomCodeFromUrl();
+                setUrlRoomCode(null);
+              }}
+            />
+          </Suspense>
         </div>
       </div>
     );
@@ -425,7 +437,9 @@ function App() {
         <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <MatchmakingQueue onCancel={() => setMultiplayerMode(null)} />
+          <Suspense fallback={<LoadingSpinner message="Finding match..." />}>
+            <MatchmakingQueue onCancel={() => setMultiplayerMode(null)} />
+          </Suspense>
         </div>
       </div>
     );
@@ -438,12 +452,14 @@ function App() {
         <ToastContainer />
         <ConnectionIndicator />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <RoomLobby onBack={() => {
-            setMultiplayerMode(null);
-            setGameStarted(false);
-            useRoomStore.getState().reset();
-            useGameStore.getState().reset();
-          }} />
+          <Suspense fallback={<LoadingSpinner message="Loading lobby..." />}>
+            <RoomLobby onBack={() => {
+              setMultiplayerMode(null);
+              setGameStarted(false);
+              useRoomStore.getState().reset();
+              useGameStore.getState().reset();
+            }} />
+          </Suspense>
         </div>
       </div>
     );
@@ -455,11 +471,13 @@ function App() {
       <div className={`${screenClass} ${bgGradient} p-3 sm:p-4 pt-safe pb-safe transition-colors duration-300 flex flex-col`}>
         <ToastContainer />
         <div className="container mx-auto flex-1 flex flex-col min-h-0">
-          <GameSettings
-            mode={gameMode === 'single' ? 'single' : 'local'}
-            onStart={handleGameStart}
-            onBack={() => setGameMode(null)}
-          />
+          <Suspense fallback={<LoadingSpinner message="Loading game settings..." />}>
+            <GameSettings
+              mode={gameMode === 'single' ? 'single' : 'local'}
+              onStart={handleGameStart}
+              onBack={() => setGameMode(null)}
+            />
+          </Suspense>
         </div>
       </div>
     );
@@ -485,7 +503,9 @@ function App() {
         )}
         {gameState ? (
           <div className="flex-1 min-h-0 flex flex-col">
-            <GameBoard onNewGame={handleNewGame} onRematch={handleRematch} onBack={handleNewGame} />
+            <Suspense fallback={<LoadingSpinner message="Loading game..." size="lg" />}>
+              <GameBoard onNewGame={handleNewGame} onRematch={handleRematch} onBack={handleNewGame} />
+            </Suspense>
           </div>
         ) : (
           <div className="max-w-4xl mx-auto p-6 text-center rounded-lg shadow-lg border-4 bg-gray-800 border-gray-600 text-white">

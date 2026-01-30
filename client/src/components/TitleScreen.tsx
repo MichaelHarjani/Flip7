@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import Settings from './Settings';
-import Tutorial from './Tutorial';
-import PracticeTool from './PracticeTool';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import Footer from './Footer';
 import RecentMatches from './RecentMatches';
 import PlayerStatsCard from './PlayerStatsCard';
 import { useAuthStore } from '../stores/authStore';
 import { useStatsStore } from '../stores/statsStore';
+
+// Lazy load modals - they're only needed when opened
+const Settings = lazy(() => import('./Settings'));
+const Tutorial = lazy(() => import('./Tutorial'));
+const PracticeTool = lazy(() => import('./PracticeTool'));
 
 interface TitleScreenProps {
   onSelectMode: (mode: 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking') => void;
@@ -221,10 +223,12 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
         </div>
       )}
 
-      {/* Modals */}
-      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
-      {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
-      {showPractice && <PracticeTool onClose={() => setShowPractice(false)} />}
+      {/* Modals - Lazy loaded */}
+      <Suspense fallback={null}>
+        {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+        {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
+        {showPractice && <PracticeTool onClose={() => setShowPractice(false)} />}
+      </Suspense>
 
       {/* First-time welcome modal */}
       {showWelcome && (
