@@ -18,7 +18,6 @@ import { playSound } from '../utils/sounds';
 import logger from '../utils/logger';
 import ConfirmDialog from './ConfirmDialog';
 import { GameBoardSkeleton } from './Skeleton';
-import { BustRiskIndicator } from './game';
 import { Flip7Logo } from './ui';
 import { useKeyBindings } from '../hooks/useKeyBindings';
 import { getStoredProfile, KEY_BINDING_PROFILES, KeyBindingProfile } from '../config/keyBindings';
@@ -787,7 +786,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden">
         {/* Game Header with Logo, Stats, and Settings */}
         <div
-          className="mb-1 sm:mb-2 rounded-lg shadow-lg flex-shrink-0 border-2"
+          className="mb-1 rounded-lg shadow-lg flex-shrink-0 border-2"
           style={{
             borderColor: isVintageTheme ? '#8b4513' : undefined,
             background: isVintageTheme
@@ -953,15 +952,20 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Scrollable content area - AI players and human player */}
-            <div className="flex-1 overflow-y-auto min-h-0 mb-1 sm:mb-2 scrollbar-thin overflow-x-hidden" style={{ 
-              paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0px))',
-              WebkitOverflowScrolling: 'touch'
-            }}>
+            {/* Content area - AI players and human player - no scrolling for single-page view */}
+            <div className="flex-1 min-h-0 mb-1 sm:mb-2 overflow-x-hidden flex flex-col">
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-2 sm:mb-3 lg:mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              <div className="flex-shrink-0 mb-1 sm:mb-2">
+                {/* Dynamic grid based on player count */}
+                <div className={`grid gap-2 sm:gap-3 ${
+                  aiPlayers.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+                  aiPlayers.length === 2 ? 'grid-cols-2' :
+                  aiPlayers.length === 3 ? 'grid-cols-3' :
+                  aiPlayers.length === 4 ? 'grid-cols-2 lg:grid-cols-4' :
+                  aiPlayers.length === 5 ? 'grid-cols-3' :
+                  'grid-cols-3'
+                }`}>
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -977,12 +981,12 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                           isDealer={originalIndex === gameState.dealerIndex}
                           isCompact={true}
                         />
-                        {/* Reserve space for thinking message to prevent jumping */}
-                        <div className={`mt-0.5 text-center text-[10px] sm:text-xs italic h-3 sm:h-4 ${
-                          isThinking ? 'text-gray-400' : 'text-transparent'
-                        }`}>
-                          {isThinking ? `${player.name} thinking...` : '\u00A0'}
-                        </div>
+                        {/* Thinking message - only show when active */}
+                        {isThinking && (
+                          <div className="mt-0.5 text-center text-[10px] sm:text-xs italic text-gray-400">
+                            {player.name} thinking...
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -992,41 +996,28 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-2 sm:pt-3 lg:pt-6 mt-2 sm:mt-3 lg:mt-6 border-yellow-600/50">
-                {humanPlayers.length > 1 ? (
-                  // Multiple human players (Local mode) - show in a grid
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-                    {humanPlayers.map((player) => {
-                      const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
-                      return (
-                        <div key={player.id || `player-${originalIndex}`} className="flex flex-col">
-                          <PlayerArea
-                            player={player}
-                            isCurrentPlayer={!isRoundEnd && originalIndex === gameState.currentPlayerIndex}
-                            isDealer={originalIndex === gameState.dealerIndex}
-                            isCompact={true}
-                          />
-                          <div className="mt-1 text-center text-xs italic h-4 text-transparent">
-                            {'\u00A0'}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  // Single human player - show larger on desktop
-                  <div className="lg:max-w-3xl xl:max-w-4xl lg:mx-auto px-2 sm:px-4">
-                    <PlayerArea
-                      player={humanPlayers[0]}
-                      isCurrentPlayer={!isRoundEnd && gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.currentPlayerIndex}
-                      isDealer={gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.dealerIndex}
-                      isCompact={false}
-                    />
-                    <div className="mt-2 text-center text-xs italic h-4 text-transparent">
-                      {'\u00A0'}
-                    </div>
-                  </div>
-                )}
+              <div className="flex-shrink-0 border-t-2 pt-1 sm:pt-2 mt-1 sm:mt-2 border-yellow-600/50">
+                {/* Dynamic grid based on human player count */}
+                <div className={`grid gap-2 sm:gap-3 ${
+                  humanPlayers.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' :
+                  humanPlayers.length === 2 ? 'grid-cols-2' :
+                  humanPlayers.length === 3 ? 'grid-cols-3' :
+                  humanPlayers.length === 4 ? 'grid-cols-2' :
+                  'grid-cols-3'
+                }`}>
+                  {humanPlayers.map((player) => {
+                    const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
+                    return (
+                      <PlayerArea
+                        key={player.id || `player-${originalIndex}`}
+                        player={player}
+                        isCurrentPlayer={!isRoundEnd && originalIndex === gameState.currentPlayerIndex}
+                        isDealer={originalIndex === gameState.dealerIndex}
+                        isCompact={true}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -1038,8 +1029,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       {(localPlayer || humanPlayer || currentHumanPlayer) && (
         <div
           data-action-buttons
-          className="flex-shrink-0 pt-2 sm:pt-3 border-t-2 border-gray-600 space-y-1 sm:space-y-2 md:space-y-3 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[70px] sm:min-h-[90px] md:min-h-[120px]"
-          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))' }}
+          className="flex-shrink-0 pt-1 sm:pt-2 border-t-2 border-gray-600 space-y-1 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent"
+          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
         >
           {false && onNewGame ? (
             <div className="flex gap-2 sm:gap-3 justify-center">
@@ -1096,17 +1087,6 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
             <div className="flex flex-col gap-1 sm:gap-2 md:gap-3">
-              {/* Bust Risk Indicator - shows above action buttons */}
-              {gameState?.deck && (
-                <div className="flex justify-center mb-2 sm:mb-3">
-                  <BustRiskIndicator
-                    player={currentHumanPlayer}
-                    deck={gameState.deck}
-                    showDetails={false}
-                    className="w-full max-w-xs sm:max-w-sm md:max-w-md"
-                  />
-                </div>
-              )}
               <div className="flex items-start gap-2 sm:gap-4 md:gap-6 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} bindings={currentBindings} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />

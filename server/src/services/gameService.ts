@@ -300,37 +300,25 @@ export class GameService {
       );
       
       if (hasDuplicate) {
-        // Check if player has Second Chance (either via flag or by having the card)
-        const hasSecondChanceCard = player.hasSecondChance || 
-          player.actionCards.some(c => c.type === 'action' && c.actionType === 'secondChance');
-        
-        console.log(`[Bust Check] Player ${player.name}: hasDuplicate=${hasDuplicate}, hasSecondChance flag=${player.hasSecondChance}, hasSecondChance card=${player.actionCards.some(c => c.type === 'action' && c.actionType === 'secondChance')}`);
-        
-        if (hasSecondChanceCard) {
+        // Check if player has an UNUSED Second Chance card
+        // The hasSecondChance flag tracks whether they have unused protection
+        // Also check actionCards for any unused Second Chance cards (in case flag is out of sync)
+        const secondChanceCards = player.actionCards.filter(
+          c => c.type === 'action' && c.actionType === 'secondChance'
+        );
+        const usedCardId = player.secondChanceUsedBy?.secondChanceCardId;
+        const hasUnusedSecondChance = player.hasSecondChance ||
+          secondChanceCards.some(c => c.id !== usedCardId);
+
+        console.log(`[Bust Check] Player ${player.name}: hasDuplicate=${hasDuplicate}, hasSecondChance flag=${player.hasSecondChance}, unusedSecondChance=${hasUnusedSecondChance}, usedCardId=${usedCardId}`);
+
+        if (hasUnusedSecondChance) {
           // Use Second Chance - find and mark ONE Second Chance card as used
           console.log(`[Second Chance] Player ${player.name} using Second Chance to prevent bust`);
-          
-          // Find the first unused Second Chance card (one that hasn't been used yet)
-          const secondChanceCards = player.actionCards.filter(
-            c => c.type === 'action' && c.actionType === 'secondChance'
-          );
-          
-          // Filter out cards that are already marked as used
-          const usedSecondChanceCardIds = new Set(
-            player.cards
-              .filter(c => {
-                // Check if this card is marked as used
-                return c.type === 'action' && 
-                       c.actionType === 'secondChance' && 
-                       player.secondChanceUsedBy?.secondChanceCardId === c.id;
-              })
-              .map(c => c.id)
-          );
-          
-          const unusedSecondChanceCard = secondChanceCards.find(
-            c => !usedSecondChanceCardIds.has(c.id)
-          );
-          
+
+          // Find the first unused Second Chance card
+          const unusedSecondChanceCard = secondChanceCards.find(c => c.id !== usedCardId);
+
           if (unusedSecondChanceCard) {
             // Mark this specific Second Chance card as used
             // Track which card triggered the Second Chance usage and which Second Chance card was used
@@ -339,30 +327,28 @@ export class GameService {
               value: card.type === 'number' ? card.value : undefined,
               secondChanceCardId: unusedSecondChanceCard.id
             };
-            
-            // Update hasSecondChance flag only if no unused Second Chance cards remain
+
+            // Check if any unused Second Chance cards remain after this one
             const remainingUnused = secondChanceCards.filter(
-              c => c.id !== unusedSecondChanceCard.id && !usedSecondChanceCardIds.has(c.id)
+              c => c.id !== unusedSecondChanceCard.id && c.id !== usedCardId
             );
-            if (remainingUnused.length === 0 && !player.hasSecondChance) {
-              // No more Second Chance cards available
+
+            // Update hasSecondChance flag - player can now bust unless they have another unused card
+            if (remainingUnused.length === 0) {
               player.hasSecondChance = false;
+              console.log(`[Second Chance] ${player.name} has no more unused Second Chance cards - can now bust`);
+            } else {
+              console.log(`[Second Chance] ${player.name} still has ${remainingUnused.length} unused Second Chance card(s)`);
             }
           } else {
-            // Fallback: if we can't find an unused one, use the first one
-            if (secondChanceCards.length > 0) {
-              player.secondChanceUsedBy = {
-                type: card.type,
-                value: card.type === 'number' ? card.value : undefined,
-                secondChanceCardId: secondChanceCards[0].id
-              };
-            }
+            // Fallback: flag says protected but no unused cards found - remove protection
+            player.hasSecondChance = false;
+            console.log(`[Second Chance] ${player.name} has no unused Second Chance cards available - removing protection`);
           }
-          
-          // Keep Second Chance card(s) in hand but mark the used one
-          // Don't remove it - it stays visible with usage info
+
+          // Discard the duplicate card that would have caused the bust
           this.gameState.discardPile.push(card);
-          return; // Don't add the card
+          return; // Don't add the duplicate card to hand
         } else {
           // BUST! - but we still need to add the card to show what caused the bust
           console.log(`[BUST] Player ${player.name} busted on duplicate ${card.value}`);

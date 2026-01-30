@@ -1,5 +1,6 @@
 import { useGameStore } from '../stores/gameStore';
 import { useThemeStore } from '../stores/themeStore';
+import { calculateScore, hasFlip7 } from '../utils/gameLogic';
 import Avatar from './Avatar';
 import AnimatedNumber from './AnimatedNumber';
 
@@ -21,13 +22,33 @@ export default function ScoreDisplay() {
     );
   }
 
-  // Find the leader
-  const leader = gameState.players.reduce((prev, current) =>
-    current.score > prev.score ? current : prev
+  // Find the leader (including tentative scores)
+  const playersWithTentative = gameState.players.map(player => {
+    const currentRoundScore = calculateScore(player);
+    const flip7Bonus = hasFlip7(player) ? 15 : 0;
+    const tentativeTotal = player.score + currentRoundScore + flip7Bonus;
+    return { player, currentRoundScore, flip7Bonus, tentativeTotal };
+  });
+
+  const leader = playersWithTentative.reduce((prev, current) =>
+    current.tentativeTotal > prev.tentativeTotal ? current : prev
   );
 
   // Target score for progress bar
   const targetScore = 200;
+
+  // Determine grid layout based on player count
+  const playerCount = gameState.players.length;
+  const getGridClass = () => {
+    switch (playerCount) {
+      case 2: return 'grid-cols-2';
+      case 3: return 'grid-cols-3';
+      case 4: return 'grid-cols-2';
+      case 5: return 'grid-cols-3';
+      case 6: return 'grid-cols-3';
+      default: return 'grid-cols-3';
+    }
+  };
 
   return (
     <div
@@ -40,19 +61,22 @@ export default function ScoreDisplay() {
         border: '2px solid rgb(75, 85, 99)',
       }}
     >
-      <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-        {gameState.players.map((player, index) => {
-          const isLeader = player.id === leader.id && player.score > 0;
-          const roundScore = gameState.roundScores?.[player.id];
-          const hasRoundScore = roundScore !== undefined && roundScore > 0;
+      <div className={`grid ${getGridClass()} gap-1 sm:gap-1.5`}>
+        {playersWithTentative.map(({ player, currentRoundScore, flip7Bonus, tentativeTotal }, index) => {
+          const isLeader = player.id === leader.player.id && tentativeTotal > 0;
           const isCurrentPlayer = index === gameState.currentPlayerIndex;
-          const percentage = Math.min((player.score / targetScore) * 100, 100);
+          const committedPercentage = Math.min((player.score / targetScore) * 100, 100);
+          const tentativePercentage = Math.min((tentativeTotal / targetScore) * 100, 100);
+          const hasTentativeScore = currentRoundScore > 0 || flip7Bonus > 0;
 
           // Player-specific colors
           const playerColors = [
             isVintageTheme ? '#4682b4' : '#3b82f6', // Blue
             isVintageTheme ? '#8b4789' : '#a855f7', // Purple
             isVintageTheme ? '#2e8b57' : '#22c55e', // Green
+            isVintageTheme ? '#cd853f' : '#f59e0b', // Amber
+            isVintageTheme ? '#dc143c' : '#ef4444', // Red
+            isVintageTheme ? '#20b2aa' : '#14b8a6', // Teal
           ];
           const playerColor = playerColors[index % playerColors.length];
 
@@ -89,29 +113,40 @@ export default function ScoreDisplay() {
                   >
                     <AnimatedNumber value={player.score} duration={600} />
                   </span>
-                  {hasRoundScore && (
+                  {hasTentativeScore && (
                     <span
-                      className={`text-[9px] font-semibold animate-bounce-soft ${
-                        isVintageTheme ? 'text-flip7-gold' : 'text-green-400'
+                      className={`text-[9px] font-medium ${
+                        isVintageTheme ? 'text-flip7-vintage/70' : 'text-gray-400'
                       }`}
                     >
-                      +{roundScore}
+                      (+{currentRoundScore}{flip7Bonus > 0 ? `+${flip7Bonus}` : ''})
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Progress bar */}
+              {/* Progress bar with tentative score */}
               <div
-                className="h-1 rounded-full overflow-hidden"
+                className="h-1.5 rounded-full overflow-hidden relative"
                 style={{
                   backgroundColor: isVintageTheme ? '#c19a6b' : 'rgb(55, 65, 81)',
                 }}
               >
+                {/* Tentative score (greyed out) - rendered first so it's behind */}
+                {hasTentativeScore && tentativePercentage > committedPercentage && (
+                  <div
+                    className="absolute h-full transition-all duration-500 rounded-full"
+                    style={{
+                      width: `${tentativePercentage}%`,
+                      backgroundColor: isVintageTheme ? 'rgba(139,69,19,0.3)' : 'rgba(156, 163, 175, 0.4)',
+                    }}
+                  />
+                )}
+                {/* Committed score (solid) */}
                 <div
-                  className="h-full transition-all duration-500"
+                  className="h-full transition-all duration-500 rounded-full relative"
                   style={{
-                    width: `${percentage}%`,
+                    width: `${committedPercentage}%`,
                     backgroundColor: playerColor,
                   }}
                 />
