@@ -146,10 +146,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     // Extract player names and AI difficulties from current game state
+    // Keep all player names in order, but only include difficulties for AI players
     const playerNames = gameState.players.map(p => p.name);
-    const aiDifficulties = gameState.players.map(p =>
-      p.isAI ? (p.aiDifficulty || 'moderate') : 'moderate'
-    ) as Array<'conservative' | 'moderate' | 'aggressive'>;
+    const aiDifficulties = gameState.players
+      .filter(p => p.isAI)
+      .map(p => p.aiDifficulty || 'moderate') as Array<'conservative' | 'moderate' | 'aggressive'>;
 
     // Reset and start a new game with the same configuration
     set({ gameId: null, gameState: null, loading: true, error: null });
@@ -157,6 +158,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       const url = `${API_BASE}/start`;
       logger.log('Restarting game with same players:', playerNames);
+      logger.log('AI difficulties:', aiDifficulties, `(${aiDifficulties.length} AI players)`);
 
       const response = await fetch(url, {
         method: 'POST',
