@@ -14,16 +14,13 @@ interface CardProps {
 
 export default function Card({ card, size = 'md', className = '', playerId, animate = 'none', showTooltip = false, isPlayable = false, isBusted = false }: CardProps) {
   const { gameState } = useGameStore();
-  
+
   // Check if this is a used Second Chance card
-  // A Second Chance card is "used" if the player has secondChanceUsedBy set with this card's ID
+  // A Second Chance card is "used" if the player has this card's ID in usedSecondChanceCardIds
   const player = playerId ? gameState?.players?.find(p => p.id === playerId) : null;
-  const isUsedSecondChance = card.type === 'action' && 
-    card.actionType === 'secondChance' && 
-    player?.secondChanceUsedBy?.secondChanceCardId === card.id;
-  
-  // Get info about the card that triggered the Second Chance usage
-  const usedByInfo = isUsedSecondChance ? player?.secondChanceUsedBy : null;
+  const isUsedSecondChance = card.type === 'action' &&
+    card.actionType === 'secondChance' &&
+    (player?.usedSecondChanceCardIds?.includes(card.id) ?? false);
   const sizeClasses = {
     xs: 'w-6 h-8 sm:w-7 sm:h-9 text-[8px] sm:text-[9px]',
     sm: 'w-8 h-11 sm:w-10 sm:h-14 text-[9px] sm:text-[10px]',
@@ -205,26 +202,7 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
             </div>
           </div>
           
-          {/* Full drawn card on the right - overlapping the Second Chance card */}
-          {usedByInfo && (
-            <div className={`absolute ${sizeClasses[size]} z-10`} style={{ left: overlapOffset[size] }}>
-              {usedByInfo.type === 'number' && usedByInfo.value !== undefined ? (
-                <div className={`
-                  ${sizeClasses[size]} rounded-lg border-4 border-blue-600 bg-white text-blue-900 shadow-lg
-                  flex flex-col items-center justify-center font-bold
-                `}>
-                  <div className={`${size === 'xs' ? 'text-xl' : size === 'sm' ? 'text-2xl' : size === 'md' ? 'text-2xl' : 'text-3xl'} font-extrabold`}>{usedByInfo.value}</div>
-                </div>
-              ) : usedByInfo.type === 'modifier' ? (
-                <div className={`
-                  ${sizeClasses[size]} rounded-lg border-4 border-green-700 bg-green-300 text-green-950 shadow-lg
-                  flex flex-col items-center justify-center font-bold
-                `}>
-                  <div className={`${size === 'xs' ? 'text-lg' : size === 'sm' ? 'text-xl' : size === 'md' ? 'text-xl' : 'text-2xl'} font-extrabold`}>+?</div>
-                </div>
-              ) : null}
-            </div>
-          )}
+          {/* Used Second Chance card - no overlay needed with new system */}
         </div>
       );
     }
