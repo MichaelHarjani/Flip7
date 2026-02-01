@@ -160,7 +160,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
 
       <div className={cardsSpacingClass}>
         {/* Modifier cards - Always reserve space with animations */}
-        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[1.5rem] sm:min-h-[2.5rem] md:min-h-[3.5rem] overflow-hidden`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[1.5rem] sm:min-h-[2.5rem] md:min-h-[3.5rem]`}>
           {player.modifierCards.length > 0 ? (
             player.modifierCards.map((card, index) => (
               <Card 
@@ -178,7 +178,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         </div>
 
         {/* Number cards - Always reserve space with flip animations */}
-        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2rem] sm:min-h-[3.5rem] md:min-h-[5rem] overflow-hidden`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2rem] sm:min-h-[3.5rem] md:min-h-[5rem]`}>
           {player.numberCards.length > 0 ? (
             player.numberCards.map((card, index) => {
               // Check if this card value appears more than once (is a duplicate/bust card)
@@ -201,7 +201,7 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         </div>
 
         {/* Action cards - Always reserve space with scale animations */}
-        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[1.5rem] sm:min-h-[2.5rem] md:min-h-[3.5rem] overflow-hidden`}>
+        <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[1.5rem] sm:min-h-[2.5rem] md:min-h-[3.5rem]`}>
           {player.actionCards.length > 0 ? (
             player.actionCards.map((card, index) => (
               <Card 

@@ -753,8 +753,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
         ) : (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Scrollable content area - AI players and human player */}
-            <div className="flex-1 overflow-y-auto min-h-0 mb-1 sm:mb-2 scrollbar-thin overflow-x-hidden" style={{ 
-              paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0px))',
+            <div className="flex-1 overflow-y-auto min-h-0 mb-1 sm:mb-2 scrollbar-thin overflow-x-hidden" style={{
+              paddingBottom: 'max(8rem, env(safe-area-inset-bottom, 8rem))',
               WebkitOverflowScrolling: 'touch'
             }}>
             {/* AI/Other Players Area */}
