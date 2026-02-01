@@ -43,9 +43,9 @@ export function hasFlip7(player: Player): boolean {
 }
 
 /**
- * Calculate player's score for the current round
+ * Calculate player's base score (without Flip 7 bonus)
  */
-export function calculateScore(player: Player): number {
+export function calculateBaseScore(player: Player): number {
   // Step 1: Add the value of Number cards
   let score = player.numberCards.reduce((sum, card) => {
     if (card.type === 'number' && card.value !== undefined) {
@@ -58,7 +58,7 @@ export function calculateScore(player: Player): number {
   const x2Card = player.modifierCards.find(
     card => card.modifierType === 'multiply' && card.modifierValue === 2
   );
-  
+
   if (x2Card) {
     score = score * 2;
   }
@@ -67,14 +67,23 @@ export function calculateScore(player: Player): number {
   const addModifiers = player.modifierCards.filter(
     card => card.modifierType === 'add' && card.modifierValue !== undefined
   );
-  
+
   for (const modifier of addModifiers) {
     if (modifier.modifierValue) {
       score += modifier.modifierValue;
     }
   }
 
-  // Step 4: If you Flip 7 Number cards, score an additional 15 points
+  return score;
+}
+
+/**
+ * Calculate player's score for the current round (including Flip 7 bonus)
+ */
+export function calculateScore(player: Player): number {
+  let score = calculateBaseScore(player);
+
+  // If you Flip 7 Number cards, score an additional 15 points
   if (hasFlip7(player)) {
     score += 15;
   }
