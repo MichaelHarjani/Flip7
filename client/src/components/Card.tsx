@@ -9,9 +9,10 @@ interface CardProps {
   animate?: 'flip' | 'slide-in' | 'scale-in' | 'glow' | 'shake' | 'none';
   showTooltip?: boolean;
   isPlayable?: boolean;
+  isBusted?: boolean; // Whether this card caused a bust (duplicate number)
 }
 
-export default function Card({ card, size = 'md', className = '', playerId, animate = 'none', showTooltip = false, isPlayable = false }: CardProps) {
+export default function Card({ card, size = 'md', className = '', playerId, animate = 'none', showTooltip = false, isPlayable = false, isBusted = false }: CardProps) {
   const { gameState } = useGameStore();
   
   // Check if this is a used Second Chance card
@@ -73,8 +74,46 @@ export default function Card({ card, size = 'md', className = '', playerId, anim
 
   if (card.type === 'number') {
     return (
-      <div className={`${baseClasses} bg-white border-2 sm:border-4 border-blue-600 text-blue-900 shadow-lg`}>
-        <div className={`${size === 'xs' ? 'text-base sm:text-xl' : size === 'sm' ? 'text-lg sm:text-2xl' : size === 'md' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-extrabold`}>{card.value}</div>
+      <div className={`${baseClasses} bg-white border-2 sm:border-4 border-blue-600 text-blue-900 shadow-lg ${isBusted ? 'opacity-90' : ''}`}>
+        <div className={`${size === 'xs' ? 'text-base sm:text-xl' : size === 'sm' ? 'text-lg sm:text-2xl' : size === 'md' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'} font-extrabold relative z-10`}>{card.value}</div>
+
+        {/* Bust overlay - Semi-transparent X so number shows through */}
+        {isBusted && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg overflow-hidden">
+            {/* Very light red tint overlay */}
+            <div
+              className="absolute inset-0 rounded-lg"
+              style={{
+                backgroundColor: 'rgba(220, 38, 38, 0.12)',
+              }}
+            />
+
+            {/* Semi-transparent X marks */}
+            <svg
+              className="w-full h-full absolute inset-0"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              {/* First diagonal line */}
+              <line
+                x1="10" y1="10"
+                x2="90" y2="90"
+                stroke="rgba(220, 38, 38, 0.6)"
+                strokeWidth="8"
+                strokeLinecap="round"
+              />
+              {/* Second diagonal line */}
+              <line
+                x1="90" y1="10"
+                x2="10" y2="90"
+                stroke="rgba(220, 38, 38, 0.6)"
+                strokeWidth="8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
+
         {showTooltip && (
           <div className="absolute hidden group-hover:block bg-black/90 text-white px-2 py-1 rounded text-xs -top-10 whitespace-nowrap z-50 shadow-xl">
             {getTooltipContent()}

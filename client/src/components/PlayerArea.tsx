@@ -2,7 +2,7 @@ import type { Player } from '@shared/types/index';
 import Card from './Card';
 import Avatar from './Avatar';
 import AnimatedNumber from './AnimatedNumber';
-import { calculateScore, hasFlip7 } from '../utils/gameLogic';
+import { calculateScore, calculateBaseScore, hasFlip7 } from '../utils/gameLogic';
 import { useGameStore } from '../stores/gameStore';
 import { getAICharacterIconPath } from '../utils/aiPlayerNames';
 
@@ -30,7 +30,15 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
   }
 
   const score = calculateScore(player);
+  const baseScore = calculateBaseScore(player);
   const hasFlip7Bonus = hasFlip7(player);
+  const flip7BonusAmount = 15;
+
+  // Identify duplicate number cards (bust cards)
+  const numberCardValues = player.numberCards.map(card => card.value);
+  const duplicateValues = numberCardValues.filter((value, index) =>
+    numberCardValues.indexOf(value) !== index
+  );
 
   const paddingClass = isCompact ? 'p-0.5 sm:p-1' : 'p-1.5 sm:p-2 md:p-3';
   const headerMarginClass = isCompact ? 'mb-0.5' : 'mb-1 sm:mb-2';
@@ -97,12 +105,26 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
           <div className="text-left">
             <div className={`${isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'} font-semibold text-gray-300`}>Total: <span className={`${isCompact ? 'text-xs sm:text-sm' : 'text-base sm:text-lg'} font-bold text-white`}><AnimatedNumber value={player.score} duration={600} /></span></div>
             <div className={`font-bold ${scoreSizeClass} text-white flex items-center gap-1 sm:gap-2`}>
-              <span>Round:</span> 
-              <span className={`${isCompact ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-extrabold ${
-                score > 7 ? 'text-red-400' : score === 7 ? 'text-green-400' : 'text-white'
-              }`}>{score}</span>
-              {hasFlip7Bonus && (
-                <span className="ml-0.5 sm:ml-1 font-extrabold text-[10px] sm:text-sm text-green-300 animate-bounce-soft">+15 🎉</span>
+              <span>Round:</span>
+              {hasFlip7Bonus ? (
+                // Show base + bonus when Flip 7 achieved
+                <div className="flex items-center gap-1">
+                  <span className={`${isCompact ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-extrabold text-green-400`}>
+                    {baseScore}
+                  </span>
+                  <span className={`${isCompact ? 'text-xs' : 'text-sm'} text-gray-300`}>+</span>
+                  <span className={`${isCompact ? 'text-base sm:text-lg' : 'text-xl sm:text-2xl'} font-extrabold text-yellow-300`}>
+                    {flip7BonusAmount}
+                  </span>
+                  <span className={`${isCompact ? 'text-base' : 'text-xl'}`}>🎉</span>
+                </div>
+              ) : (
+                // Show current round score normally
+                <span className={`${isCompact ? 'text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-extrabold ${
+                  score > 7 ? 'text-red-400' : score === 7 ? 'text-green-400' : 'text-white'
+                }`}>
+                  {score}
+                </span>
               )}
               {/* Card count indicator */}
               <span className={`${isCompact ? 'text-[8px] sm:text-xs' : 'text-xs'} text-gray-400 ml-auto`}>
@@ -158,16 +180,21 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
         {/* Number cards - Always reserve space with flip animations */}
         <div className={`flex gap-0.5 sm:gap-1 flex-wrap min-h-[2rem] sm:min-h-[3.5rem] md:min-h-[5rem] overflow-hidden`}>
           {player.numberCards.length > 0 ? (
-            player.numberCards.map((card, index) => (
-              <Card 
-                key={card.id} 
-                card={card} 
-                size={isCompact ? "xs" : "sm"} 
-                animate="flip"
-                showTooltip={true}
-                className={`animation-delay-${index * 100}`}
-              />
-            ))
+            player.numberCards.map((card, index) => {
+              // Check if this card value appears more than once (is a duplicate/bust card)
+              const isBustedCard = duplicateValues.includes(card.value);
+              return (
+                <Card
+                  key={card.id}
+                  card={card}
+                  size={isCompact ? "xs" : "sm"}
+                  animate="flip"
+                  showTooltip={true}
+                  isBusted={isBustedCard}
+                  className={`animation-delay-${index * 100}`}
+                />
+              );
+            })
           ) : (
             <div className="w-full h-full"></div>
           )}

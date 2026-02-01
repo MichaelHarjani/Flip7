@@ -394,7 +394,9 @@ export class GameService {
       case 'flipThree':
         // Player must accept next 3 cards immediately
         // Draw 3 cards for the target player
-        for (let i = 0; i < 3; i++) {
+        const totalCardsToDraw = this.gameState.pendingFlipThreeCards || 3;
+
+        for (let i = 0; i < totalCardsToDraw; i++) {
           if (this.gameState.deck.length === 0) {
             if (this.gameState.discardPile.length === 0) {
               break; // No more cards available
@@ -402,22 +404,89 @@ export class GameService {
             this.gameState.deck = shuffleDeck([...this.gameState.discardPile]);
             this.gameState.discardPile = [];
           }
-          
+
           const newCard = this.gameState.deck.pop();
           if (!newCard) break;
-          
+
           // Deal the card (pass isResolvingFlipThree=true to prevent infinite recursion)
           this.dealCardToPlayer(player, newCard, false, true);
-          
+
+          // Check if a pending action card was created (e.g., Freeze drawn during Flip Three)
+          // If so, pause Flip Three execution and let player resolve the action card first
+          if (this.gameState.pendingActionCard && this.gameState.pendingActionCard.playerId === player.id) {
+            // Store remaining cards to draw after resolving the pending action
+            const remainingCards = totalCardsToDraw - (i + 1);
+            if (remainingCards > 0) {
+              this.gameState.pendingFlipThreeCards = remainingCards;
+            } else {
+              this.gameState.pendingFlipThreeCards = undefined;
+            }
+            console.log(`[Flip Three] Paused at card ${i + 1}/${totalCardsToDraw}, ${remainingCards} remaining. Pending action: ${this.gameState.pendingActionCard.actionType}`);
+            break; // Pause Flip Three to resolve the pending action card
+          }
+
           // Stop if player busted or achieved Flip 7
           if (player.hasBusted || hasFlip7(player)) {
+            this.gameState.pendingFlipThreeCards = undefined; // Clear any pending
             break;
           }
         }
+
+        // If all cards were drawn successfully, clear pending count
+        if (!this.gameState.pendingActionCard) {
+          this.gameState.pendingFlipThreeCards = undefined;
+        }
+
         return false; // Flip Three card is discarded after use, but handled in playActionCard
     }
     
     return false; // Default: card should be added to hand
+  }
+
+  /**
+   * Resume Flip Three execution after resolving a pending action card
+   */
+  private resumeFlipThree(player: Player): void {
+    if (!this.gameState || !this.gameState.pendingFlipThreeCards) return;
+
+    const remainingCards = this.gameState.pendingFlipThreeCards;
+    console.log(`[Flip Three] Resuming execution for ${player.name}. Drawing ${remainingCards} more cards.`);
+
+    // Clear the pending count before drawing to avoid re-triggering
+    this.gameState.pendingFlipThreeCards = undefined;
+
+    // Draw the remaining cards
+    for (let i = 0; i < remainingCards; i++) {
+      if (this.gameState.deck.length === 0) {
+        if (this.gameState.discardPile.length === 0) {
+          break; // No more cards available
+        }
+        this.gameState.deck = shuffleDeck([...this.gameState.discardPile]);
+        this.gameState.discardPile = [];
+      }
+
+      const newCard = this.gameState.deck.pop();
+      if (!newCard) break;
+
+      // Deal the card (pass isResolvingFlipThree=true to prevent infinite recursion)
+      this.dealCardToPlayer(player, newCard, false, true);
+
+      // Check if another pending action card was created
+      if (this.gameState.pendingActionCard && this.gameState.pendingActionCard.playerId === player.id) {
+        // Store remaining cards again and pause
+        const newRemainingCards = remainingCards - (i + 1);
+        if (newRemainingCards > 0) {
+          this.gameState.pendingFlipThreeCards = newRemainingCards;
+        }
+        console.log(`[Flip Three] Paused again. ${newRemainingCards} cards remaining.`);
+        break; // Pause again
+      }
+
+      // Stop if player busted or achieved Flip 7
+      if (player.hasBusted || hasFlip7(player)) {
+        break;
+      }
+    }
   }
 
   /**
@@ -765,6 +834,9 @@ export class GameService {
       }
     }
 
+    // Check if there are pending Flip Three cards before removing the card from hand
+    const hadPendingFlipThree = this.gameState.pendingFlipThreeCards && this.gameState.pendingFlipThreeCards > 0;
+
     // Remove card from player's hand
     player.actionCards = player.actionCards.filter(c => c.id !== cardId);
     player.cards = player.cards.filter(c => c.id !== cardId);
@@ -775,7 +847,7 @@ export class GameService {
       // Apply the card effect to the target
       // Pass playerId for freeze to track who froze them
       this.handleActionCard(targetPlayer, card, false, card.actionType === 'freeze' ? playerId : undefined);
-      
+
       if (card.actionType === 'freeze') {
         // Freeze card stays visible on the target player
         targetPlayer.cards.push(card);
@@ -790,15 +862,23 @@ export class GameService {
       this.dealCardToPlayer(targetPlayer, card, false);
     }
 
+    // Clear pending action card
+    this.gameState.pendingActionCard = undefined;
+
+    // If we just resolved a Freeze card during Flip Three execution, resume drawing
+    if (hadPendingFlipThree && card.actionType === 'freeze' && this.gameState.pendingFlipThreeCards && this.gameState.pendingFlipThreeCards > 0) {
+      this.resumeFlipThree(player);
+    }
+
     // Move to next player after resolving action card (if round is still active)
     // BUT: If the target player is the current player and they now have a pending action card
     // (e.g., one of the 3 cards drawn was an action card), don't move to next player yet
     // Let them resolve the new pending action card first
     if (this.gameState.gameStatus === 'playing') {
       const targetIsCurrentPlayer = targetPlayer.id === this.gameState.players[this.gameState.currentPlayerIndex].id;
-      const hasNewPendingAction = this.gameState.pendingActionCard && 
+      const hasNewPendingAction = this.gameState.pendingActionCard &&
                                   this.gameState.pendingActionCard.playerId === targetPlayer.id;
-      
+
       // Only move to next player if target doesn't have a new pending action card to resolve
       if (!(targetIsCurrentPlayer && hasNewPendingAction)) {
         this.moveToNextPlayer();

@@ -61,6 +61,7 @@ export interface GameState {
     cardId: string;
     actionType: 'freeze' | 'flipThree';
   }; // Action card that must be resolved immediately
+  pendingFlipThreeCards?: number; // Remaining cards to draw from Flip Three after resolving pending action card
 }
 
 export type GameAction = 

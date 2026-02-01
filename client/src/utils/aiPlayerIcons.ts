@@ -1,39 +1,50 @@
 /**
  * AI Character Icon Utilities
  * Maps character names to their icon image paths
+ * Flip 7 Card Game Characters
  */
 
 // Character icon mappings - will be populated after extraction
 export const AI_CHARACTER_ICONS: Record<string, string> = {
-  'Wall-E': '/src/assets/ai-icons/Wall-E.png',
-  'R2-D2': '/src/assets/ai-icons/R2-D2.png',
-  'Herbie': '/src/assets/ai-icons/Herbie.png',
-  'C-3PO': '/src/assets/ai-icons/C-3PO.png',
-  'EVE': '/src/assets/ai-icons/EVE.png',
-  'Baymax': '/src/assets/ai-icons/Baymax.png',
-  '7 of 9': '/src/assets/ai-icons/7-of-9.png',
-  'T-800': '/src/assets/ai-icons/T-800.png',
-  'HAL 9000': '/src/assets/ai-icons/HAL-9000.png',
-  'Ben 10': '/src/assets/ai-icons/Ben-10.png',
+  'Lucky Seven': '/src/assets/ai-icons/Lucky-Seven.png',
+  'Ace Diamond': '/src/assets/ai-icons/Ace-Diamond.png',
+  'Queen Hearts': '/src/assets/ai-icons/Queen-Hearts.png',
+  'Wild Card': '/src/assets/ai-icons/Wild-Card.png',
+  'Chip Master': '/src/assets/ai-icons/Chip-Master.png',
+  'Blaze': '/src/assets/ai-icons/Blaze.png',
+  'Shuffle': '/src/assets/ai-icons/Shuffle.png',
+  'Professor Odds': '/src/assets/ai-icons/Professor-Odds.png',
+  'Maverick': '/src/assets/ai-icons/Maverick.png',
+  'Lady Luck': '/src/assets/ai-icons/Lady-Luck.png',
+  'Royal Flush': '/src/assets/ai-icons/Royal-Flush.png',
+  'Jack Spades': '/src/assets/ai-icons/Jack-Spades.png',
+  'The Joker': '/src/assets/ai-icons/The-Joker.png',
+  'High Stakes': '/src/assets/ai-icons/High-Stakes.png',
+  'Double Down': '/src/assets/ai-icons/Double-Down.png',
+  'Snake Eyes': '/src/assets/ai-icons/Snake-Eyes.png',
+  'Full House': '/src/assets/ai-icons/Full-House.png',
+  'All In Annie': '/src/assets/ai-icons/All-In-Annie.png',
+  'Card Shark': '/src/assets/ai-icons/Card-Shark.png',
+  'Pocket Aces': '/src/assets/ai-icons/Pocket-Aces.png',
 };
 
 /**
  * Get the icon path for an AI character name
  * @param characterName - The character name
- * @returns The path to the character's icon, or a default robot emoji
+ * @returns The path to the character's icon, or a default card emoji
  */
 export function getAICharacterIcon(characterName: string): string {
   // Try to get the icon path
   const iconPath = AI_CHARACTER_ICONS[characterName];
-  
+
   if (iconPath) {
     // In Vite, we need to import images dynamically or use them as assets
     // For now, return the path - we'll handle the import in the component
     return iconPath;
   }
-  
+
   // Fallback to emoji if icon not found
-  return '🤖';
+  return '🎴';
 }
 
 /**
