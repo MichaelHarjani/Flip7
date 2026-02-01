@@ -1,27 +1,19 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { useWebSocketStore } from '../stores/websocketStore';
 import { useRoomStore } from '../stores/roomStore';
 import { useThemeStore } from '../stores/themeStore';
-import { useStatsStore, type MatchParticipant, type GameMode } from '../stores/statsStore';
-import { useAchievementStore } from '../stores/achievementStore';
-import { useAuthStore } from '../stores/authStore';
 import PlayerArea from './PlayerArea';
 import ActionButtons from './ActionButtons';
 import ActionCardButtons from './ActionCardButtons';
 import ScoreDisplay from './ScoreDisplay';
 import GameStats from './GameStats';
-import Settings from './Settings';
 import confetti from 'canvas-confetti';
 import { hasFlip7 } from '../utils/gameLogic';
 import { playSound } from '../utils/sounds';
 import logger from '../utils/logger';
 import ConfirmDialog from './ConfirmDialog';
 import { GameBoardSkeleton } from './Skeleton';
-import { Flip7Logo } from './ui';
-import { useKeyBindings } from '../hooks/useKeyBindings';
-import { getStoredProfile, KEY_BINDING_PROFILES, KeyBindingProfile } from '../config/keyBindings';
-import { Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 
 interface GameBoardProps {
   onNewGame?: () => void;
@@ -32,11 +24,9 @@ interface GameBoardProps {
 export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardProps) {
   const { gameState, makeAIDecision, startNextRound, startRound, loading, error, setGameState } = useGameStore();
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const { roomCode, isHost } = useRoomStore();
-  const { theme, getThemeConfig } = useThemeStore();
+  const { getThemeConfig } = useThemeStore();
   const themeConfig = getThemeConfig();
-  const isVintageTheme = theme === 'vintage-flip7';
   const [aiThinkingPlayerId, setAiThinkingPlayerId] = useState<string | null>(null);
   const [lastAction, _setLastAction] = useState<string | null>(null);
   const maxThinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -50,7 +40,6 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
   const confettiIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastProcessedStateRef = useRef<string>(''); // Track last processed game state to detect changes
   const [screenShake, setScreenShake] = useState(false);
-  const [keyProfile] = useState<KeyBindingProfile>(() => getStoredProfile());
 
   // Round end countdown for multiplayer (3 seconds)
   const [roundEndCountdown, setRoundEndCountdown] = useState<number>(0);
@@ -101,59 +90,53 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
     });
   }
 
-  // Keyboard shortcuts using the key bindings hook
-  const handleHit = useCallback(() => {
-    if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) return;
-    const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
-    if (hasPendingActionCard) return;
-
-    playSound('cardDraw');
-    useGameStore.getState().hit(currentHumanPlayer.id);
-  }, [currentHumanPlayer, gameState?.pendingActionCard]);
-
-  const handleStay = useCallback(() => {
-    if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) return;
-    const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
-    if (hasPendingActionCard) return;
-
-    playSound('click');
-    useGameStore.getState().stay(currentHumanPlayer.id);
-  }, [currentHumanPlayer, gameState?.pendingActionCard]);
-
-  const handleNextRoundKey = useCallback(() => {
-    if (gameState?.gameStatus === 'roundEnd') {
-      startNextRound();
-    }
-  }, [gameState?.gameStatus, startNextRound]);
-
-  // Use the key bindings hook
-  const currentBindings = useKeyBindings(
-    {
-      onHit: handleHit,
-      onStay: handleStay,
-      onNextRound: handleNextRoundKey,
-    },
-    keyProfile,
-    // Enable when player can act or round is over
-    (!!currentHumanPlayer && currentHumanPlayer.isActive && !currentHumanPlayer.hasBusted) ||
-    gameState?.gameStatus === 'roundEnd'
-  );
-
-  // Escape key handler (separate from game actions)
+  // Keyboard shortcuts
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && onBack) {
-        if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
-          setShowLeaveConfirm(true);
-        } else {
-          onBack();
+    const { hit, stay } = useGameStore.getState();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Only allow shortcuts during active play
+      if (!currentHumanPlayer || !currentHumanPlayer.isActive || currentHumanPlayer.hasBusted) {
+        // Esc to go back still works
+        if (e.key === 'Escape' && onBack) {
+          if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
+            setShowLeaveConfirm(true);
+          } else {
+            onBack();
+          }
         }
+        return;
+      }
+
+      // Check for pending action card
+      const hasPendingActionCard = gameState?.pendingActionCard?.playerId === currentHumanPlayer.id;
+      if (hasPendingActionCard) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'h':
+          playSound('cardDraw');
+          hit(currentHumanPlayer.id);
+          break;
+        case 's':
+          playSound('click');
+          stay(currentHumanPlayer.id);
+          break;
+        case 'escape':
+          if (onBack) {
+            setShowLeaveConfirm(true);
+          }
+          break;
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [onBack, gameState?.gameStatus]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentHumanPlayer, gameState?.pendingActionCard, gameState?.gameStatus, onBack]);
 
   // Listen for WebSocket game state updates in multiplayer mode
   useEffect(() => {
@@ -382,106 +365,6 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       winSoundPlayedRef.current = false;
     }
   }, [gameState?.gameStatus]);
-
-  // Record match stats when game ends
-  const matchRecordedRef = useRef(false);
-  const { recordMatch } = useStatsStore();
-  const { processGameEnd, checkAndUnlockAchievements } = useAchievementStore();
-  const { user } = useAuthStore();
-
-  useEffect(() => {
-    if (gameState?.gameStatus === 'gameEnd' && !matchRecordedRef.current && gameState.players) {
-      matchRecordedRef.current = true;
-
-      // Find winner
-      const winner = gameState.players.reduce((prev, current) =>
-        current.score > prev.score ? current : prev
-      );
-
-      // Determine game mode
-      let gameMode: GameMode = 'single';
-      if (multiplayerRoomCode) {
-        gameMode = 'online';
-      } else if (gameState.players.filter(p => !p.isAI).length > 1) {
-        gameMode = 'local';
-      }
-
-      // Build participants list with stats from round history
-      const participants: MatchParticipant[] = gameState.players.map(player => {
-        // Count flip 7s and busts from round history
-        let flip7Count = 0;
-        let bustCount = 0;
-        const roundScores: number[] = [];
-
-        gameState.roundHistory?.forEach(round => {
-          const roundScore = round.playerScores[player.id] || 0;
-          roundScores.push(roundScore);
-
-          // Check if player had 7+ number cards (Flip 7)
-          const playerCards = round.playerCards[player.id] || [];
-          const numberCards = playerCards.filter(c => c.type === 'number');
-          if (numberCards.length >= 7) {
-            flip7Count++;
-          }
-
-          // Check if player busted
-          if (round.playerBusts[player.id]) {
-            bustCount++;
-          }
-        });
-
-        return {
-          id: player.id,
-          name: player.name,
-          score: player.score,
-          userId: player.id === localPlayerId ? user?.id : null,
-          isAI: player.isAI,
-          flip7Count,
-          bustCount,
-          roundScores,
-        };
-      });
-
-      // Record the match
-      recordMatch({
-        gameId: `game-${Date.now()}`,
-        gameMode,
-        winnerId: winner.id,
-        winnerName: winner.name,
-        winnerScore: winner.score,
-        winnerUserId: winner.id === localPlayerId ? user?.id : null,
-        totalRounds: gameState.round,
-        targetScore: 200,
-        participants,
-      });
-
-      logger.log('[GameBoard] Match recorded:', { winner: winner.name, rounds: gameState.round });
-
-      // Process achievements and XP
-      const humanParticipant = participants.find(p => !p.isAI && (p.userId === user?.id || p.id === localPlayerId));
-      if (humanParticipant) {
-        const isWin = winner.id === humanParticipant.id;
-        const { xpEarned, leveledUp, newLevel } = processGameEnd(
-          humanParticipant.score,
-          isWin,
-          humanParticipant.flip7Count
-        );
-
-        // Check for new achievement unlocks
-        const stats = useStatsStore.getState().stats;
-        if (stats) {
-          checkAndUnlockAchievements({
-            ...stats,
-            highestRoundScore: Math.max(stats.highestRoundScore, ...humanParticipant.roundScores),
-          });
-        }
-
-        logger.log('[GameBoard] XP earned:', xpEarned, 'Level up:', leveledUp, 'New level:', newLevel);
-      }
-    } else if (gameState?.gameStatus !== 'gameEnd') {
-      matchRecordedRef.current = false;
-    }
-  }, [gameState?.gameStatus, gameState?.players, gameState?.round, gameState?.roundHistory, localPlayerId, user?.id, recordMatch, multiplayerRoomCode, processGameEnd, checkAndUnlockAchievements]);
 
   // Play notification sound when it's the local player's turn in multiplayer
   const wasLocalPlayerTurnRef = useRef<boolean>(false);
@@ -764,6 +647,26 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
   return (
     <div className={`w-full max-w-[100vw] lg:max-w-[90vw] xl:max-w-[85vw] 2xl:max-w-[80vw] mx-auto flex flex-col p-0.5 sm:p-1 md:p-2 lg:p-4 relative no-select h-full ${screenShake ? 'screen-shake' : ''}`}>
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={() => {
+            // Show confirmation if game is in progress
+            if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
+              setShowLeaveConfirm(true);
+            } else {
+              onBack();
+            }
+          }}
+          className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 border-2 border-gray-600 text-white transition-colors"
+          aria-label="Back to main menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+
       {/* Leave game confirmation dialog */}
       {showLeaveConfirm && onBack && (
         <ConfirmDialog
@@ -779,134 +682,31 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           onCancel={() => setShowLeaveConfirm(false)}
         />
       )}
-      {/* Settings Modal */}
-      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
-
       {/* Scaled content wrapper - mobile uses zoom for better fit */}
       <div className="flex-1 flex flex-col min-h-0 game-content-scale overflow-hidden">
-        {/* Game Header with Logo, Stats, and Settings */}
-        <div
-          className="mb-1 rounded-lg shadow-lg flex-shrink-0 border-2"
-          style={{
-            borderColor: isVintageTheme ? '#8b4513' : undefined,
-            background: isVintageTheme
-              ? 'linear-gradient(180deg, rgba(45,24,16,0.95) 0%, rgba(61,37,24,0.9) 100%)'
-              : undefined,
-            boxShadow: isVintageTheme ? '0 2px 8px rgba(0,0,0,0.3)' : undefined,
-          }}
-        >
-          {/* Top row: Back, Logo, Round/Deck/Settings */}
-          <div className="flex items-center justify-between p-1.5 sm:p-2">
-            {/* Left: Back button */}
-            <div className="w-20 sm:w-24">
-              {onBack && (
-                <button
-                  onClick={() => {
-                    if (gameState?.gameStatus === 'playing' || gameState?.gameStatus === 'roundEnd') {
-                      setShowLeaveConfirm(true);
-                    } else {
-                      onBack();
-                    }
-                  }}
-                  className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-all hover:scale-105"
-                  style={isVintageTheme ? {
-                    backgroundColor: 'rgba(139,69,19,0.6)',
-                    border: '2px solid #d4af37',
-                    color: '#f5f1e8',
-                  } : {
-                    backgroundColor: 'rgba(55, 65, 81, 0.8)',
-                    border: '2px solid rgb(75, 85, 99)',
-                    color: 'white',
-                  }}
-                  aria-label="Back to main menu"
-                >
-                  <ArrowLeft size={16} />
-                  <span className="hidden sm:inline text-xs font-semibold">Back</span>
-                </button>
-              )}
-            </div>
-
-            {/* Center: Logo */}
-            <div className="flex-1 flex justify-center">
-              <Flip7Logo size="xs" />
-            </div>
-
-            {/* Right: Game info and settings */}
-            <div className="flex items-center gap-1 sm:gap-2 w-20 sm:w-24 justify-end">
-              {/* Round indicator */}
-              <div
-                className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-card"
-                style={isVintageTheme ? {
-                  backgroundColor: 'rgba(139,69,19,0.6)',
-                  border: '1px solid #d4af37',
-                  color: '#f5f1e8',
-                } : {
-                  backgroundColor: 'rgba(55, 65, 81, 0.8)',
-                  border: '1px solid rgb(75, 85, 99)',
-                  color: 'white',
-                }}
-              >
-                <span className={isVintageTheme ? 'text-flip7-vintage' : 'text-gray-400'}>R</span>
-                <span className={`font-bold ${isVintageTheme ? 'text-flip7-gold' : 'text-yellow-400'}`}>{gameState.round || 1}</span>
-              </div>
-
-              {/* Deck count */}
-              <div
-                className="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-card"
-                style={isVintageTheme ? {
-                  backgroundColor: 'rgba(139,69,19,0.6)',
-                  border: '1px solid #d4af37',
-                  color: '#f5f1e8',
-                } : {
-                  backgroundColor: 'rgba(55, 65, 81, 0.8)',
-                  border: '1px solid rgb(75, 85, 99)',
-                  color: 'white',
-                }}
-                title="Cards remaining in deck"
-              >
-                <span className="text-xs">🃏</span>
-                <span className={`font-bold ml-0.5 ${isVintageTheme ? 'text-flip7-gold' : 'text-yellow-400'}`}>{gameState.deck?.length || 0}</span>
-              </div>
-
-              {/* Settings button */}
-              <button
-                onClick={() => setShowSettings(true)}
-                className="p-1 sm:p-1.5 rounded-lg transition-all hover:scale-105"
-                style={isVintageTheme ? {
-                  backgroundColor: 'rgba(139,69,19,0.6)',
-                  border: '2px solid #d4af37',
-                  color: '#d4af37',
-                } : {
-                  backgroundColor: 'rgba(55, 65, 81, 0.8)',
-                  border: '2px solid rgb(75, 85, 99)',
-                  color: 'rgb(156, 163, 175)',
-                }}
-                aria-label="Settings"
-              >
-                <SettingsIcon size={14} className="sm:w-4 sm:h-4" />
-              </button>
+        {/* Compact header with scores and game state indicators */}
+        <div className={`mb-0.5 sm:mb-1 rounded-lg shadow-lg p-1 border sm:border-2 flex-shrink-0 ${themeConfig.cardBg} ${themeConfig.cardBorder}`}>
+          <div className="flex justify-between items-center gap-1 mb-0.5">
+            <h1 className={`text-sm sm:text-lg md:text-xl font-bold ${themeConfig.textPrimary} ${onBack ? 'ml-10 sm:ml-12' : ''}`}>Flip 7</h1>
+            <div className={`text-[9px] sm:text-[10px] ${themeConfig.textSecondary} flex items-center gap-1`}>
+              <span className="font-semibold">R{gameState.round || 1}</span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5" title="Cards remaining in deck">
+                <span className="text-sm">🃏</span>
+                <span>{gameState.deck?.length || 0}</span>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-0.5" title="Dealer">
+                <span className="text-sm">🎴</span>
+                <span>{gameState.players?.[gameState.dealerIndex]?.name || '?'}</span>
+              </span>
             </div>
           </div>
-
-          {/* Score tracker row */}
-          <div className="px-1.5 pb-1.5 sm:px-2 sm:pb-2">
-            <ScoreDisplay />
-          </div>
-
+          <ScoreDisplay />
+          
           {/* Last action indicator */}
           {lastAction && (
-            <div
-              className="mx-1.5 mb-1.5 sm:mx-2 sm:mb-2 text-[9px] sm:text-xs text-center rounded px-2 py-0.5 animate-scale-in"
-              style={isVintageTheme ? {
-                backgroundColor: 'rgba(70,130,180,0.3)',
-                border: '1px solid #4682b4',
-                color: '#87ceeb',
-              } : {
-                backgroundColor: 'rgba(30, 58, 138, 0.5)',
-                border: '1px solid rgb(37, 99, 235)',
-                color: 'rgb(191, 219, 254)',
-              }}
-            >
+            <div className="mt-1 text-[9px] sm:text-xs text-center bg-blue-900/50 border border-blue-600 rounded px-2 py-0.5 text-blue-200 animate-scale-in">
               {lastAction}
             </div>
           )}
@@ -952,20 +752,15 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Content area - AI players and human player - no scrolling for single-page view */}
-            <div className="flex-1 min-h-0 mb-1 sm:mb-2 overflow-x-hidden flex flex-col">
+            {/* Scrollable content area - AI players and human player */}
+            <div className="flex-1 overflow-y-auto min-h-0 mb-1 sm:mb-2 scrollbar-thin overflow-x-hidden" style={{ 
+              paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom, 0px))',
+              WebkitOverflowScrolling: 'touch'
+            }}>
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-1 sm:mb-2">
-                {/* Dynamic grid based on player count */}
-                <div className={`grid gap-2 sm:gap-3 ${
-                  aiPlayers.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-                  aiPlayers.length === 2 ? 'grid-cols-2' :
-                  aiPlayers.length === 3 ? 'grid-cols-3' :
-                  aiPlayers.length === 4 ? 'grid-cols-2 lg:grid-cols-4' :
-                  aiPlayers.length === 5 ? 'grid-cols-3' :
-                  'grid-cols-3'
-                }`}>
+              <div className="flex-shrink-0 mb-1 sm:mb-2 lg:mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -981,12 +776,12 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
                           isDealer={originalIndex === gameState.dealerIndex}
                           isCompact={true}
                         />
-                        {/* Thinking message - only show when active */}
-                        {isThinking && (
-                          <div className="mt-0.5 text-center text-[10px] sm:text-xs italic text-gray-400">
-                            {player.name} thinking...
-                          </div>
-                        )}
+                        {/* Reserve space for thinking message to prevent jumping */}
+                        <div className={`mt-0.5 text-center text-[10px] sm:text-xs italic h-3 sm:h-4 ${
+                          isThinking ? 'text-gray-400' : 'text-transparent'
+                        }`}>
+                          {isThinking ? `${player.name} thinking...` : '\u00A0'}
+                        </div>
                       </div>
                     );
                   })}
@@ -996,28 +791,41 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-2 pt-1 sm:pt-2 mt-1 sm:mt-2 border-yellow-600/50">
-                {/* Dynamic grid based on human player count */}
-                <div className={`grid gap-2 sm:gap-3 ${
-                  humanPlayers.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' :
-                  humanPlayers.length === 2 ? 'grid-cols-2' :
-                  humanPlayers.length === 3 ? 'grid-cols-3' :
-                  humanPlayers.length === 4 ? 'grid-cols-2' :
-                  'grid-cols-3'
-                }`}>
-                  {humanPlayers.map((player) => {
-                    const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
-                    return (
-                      <PlayerArea
-                        key={player.id || `player-${originalIndex}`}
-                        player={player}
-                        isCurrentPlayer={!isRoundEnd && originalIndex === gameState.currentPlayerIndex}
-                        isDealer={originalIndex === gameState.dealerIndex}
-                        isCompact={true}
-                      />
-                    );
-                  })}
-                </div>
+              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-1 sm:pt-2 lg:pt-4 mt-1 sm:mt-2 lg:mt-4 border-yellow-600/50">
+                {humanPlayers.length > 1 ? (
+                  // Multiple human players (Local mode) - show in a grid
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                    {humanPlayers.map((player) => {
+                      const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
+                      return (
+                        <div key={player.id || `player-${originalIndex}`} className="flex flex-col">
+                          <PlayerArea
+                            player={player}
+                            isCurrentPlayer={!isRoundEnd && originalIndex === gameState.currentPlayerIndex}
+                            isDealer={originalIndex === gameState.dealerIndex}
+                            isCompact={true}
+                          />
+                          <div className="mt-1 text-center text-xs italic h-4 text-transparent">
+                            {'\u00A0'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Single human player - show larger on desktop
+                  <div className="lg:max-w-2xl lg:mx-auto">
+                    <PlayerArea
+                      player={humanPlayers[0]}
+                      isCurrentPlayer={!isRoundEnd && gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.currentPlayerIndex}
+                      isDealer={gameState.players?.findIndex(p => p.id === humanPlayers[0].id) === gameState.dealerIndex}
+                      isCompact={false}
+                    />
+                    <div className="mt-1 text-center text-xs italic h-4 text-transparent">
+                      {'\u00A0'}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1029,8 +837,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       {(localPlayer || humanPlayer || currentHumanPlayer) && (
         <div
           data-action-buttons
-          className="flex-shrink-0 pt-1 sm:pt-2 border-t-2 border-gray-600 space-y-1 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent"
-          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
+          className="flex-shrink-0 pt-3 sm:pt-4 pb-3 sm:pb-4 border-t-2 border-gray-600 space-y-1 sm:space-y-2 md:space-y-3 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[120px] sm:min-h-[140px] md:min-h-[160px]"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
         >
           {false && onNewGame ? (
             <div className="flex gap-2 sm:gap-3 justify-center">
@@ -1087,8 +895,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
             <div className="flex flex-col gap-1 sm:gap-2 md:gap-3">
-              <div className="flex items-start gap-2 sm:gap-4 md:gap-6 justify-center flex-wrap">
-                <ActionButtons playerId={currentHumanPlayer.id} bindings={currentBindings} />
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 justify-center flex-wrap">
+                <ActionButtons playerId={currentHumanPlayer.id} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
               </div>
             </div>

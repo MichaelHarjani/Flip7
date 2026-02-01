@@ -112,25 +112,25 @@ export default function ActionCardButtons({ playerId, actionCards }: ActionCardB
 
   return (
     <>
-      <div className="space-y-2 relative">
-        <div className="text-sm font-semibold mb-2 text-gray-300 flex items-center gap-2">
+      <div className="space-y-2 relative py-1">
+        <div className="text-sm font-semibold mb-1 text-gray-300 flex items-center gap-2">
           <span>⚡ Action Cards:</span>
           {loading && <span className="animate-spin text-xs">⟳</span>}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {playableCards.map((card, index) => {
             const info = getCardInfo(card.actionType || 'freeze');
             return (
               <div key={card.id} className="relative animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
-                <div 
+                <div
                   onClick={() => !loading && handleCardClick(card.id)}
                   className={`cursor-pointer transition-all duration-200 ${
                     loading ? 'cursor-not-allowed opacity-50' : 'hover:scale-110'
                   }`}
                 >
-                  <CardComponent 
-                    card={card} 
-                    size="sm" 
+                  <CardComponent
+                    card={card}
+                    size="sm"
                     playerId={playerId}
                     animate="scale-in"
                     showTooltip={true}

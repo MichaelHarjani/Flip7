@@ -1,17 +1,28 @@
 /**
  * List of AI player character names
+ * Flip 7 Card Game Characters - Each with unique personality
  */
 const AI_CHARACTER_NAMES = [
-  'Wall-E',
-  'R2-D2',
-  'Herbie',
-  'C-3PO',
-  'EVE',
-  'Baymax',
-  '7 of 9',
-  'T-800',
-  'HAL 9000',
-  'Ben 10',
+  'Lucky Seven',    // The luckiest player - always finds a way
+  'Ace Diamond',    // Flashy, confident high-roller
+  'Queen Hearts',   // Charming, strategic mastermind
+  'Wild Card',      // Unpredictable risk-taker
+  'Chip Master',    // Calculated, methodical player
+  'Blaze',          // Hot-headed, aggressive competitor
+  'Shuffle',        // Quick and nimble dealer
+  'Professor Odds', // Mathematical genius
+  'Maverick',       // Rebellious gambler
+  'Lady Luck',      // Mysterious fortune-blessed player
+  'Royal Flush',    // Regal aristocrat with commanding presence
+  'Jack Spades',    // Cool, mysterious jack-of-all-trades
+  'The Joker',      // Chaotic trickster, comedy and chaos
+  'High Stakes',    // Adrenaline junkie, thrives under pressure
+  'Double Down',    // Bold risk-taker, doubles everything
+  'Snake Eyes',     // Unlucky but persistent fighter
+  'Full House',     // Steady, balanced tactician
+  'All In Annie',   // Fearless gambler, never backs down
+  'Card Shark',     // Cunning predator of the table
+  'Pocket Aces',    // Cocky starter with premium hands
 ] as const;
 
 /**
@@ -20,16 +31,26 @@ const AI_CHARACTER_NAMES = [
  * Using Vite's public directory - files in public/ are served at root
  */
 const CHARACTER_ICONS: Record<string, string> = {
-  'Wall-E': '/assets/ai-icons/Wall-E.png',
-  'R2-D2': '/assets/ai-icons/R2-D2.png',
-  'Herbie': '/assets/ai-icons/Herbie.png',
-  'C-3PO': '/assets/ai-icons/C-3PO.png',
-  'EVE': '/assets/ai-icons/EVE.png',
-  'Baymax': '/assets/ai-icons/Baymax.png',
-  '7 of 9': '/assets/ai-icons/7-of-9.png',
-  'T-800': '/assets/ai-icons/T-800.png',
-  'HAL 9000': '/assets/ai-icons/HAL-9000.png',
-  'Ben 10': '/assets/ai-icons/Ben-10.png',
+  'Lucky Seven': '/assets/ai-icons/Lucky-Seven.png',
+  'Ace Diamond': '/assets/ai-icons/Ace-Diamond.png',
+  'Queen Hearts': '/assets/ai-icons/Queen-Hearts.png',
+  'Wild Card': '/assets/ai-icons/Wild-Card.png',
+  'Chip Master': '/assets/ai-icons/Chip-Master.png',
+  'Blaze': '/assets/ai-icons/Blaze.png',
+  'Shuffle': '/assets/ai-icons/Shuffle.png',
+  'Professor Odds': '/assets/ai-icons/Professor-Odds.png',
+  'Maverick': '/assets/ai-icons/Maverick.png',
+  'Lady Luck': '/assets/ai-icons/Lady-Luck.png',
+  'Royal Flush': '/assets/ai-icons/Royal-Flush.png',
+  'Jack Spades': '/assets/ai-icons/Jack-Spades.png',
+  'The Joker': '/assets/ai-icons/The-Joker.png',
+  'High Stakes': '/assets/ai-icons/High-Stakes.png',
+  'Double Down': '/assets/ai-icons/Double-Down.png',
+  'Snake Eyes': '/assets/ai-icons/Snake-Eyes.png',
+  'Full House': '/assets/ai-icons/Full-House.png',
+  'All In Annie': '/assets/ai-icons/All-In-Annie.png',
+  'Card Shark': '/assets/ai-icons/Card-Shark.png',
+  'Pocket Aces': '/assets/ai-icons/Pocket-Aces.png',
 };
 
 /**
