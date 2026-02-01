@@ -16,6 +16,16 @@ export const AI_CHARACTER_ICONS: Record<string, string> = {
   'Professor Odds': '/src/assets/ai-icons/Professor-Odds.png',
   'Maverick': '/src/assets/ai-icons/Maverick.png',
   'Lady Luck': '/src/assets/ai-icons/Lady-Luck.png',
+  'Royal Flush': '/src/assets/ai-icons/Royal-Flush.png',
+  'Jack Spades': '/src/assets/ai-icons/Jack-Spades.png',
+  'The Joker': '/src/assets/ai-icons/The-Joker.png',
+  'High Stakes': '/src/assets/ai-icons/High-Stakes.png',
+  'Double Down': '/src/assets/ai-icons/Double-Down.png',
+  'Snake Eyes': '/src/assets/ai-icons/Snake-Eyes.png',
+  'Full House': '/src/assets/ai-icons/Full-House.png',
+  'All In Annie': '/src/assets/ai-icons/All-In-Annie.png',
+  'Card Shark': '/src/assets/ai-icons/Card-Shark.png',
+  'Pocket Aces': '/src/assets/ai-icons/Pocket-Aces.png',
 };
 
 /**

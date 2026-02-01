@@ -13,6 +13,16 @@ const AI_CHARACTER_NAMES = [
   'Professor Odds', // Mathematical genius
   'Maverick',       // Rebellious gambler
   'Lady Luck',      // Mysterious fortune-blessed player
+  'Royal Flush',    // Regal aristocrat with commanding presence
+  'Jack Spades',    // Cool, mysterious jack-of-all-trades
+  'The Joker',      // Chaotic trickster, comedy and chaos
+  'High Stakes',    // Adrenaline junkie, thrives under pressure
+  'Double Down',    // Bold risk-taker, doubles everything
+  'Snake Eyes',     // Unlucky but persistent fighter
+  'Full House',     // Steady, balanced tactician
+  'All In Annie',   // Fearless gambler, never backs down
+  'Card Shark',     // Cunning predator of the table
+  'Pocket Aces',    // Cocky starter with premium hands
 ] as const;
 
 /**
@@ -31,6 +41,16 @@ const CHARACTER_ICONS: Record<string, string> = {
   'Professor Odds': '/assets/ai-icons/Professor-Odds.png',
   'Maverick': '/assets/ai-icons/Maverick.png',
   'Lady Luck': '/assets/ai-icons/Lady-Luck.png',
+  'Royal Flush': '/assets/ai-icons/Royal-Flush.png',
+  'Jack Spades': '/assets/ai-icons/Jack-Spades.png',
+  'The Joker': '/assets/ai-icons/The-Joker.png',
+  'High Stakes': '/assets/ai-icons/High-Stakes.png',
+  'Double Down': '/assets/ai-icons/Double-Down.png',
+  'Snake Eyes': '/assets/ai-icons/Snake-Eyes.png',
+  'Full House': '/assets/ai-icons/Full-House.png',
+  'All In Annie': '/assets/ai-icons/All-In-Annie.png',
+  'Card Shark': '/assets/ai-icons/Card-Shark.png',
+  'Pocket Aces': '/assets/ai-icons/Pocket-Aces.png',
 };
 
 /**
