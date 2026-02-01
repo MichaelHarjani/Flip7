@@ -492,7 +492,6 @@ function App() {
       {/* Only show connection indicator for multiplayer modes */}
       {multiplayerMode && <ConnectionIndicator />}
       <div className="container mx-auto flex-1 flex flex-col min-h-0">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-0.5 flex-shrink-0 text-white">Flip 7</h1>
         {error && (
           <div className="border-2 px-4 py-2 rounded mb-2 flex justify-between items-center max-w-4xl mx-auto flex-shrink-0 text-sm bg-red-900 border-red-600 text-red-100">
             <span>{error}</span>

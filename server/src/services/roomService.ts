@@ -1,7 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { GameRoom, PlayerSession } from '../shared/types/index.js';
+import type { GameRoom, PlayerSession, RoomSettings } from '../shared/types/index.js';
 import { sessionService } from './sessionService.js';
 import { supabase, isSupabaseAvailable } from '../config/supabase.js';
+
+const DEFAULT_ROOM_SETTINGS: RoomSettings = {
+  targetScore: 200,
+  turnTimeLimit: null,
+};
 
 /**
  * Service for managing game rooms
@@ -37,7 +42,7 @@ export class RoomService {
   /**
    * Create a new room
    */
-  createRoom(hostName: string, maxPlayers: number = 4, userId?: string): { room: GameRoom; sessionId: string; playerId: string } {
+  createRoom(hostName: string, maxPlayers: number = 4, userId?: string, settings?: RoomSettings): { room: GameRoom; sessionId: string; playerId: string } {
     const roomCode = this.generateRoomCode();
     const sessionId = uuidv4();
     const playerId = `player-${uuidv4()}`;
@@ -52,6 +57,7 @@ export class RoomService {
       players: [hostSession],
       maxPlayers,
       status: 'waiting',
+      settings: settings || DEFAULT_ROOM_SETTINGS,
       createdAt: new Date(),
     };
 
@@ -411,6 +417,7 @@ export class RoomService {
       players,
       maxPlayers: data.max_players,
       status: data.status,
+      settings: data.settings || DEFAULT_ROOM_SETTINGS,
       createdAt: new Date(data.created_at),
     };
 

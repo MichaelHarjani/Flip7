@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useThemeStore, themeConfigs, type ThemeType } from '../stores/themeStore';
-import { getSoundEnabled, setSoundEnabled, playSound } from '../utils/sounds';
+import { getSoundEnabled, setSoundEnabled, getMasterVolume, setMasterVolume, playSound } from '../utils/sounds';
 import { Modal, Button } from './ui';
 import KeyBindingSettings from './settings/KeyBindingSettings';
 import { Volume2, Palette, Zap, Keyboard } from 'lucide-react';
@@ -12,6 +12,7 @@ interface SettingsProps {
 export default function Settings({ onClose }: SettingsProps) {
   const { theme, reduceMotion, setTheme, setReduceMotion } = useThemeStore();
   const [soundEnabled, setSoundEnabledState] = useState(getSoundEnabled());
+  const [volume, setVolume] = useState(getMasterVolume());
   const isVintageTheme = theme === 'vintage-flip7';
 
   const handleSoundToggle = (enabled: boolean) => {
@@ -73,26 +74,62 @@ export default function Settings({ onClose }: SettingsProps) {
             <Volume2 size={20} className={iconClass} />
             <h3 className={`text-lg font-semibold ${sectionHeaderClass}`}>Audio</h3>
           </div>
-          <label
-            className={`flex items-center justify-between cursor-pointer p-3 rounded-lg ${
-              isVintageTheme ? 'bg-flip7-vintage/10' : 'bg-gray-700/50'
-            }`}
-          >
-            <div>
-              <div className={`font-semibold ${labelClass}`}>Sound Effects</div>
-              <p className={`text-sm ${sublabelClass}`}>Play sounds for game actions</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={soundEnabled}
-              onChange={(e) => handleSoundToggle(e.target.checked)}
-              className={`w-6 h-6 rounded cursor-pointer ${
-                isVintageTheme
-                  ? 'border-2 border-flip7-border bg-flip7-card-base text-flip7-gold focus:ring-flip7-gold'
-                  : 'border-2 border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500'
+          <div className="space-y-3">
+            <label
+              className={`flex items-center justify-between cursor-pointer p-3 rounded-lg ${
+                isVintageTheme ? 'bg-flip7-vintage/10' : 'bg-gray-700/50'
               }`}
-            />
-          </label>
+            >
+              <div>
+                <div className={`font-semibold ${labelClass}`}>Sound Effects</div>
+                <p className={`text-sm ${sublabelClass}`}>Play sounds for game actions</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={soundEnabled}
+                onChange={(e) => handleSoundToggle(e.target.checked)}
+                className={`w-6 h-6 rounded cursor-pointer ${
+                  isVintageTheme
+                    ? 'border-2 border-flip7-border bg-flip7-card-base text-flip7-gold focus:ring-flip7-gold'
+                    : 'border-2 border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500'
+                }`}
+              />
+            </label>
+
+            {soundEnabled && (
+              <div
+                className={`p-3 rounded-lg ${
+                  isVintageTheme ? 'bg-flip7-vintage/10' : 'bg-gray-700/50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`font-semibold ${labelClass}`}>Volume</div>
+                  <span className={`text-sm font-medium ${sublabelClass}`}>
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={volume}
+                  onChange={(e) => {
+                    const newVolume = parseFloat(e.target.value);
+                    setVolume(newVolume);
+                    setMasterVolume(newVolume);
+                  }}
+                  onMouseUp={() => playSound('click')}
+                  onTouchEnd={() => playSound('click')}
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${
+                    isVintageTheme
+                      ? 'bg-flip7-border accent-flip7-gold'
+                      : 'bg-gray-600 accent-blue-500'
+                  }`}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Visual Settings */}

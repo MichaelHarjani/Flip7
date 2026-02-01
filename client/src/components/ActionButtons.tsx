@@ -52,7 +52,7 @@ export default function ActionButtons({ playerId, disabled, bindings }: ActionBu
   const isDisabled = disabled || loading || localProcessing || hasPendingActionCard;
 
   return (
-    <div className="flex gap-3 sm:gap-4 md:gap-6 justify-center">
+    <div className="flex gap-2 sm:gap-3 md:gap-4 justify-center">
       <Button
         variant="success"
         size="lg"
@@ -60,7 +60,7 @@ export default function ActionButtons({ playerId, disabled, bindings }: ActionBu
         disabled={isDisabled}
         loading={loading}
         shortcut={bindings?.hit || 'h'}
-        className="min-w-[110px] sm:min-w-[130px] md:min-w-[140px]"
+        className="min-w-[100px] sm:min-w-[110px] md:min-w-[120px]"
       >
         <span className="mr-1.5">🎴</span>
         Hit
@@ -72,7 +72,7 @@ export default function ActionButtons({ playerId, disabled, bindings }: ActionBu
         disabled={isDisabled}
         loading={loading}
         shortcut={bindings?.stay || 's'}
-        className="min-w-[110px] sm:min-w-[130px] md:min-w-[140px]"
+        className="min-w-[100px] sm:min-w-[110px] md:min-w-[120px]"
       >
         <span className="mr-1.5">✋</span>
         Stay

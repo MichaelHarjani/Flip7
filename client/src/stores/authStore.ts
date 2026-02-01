@@ -8,6 +8,8 @@ export interface UserProfile {
   username: string;
   email: string;
   avatar_url: string | null;
+  avatar_id?: string | null; // Predefined avatar ID
+  bio?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +29,7 @@ export interface AuthStore {
   checkSession: () => Promise<{ user: User | null; session: Session | null }>;
   fetchProfile: () => Promise<UserProfile | null>;
   setProfile: (profile: UserProfile) => void;
+  updateProfile: (updates: { username?: string; bio?: string; avatar_id?: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -213,6 +216,40 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       profile,
       needsUsername: false,
     });
+  },
+
+  /**
+   * Update user profile
+   */
+  updateProfile: async (updates: { username?: string; bio?: string; avatar_id?: string }) => {
+    const { session, profile } = get();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:5001';
+    const response = await fetch(`${wsUrl}/api/profile`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Failed to update profile' }));
+      throw new Error(error.message || 'Failed to update profile');
+    }
+
+    const data = await response.json();
+
+    if (data.profile) {
+      set({
+        profile: data.profile,
+      });
+    }
   },
 }));
 

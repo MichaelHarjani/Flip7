@@ -26,6 +26,30 @@ export function getSoundEnabled(): boolean {
   return isSoundEnabled();
 }
 
+// Master volume control (0-1, default 0.5)
+function getMasterVolumeFromStorage(): number {
+  const stored = localStorage.getItem('flip7_masterVolume');
+  if (stored !== null) {
+    const parsed = parseFloat(stored);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+      return parsed;
+    }
+  }
+  return 0.5; // Default
+}
+
+let masterVolume = getMasterVolumeFromStorage();
+
+export function getMasterVolume(): number {
+  return masterVolume;
+}
+
+export function setMasterVolume(volume: number): void {
+  const clampedVolume = Math.max(0, Math.min(1, volume));
+  masterVolume = clampedVolume;
+  localStorage.setItem('flip7_masterVolume', String(clampedVolume));
+}
+
 // Play a simple tone
 function playTone(
   frequency: number,
@@ -53,7 +77,9 @@ function playTone(
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
 
-    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+    // Apply master volume
+    const adjustedVolume = volume * masterVolume;
+    gainNode.gain.setValueAtTime(adjustedVolume, ctx.currentTime);
     if (decay) {
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
     }
@@ -155,5 +181,5 @@ export function useSound() {
     playSound(type);
   }, []);
 
-  return { play, setSoundEnabled, getSoundEnabled };
+  return { play, setSoundEnabled, getSoundEnabled, getMasterVolume, setMasterVolume };
 }

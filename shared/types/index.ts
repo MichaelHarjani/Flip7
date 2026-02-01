@@ -78,6 +78,11 @@ export interface PlayerSession {
   lastSeen: Date;
 }
 
+export interface RoomSettings {
+  targetScore: 100 | 200 | 300 | 500;
+  turnTimeLimit: 15 | 30 | 60 | null; // null = unlimited
+}
+
 export interface GameRoom {
   roomCode: string;
   gameId: string | null;
@@ -85,6 +90,7 @@ export interface GameRoom {
   players: PlayerSession[];
   maxPlayers: number;
   status: 'waiting' | 'starting' | 'playing' | 'ended';
+  settings: RoomSettings;
   createdAt: Date;
 }
 

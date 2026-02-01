@@ -1,47 +1,13 @@
-interface FooterProps {
-  onShowTutorial?: () => void;
-}
+// Version is updated with each release:
+// - Patch (0.0.X): Small updates, bug fixes, minor UI tweaks
+// - Minor (0.X.0): New features, significant improvements
+// - Major (X.0.0): Major overhauls, breaking changes
+const APP_VERSION = '1.1.0';
 
-export default function Footer({ onShowTutorial }: FooterProps) {
-  const currentYear = new Date().getFullYear();
-
+export default function Footer() {
   return (
-    <footer className="flex-shrink-0 border-t border-gray-700 bg-gray-900/50 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto px-4 py-3">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-gray-300">Flip 7</span>
-            <span className="hidden sm:inline">|</span>
-            <span>Press your luck card game</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {onShowTutorial && (
-              <button
-                onClick={onShowTutorial}
-                className="hover:text-white transition-colors"
-              >
-                How to Play
-              </button>
-            )}
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white transition-colors"
-            >
-              GitHub
-            </a>
-            <span className="text-gray-500">
-              v1.0.0
-            </span>
-          </div>
-
-          <div className="text-gray-500">
-            &copy; {currentYear}
-          </div>
-        </div>
-      </div>
+    <footer className="absolute bottom-0 left-0 right-0 py-2 text-center">
+      <span className="text-xs text-gray-500">v{APP_VERSION}</span>
     </footer>
   );
 }

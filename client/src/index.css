@@ -54,11 +54,11 @@ html, body {
 
 /* Safe area padding utilities */
 .pb-safe {
-  padding-bottom: max(0.5rem, var(--sab));
+  padding-bottom: var(--sab, 0);
 }
 
 .pt-safe {
-  padding-top: max(0.25rem, var(--sat));
+  padding-top: var(--sat, 0);
 }
 
 code {

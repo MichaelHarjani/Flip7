@@ -1,8 +1,12 @@
+import { getAvatarById, getAvatarColor } from '../utils/avatars';
+
 interface AvatarProps {
   name: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   isAI?: boolean;
   className?: string;
+  avatarId?: string; // Predefined avatar ID
+  avatarUrl?: string; // Custom avatar URL (for Google sign-in, etc.)
 }
 
 // Generate a consistent color based on the name
@@ -52,10 +56,54 @@ const sizeClasses = {
   lg: 'w-10 h-10 text-sm',
 };
 
-export default function Avatar({ name, size = 'md', isAI = false, className = '' }: AvatarProps) {
+export default function Avatar({ name, size = 'md', isAI = false, className = '', avatarId, avatarUrl }: AvatarProps) {
+  const sizeClass = sizeClasses[size];
+
+  // If there's a custom avatar URL (e.g., from Google), use it
+  if (avatarUrl) {
+    return (
+      <div
+        className={`
+          ${sizeClass}
+          rounded-full
+          flex items-center justify-center
+          flex-shrink-0
+          ring-2 ring-white/20
+          overflow-hidden
+          ${className}
+        `}
+        title={name}
+      >
+        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+
+  // If there's a predefined avatar ID, use the emoji
+  const predefinedAvatar = avatarId ? getAvatarById(avatarId) : undefined;
+  if (predefinedAvatar) {
+    const bgColor = getAvatarColor(avatarId!);
+    return (
+      <div
+        className={`
+          ${sizeClass}
+          ${bgColor}
+          rounded-full
+          flex items-center justify-center
+          flex-shrink-0
+          ring-2 ring-white/20
+          ${className}
+        `}
+        title={name}
+      >
+        <span className="text-[0.8em]">{predefinedAvatar.emoji}</span>
+      </div>
+    );
+  }
+
+  // Default: use initials
   const bgColor = getColorFromName(name);
   const initials = getInitials(name);
-  const sizeClass = sizeClasses[size];
 
   return (
     <div

@@ -35,11 +35,11 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
   const score = calculateScore(player);
   const hasFlip7Bonus = hasFlip7(player);
 
-  const paddingClass = isCompact ? 'p-1.5 sm:p-2' : 'p-2 sm:p-3 md:p-4';
-  const headerMarginClass = isCompact ? 'mb-1' : 'mb-2 sm:mb-3';
+  const paddingClass = isCompact ? 'p-1 sm:p-1.5' : 'p-1.5 sm:p-2 md:p-3';
+  const headerMarginClass = isCompact ? 'mb-0.5' : 'mb-1 sm:mb-1.5';
   const titleSizeClass = isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base';
   const scoreSizeClass = isCompact ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm';
-  const cardsSpacingClass = isCompact ? 'space-y-1' : 'space-y-1.5 sm:space-y-2';
+  const cardsSpacingClass = isCompact ? 'space-y-0.5' : 'space-y-1 sm:space-y-1.5';
 
   const isFrozen = !player.isActive && !player.hasBusted && player.frozenBy;
 
@@ -190,10 +190,10 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
       </div>
 
       <div className={cardsSpacingClass}>
-        {/* Modifier cards - Always reserve space with animations */}
-        <div className={`flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap ${isCompact ? 'min-h-[2.75rem] sm:min-h-[3.5rem]' : 'min-h-[3.5rem] sm:min-h-[4.5rem] md:min-h-[5rem]'} pb-1`}>
-          {player.modifierCards.length > 0 ? (
-            player.modifierCards.map((card, index) => (
+        {/* Modifier cards */}
+        {player.modifierCards.length > 0 && (
+          <div className="flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap pb-0.5">
+            {player.modifierCards.map((card, index) => (
               <Card
                 key={card.id}
                 card={card}
@@ -202,16 +202,14 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
                 showTooltip={true}
                 className={`animation-delay-${index * 100}`}
               />
-            ))
-          ) : (
-            <div className="w-full h-full"></div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Number cards - Always reserve space with flip animations */}
-        <div className={`flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap ${isCompact ? 'min-h-[3rem] sm:min-h-[4rem]' : 'min-h-[4rem] sm:min-h-[5rem] md:min-h-[6rem]'} pb-2`}>
-          {player.numberCards.length > 0 ? (
-            player.numberCards.map((card, index) => (
+        {/* Number cards */}
+        {player.numberCards.length > 0 && (
+          <div className="flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap pb-0.5">
+            {player.numberCards.map((card, index) => (
               <Card
                 key={card.id}
                 card={card}
@@ -220,16 +218,14 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
                 showTooltip={true}
                 className={`animation-delay-${index * 100}`}
               />
-            ))
-          ) : (
-            <div className="w-full h-full"></div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Action cards - Always reserve space with scale animations */}
-        <div className={`flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap ${isCompact ? 'min-h-[2.75rem] sm:min-h-[3.5rem]' : 'min-h-[3.5rem] sm:min-h-[4.5rem] md:min-h-[5rem]'} pb-1`}>
-          {player.actionCards.length > 0 ? (
-            player.actionCards.map((card, index) => (
+        {/* Action cards */}
+        {player.actionCards.length > 0 && (
+          <div className="flex gap-1.5 sm:gap-2 md:gap-3 flex-wrap pb-0.5">
+            {player.actionCards.map((card, index) => (
               <Card
                 key={card.id}
                 card={card}
@@ -240,11 +236,14 @@ export default function PlayerArea({ player, isCurrentPlayer, isDealer, isCompac
                 isPlayable={isCurrentPlayer && player.isActive}
                 className={`animation-delay-${index * 100}`}
               />
-            ))
-          ) : (
-            <div className="w-full h-full"></div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {/* Minimum height placeholder when no cards at all */}
+        {player.modifierCards.length === 0 && player.numberCards.length === 0 && player.actionCards.length === 0 && (
+          <div className="min-h-[2rem]" />
+        )}
       </div>
     </div>
   );

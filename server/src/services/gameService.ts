@@ -4,6 +4,7 @@ import { checkBust, hasFlip7, calculateScore, organizePlayerCards, getActivePlay
 
 export class GameService {
   private gameState: GameState | null = null;
+  private targetScore: number = 200; // Default, can be overridden
 
   /**
    * Reshuffle the discard pile back into the deck, excluding cards currently in players' hands
@@ -44,16 +45,28 @@ export class GameService {
   }
 
   /**
+   * Set the target score for winning the game
+   */
+  setTargetScore(score: number): void {
+    this.targetScore = score;
+  }
+
+  /**
    * Initialize a new game
    * @param playerNames - Array of player names (for single player/local mode)
    * @param aiDifficulties - Array of AI difficulties
    * @param playerIds - Optional array of player IDs (for multiplayer mode)
+   * @param targetScore - Optional target score for winning (default 200)
    */
   initializeGame(
     playerNames: string[],
     aiDifficulties: Array<'conservative' | 'moderate' | 'aggressive'> = [],
-    playerIds?: string[]
+    playerIds?: string[],
+    targetScore?: number
   ): GameState {
+    if (targetScore) {
+      this.targetScore = targetScore;
+    }
     console.log('[GameService] initializeGame called with:', {
       playerNames,
       playerIds,
@@ -764,8 +777,8 @@ export class GameService {
       }
     });
 
-    // Check for game end (200 points)
-    const winner = this.gameState.players.find(p => p.score >= 200);
+    // Check for game end (using configured target score)
+    const winner = this.gameState.players.find(p => p.score >= this.targetScore);
     if (winner) {
       this.gameState.gameStatus = 'gameEnd';
     }

@@ -108,6 +108,25 @@ export default function RoomLobby({ onBack }: RoomLobbyProps) {
         <PlayerList players={room.players} currentSessionId={sessionId} />
       </div>
 
+      {/* Room Settings */}
+      {room.settings && (
+        <div className="mb-4 p-3 bg-gray-700/50 rounded-lg border border-gray-600">
+          <div className="text-sm font-medium text-gray-300 mb-2">Game Settings</div>
+          <div className="flex gap-4 text-sm">
+            <div>
+              <span className="text-gray-400">Target Score: </span>
+              <span className="text-white font-semibold">{room.settings.targetScore} pts</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Turn Timer: </span>
+              <span className="text-white font-semibold">
+                {room.settings.turnTimeLimit ? `${room.settings.turnTimeLimit}s` : 'None'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4">
         <div className="text-sm text-gray-300">
           Players: {room.players.length}

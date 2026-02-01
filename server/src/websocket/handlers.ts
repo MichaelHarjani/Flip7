@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameState } from '../shared/types/index.js';
+import type { GameState, RoomSettings } from '../shared/types/index.js';
 import { roomService } from '../services/roomService.js';
 import { sessionService } from '../services/sessionService.js';
 import { matchmakingService } from '../services/matchmakingService.js';
@@ -7,6 +7,7 @@ import { GameService } from '../services/gameService.js';
 import { makeAIDecision } from '../ai/aiPlayer.js';
 import { gameStateBufferService } from '../services/gameStateBuffer.js';
 import { extractUserFromSocket } from '../middleware/authMiddleware.js';
+import { friendsService } from '../services/friendsService.js';
 
 // Store game instances
 const gameInstances = new Map<string, GameService>();
@@ -25,6 +26,10 @@ export function setupWebSocketHandlers(io: Server): void {
 
     if (user) {
       console.log(`[Auth] Authenticated connection: ${user.id} (${user.email})`);
+      // Update user online status
+      friendsService.updateOnlineStatus(user.id, true).catch(err => {
+        console.error('[WebSocket] Error updating online status:', err);
+      });
     } else {
       console.log(`[Auth] Guest connection: ${socket.id}`);
     }
@@ -37,7 +42,7 @@ export function setupWebSocketHandlers(io: Server): void {
     });
 
     // Handle room creation
-    socket.on('room:create', async (data: { playerName: string; maxPlayers?: number }) => {
+    socket.on('room:create', async (data: { playerName: string; maxPlayers?: number; settings?: RoomSettings }) => {
       try {
         // Get userId if authenticated
         const userId = socket.data.user?.id;
@@ -45,7 +50,8 @@ export function setupWebSocketHandlers(io: Server): void {
         const { room, sessionId, playerId } = roomService.createRoom(
           data.playerName,
           data.maxPlayers || 4,
-          userId
+          userId,
+          data.settings
         );
 
         // Join socket room
@@ -205,7 +211,10 @@ export function setupWebSocketHandlers(io: Server): void {
         const playerNames = room.players.map(p => p.name);
         const playerIds = room.players.map(p => p.playerId);
 
-        console.log(`[Game Start] Initializing game ${gameId} with ${playerNames.length} players`);
+        // Get target score from room settings
+        const targetScore = room.settings?.targetScore || 200;
+
+        console.log(`[Game Start] Initializing game ${gameId} with ${playerNames.length} players, targetScore: ${targetScore}`);
         console.log(`[Game Start] Room object:`, JSON.stringify(room, null, 2));
         console.log(`[Game Start] Player mapping:`, room.players.map((p, i) => ({
           index: i,
@@ -229,7 +238,7 @@ export function setupWebSocketHandlers(io: Server): void {
         })));
         console.log(`[Game Start] playerIds length:`, playerIds?.length, 'playerNames length:', playerNames?.length);
 
-        const gameState = gameService.initializeGame(playerNames, [], playerIds); // No AI players in multiplayer
+        const gameState = gameService.initializeGame(playerNames, [], playerIds, targetScore); // No AI players in multiplayer
 
         console.log(`[Game Start] Game state players:`, gameState.players.map((p, i) => ({
           index: i,
@@ -499,6 +508,14 @@ export function setupWebSocketHandlers(io: Server): void {
     socket.on('disconnect', () => {
       const roomCode = socket.data.roomCode;
       const sessionId = socket.data.sessionId;
+      const user = socket.data.user;
+
+      // Update user online status to offline
+      if (user) {
+        friendsService.updateOnlineStatus(user.id, false).catch(err => {
+          console.error('[WebSocket] Error updating online status on disconnect:', err);
+        });
+      }
 
       if (roomCode && sessionId) {
         // Update connection status

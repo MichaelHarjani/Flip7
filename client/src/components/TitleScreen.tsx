@@ -4,11 +4,15 @@ import RecentMatches from './RecentMatches';
 import PlayerStatsCard from './PlayerStatsCard';
 import { useAuthStore } from '../stores/authStore';
 import { useStatsStore } from '../stores/statsStore';
+import { useFriendsStore } from '../stores/friendsStore';
+import { Flip7Logo } from './ui';
+import { Users } from 'lucide-react';
 
 // Lazy load modals - they're only needed when opened
 const Settings = lazy(() => import('./Settings'));
 const Tutorial = lazy(() => import('./Tutorial'));
 const PracticeTool = lazy(() => import('./PracticeTool'));
+const FriendsPanel = lazy(() => import('./friends/FriendsPanel'));
 
 interface TitleScreenProps {
   onSelectMode: (mode: 'single' | 'local' | 'createRoom' | 'joinRoom' | 'matchmaking') => void;
@@ -17,12 +21,21 @@ interface TitleScreenProps {
 export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
   const { user, profile, isGuest, loading, signInWithGoogle, signOut } = useAuthStore();
   const { stats, recentMatches } = useStatsStore();
+  const { requests, fetchRequests } = useFriendsStore();
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showPractice, setShowPractice] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const hasStats = stats && stats.gamesPlayed > 0;
+
+  // Fetch friend requests count when user is logged in
+  useEffect(() => {
+    if (!isGuest && user) {
+      fetchRequests();
+    }
+  }, [isGuest, user, fetchRequests]);
 
   // Check if first-time user and show welcome/tutorial prompt
   useEffect(() => {
@@ -102,6 +115,21 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
 
       {/* Top Right Buttons */}
       <div className="absolute top-4 right-4 flex gap-2">
+        {/* Friends Button */}
+        <button
+          onClick={() => setShowFriends(true)}
+          className="relative p-3 bg-indigo-700 hover:bg-indigo-600 text-white rounded-full transition-all hover:scale-110 shadow-lg"
+          aria-label="Friends"
+          title="Friends"
+        >
+          <Users className="w-6 h-6" />
+          {requests.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+              {requests.length}
+            </span>
+          )}
+        </button>
+
         {/* Tutorial Button */}
         <button
           onClick={() => setShowTutorial(true)}
@@ -141,7 +169,9 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
       </div>
 
       <div className="text-center mb-4 sm:mb-6 animate-scale-in">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-1 sm:mb-2 text-white animate-float">Flip 7</h1>
+        <div className="mb-1 sm:mb-2 animate-float">
+          <Flip7Logo size="lg" />
+        </div>
         <p className="text-sm sm:text-lg md:text-xl text-gray-300">The Greatest Card Game of All Time!</p>
       </div>
 
@@ -228,6 +258,7 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
         {showSettings && <Settings onClose={() => setShowSettings(false)} />}
         {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
         {showPractice && <PracticeTool onClose={() => setShowPractice(false)} />}
+        {showFriends && <FriendsPanel isOpen={showFriends} onClose={() => setShowFriends(false)} />}
       </Suspense>
 
       {/* First-time welcome modal */}
@@ -260,7 +291,7 @@ export default function TitleScreen({ onSelectMode }: TitleScreenProps) {
       </div>
 
       {/* Footer */}
-      <Footer onShowTutorial={() => setShowTutorial(true)} />
+      <Footer />
     </div>
   );
 }

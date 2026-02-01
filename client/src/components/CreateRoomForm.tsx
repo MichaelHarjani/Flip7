@@ -1,12 +1,23 @@
 import { useState, useRef } from 'react';
 import { useRoomStore } from '../stores/roomStore';
+import type { RoomSettings } from '@shared/types/index';
 
 interface CreateRoomFormProps {
   onBack: () => void;
 }
 
+const TARGET_SCORE_OPTIONS: RoomSettings['targetScore'][] = [100, 200, 300, 500];
+const TURN_TIME_OPTIONS: { value: RoomSettings['turnTimeLimit']; label: string }[] = [
+  { value: null, label: 'No Limit' },
+  { value: 60, label: '60 seconds' },
+  { value: 30, label: '30 seconds' },
+  { value: 15, label: '15 seconds' },
+];
+
 export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
   const [name, setName] = useState('');
+  const [targetScore, setTargetScore] = useState<RoomSettings['targetScore']>(200);
+  const [turnTimeLimit, setTurnTimeLimit] = useState<RoomSettings['turnTimeLimit']>(null);
   const { loading, error, createRoom, clearError } = useRoomStore();
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -16,9 +27,8 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
     const inputValue = nameInputRef.current?.value || name;
     if (inputValue.trim()) {
       clearError();
-      // No max player limit - rooms can have unlimited players
-      await createRoom(inputValue.trim());
-      // Room created, will show lobby via useEffect in App.tsx
+      const settings: RoomSettings = { targetScore, turnTimeLimit };
+      await createRoom(inputValue.trim(), settings);
     }
   };
 
@@ -42,6 +52,48 @@ export default function CreateRoomForm({ onBack }: CreateRoomFormProps) {
             required
             disabled={loading}
           />
+        </div>
+
+        <div className="border-t border-gray-600 pt-4">
+          <h3 className="text-sm font-medium text-gray-300 mb-3">Room Settings</h3>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">
+                Target Score
+              </label>
+              <select
+                value={targetScore}
+                onChange={(e) => setTargetScore(Number(e.target.value) as RoomSettings['targetScore'])}
+                disabled={loading}
+                className="w-full px-3 py-2 bg-gray-700 border-2 border-gray-600 rounded text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                {TARGET_SCORE_OPTIONS.map((score) => (
+                  <option key={score} value={score}>
+                    {score} points
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">
+                Turn Timer
+              </label>
+              <select
+                value={turnTimeLimit ?? ''}
+                onChange={(e) => setTurnTimeLimit(e.target.value === '' ? null : Number(e.target.value) as RoomSettings['turnTimeLimit'])}
+                disabled={loading}
+                className="w-full px-3 py-2 bg-gray-700 border-2 border-gray-600 rounded text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                {TURN_TIME_OPTIONS.map((option) => (
+                  <option key={option.label} value={option.value ?? ''}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         {error && (

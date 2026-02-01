@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameRoom } from '@shared/types/index';
+import type { GameRoom, RoomSettings } from '@shared/types/index';
 import { useWebSocketStore } from './websocketStore';
 import { useGameStore } from './gameStore';
 
@@ -17,7 +17,7 @@ interface RoomStore {
   getPlayerId: () => string | null;
 
   // Actions
-  createRoom: (name: string) => Promise<void>;
+  createRoom: (name: string, settings?: RoomSettings) => Promise<void>;
   joinRoom: (code: string, name: string) => Promise<void>;
   leaveRoom: () => void;
   startMatchmaking: (name: string, maxPlayers?: number) => Promise<void>;
@@ -205,9 +205,9 @@ export const useRoomStore = create<RoomStore>((set, get) => {
     getSessionId: () => sessionStorage.getItem('flip7_sessionId'),
     getPlayerId: () => sessionStorage.getItem('flip7_playerId'),
 
-    createRoom: async (name: string) => {
+    createRoom: async (name: string, settings?: RoomSettings) => {
       const wsStoreState = useWebSocketStore.getState();
-      
+
       if (!wsStoreState.socket || !wsStoreState.connected) {
         wsStoreState.connect();
         // Wait for connection with proper check
@@ -216,7 +216,7 @@ export const useRoomStore = create<RoomStore>((set, get) => {
           await new Promise(resolve => setTimeout(resolve, 100));
           attempts++;
         }
-        
+
         if (!useWebSocketStore.getState().connected) {
           set({ error: 'Failed to connect to server', loading: false });
           return;
@@ -224,7 +224,10 @@ export const useRoomStore = create<RoomStore>((set, get) => {
       }
 
       set({ loading: true, error: null });
-      useWebSocketStore.getState().emit('room:create', { playerName: name });
+      useWebSocketStore.getState().emit('room:create', {
+        playerName: name,
+        settings: settings || { targetScore: 200, turnTimeLimit: null }
+      });
     },
 
     joinRoom: async (code: string, name: string) => {

@@ -1,5 +1,5 @@
 import type { Socket } from 'socket.io';
-import type { Request } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { supabase, isSupabaseAvailable } from '../config/supabase.js';
 
 interface SupabaseUser {
@@ -9,6 +9,10 @@ interface SupabaseUser {
     name?: string;
     avatar_url?: string;
   };
+}
+
+export interface AuthRequest extends Request {
+  user?: SupabaseUser;
 }
 
 /**
@@ -80,4 +84,20 @@ export async function getUserFromRequest(req: Request): Promise<SupabaseUser | n
 
   const token = authHeader.substring(7);
   return verifyAuthToken(token);
+}
+
+/**
+ * Express middleware that requires authentication
+ * Adds user to req.user if authenticated, returns 401 if not
+ */
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  const user = await getUserFromRequest(req);
+
+  if (!user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  req.user = user;
+  next();
 }
