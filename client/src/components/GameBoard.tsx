@@ -835,10 +835,10 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
       {/* Action Buttons - Fixed at bottom, always visible (outside scale) */}
       {(localPlayer || humanPlayer || currentHumanPlayer) && (
-        <div 
+        <div
           data-action-buttons
-          className="flex-shrink-0 pt-1 sm:pt-2 border-t-2 border-gray-600 space-y-0.5 sm:space-y-1 md:space-y-2 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[60px] sm:min-h-[80px] md:min-h-[100px]" 
-          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0.5rem))' }}
+          className="flex-shrink-0 pt-3 sm:pt-4 pb-3 sm:pb-4 border-t-2 border-gray-600 space-y-1 sm:space-y-2 md:space-y-3 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[120px] sm:min-h-[140px] md:min-h-[160px]"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
         >
           {false && onNewGame ? (
             <div className="flex gap-2 sm:gap-3 justify-center">
@@ -894,8 +894,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           ) : currentHumanPlayer &&
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
-            <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2">
-              <div className="flex items-start gap-1 sm:gap-2 md:gap-4 justify-center flex-wrap">
+            <div className="flex flex-col gap-1 sm:gap-2 md:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
               </div>
