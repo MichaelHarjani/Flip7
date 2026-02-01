@@ -759,8 +759,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
             }}>
             {/* AI/Other Players Area */}
             {aiPlayers.length > 0 && (
-              <div className="flex-shrink-0 mb-1 sm:mb-2 lg:mb-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+              <div className="flex-shrink-0 mb-2 sm:mb-3 lg:mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4">
                   {aiPlayers.map((player) => {
                     const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                     const isThinking = aiThinkingPlayerId === player.id &&
@@ -791,10 +791,10 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
 
             {/* Human Player Area(s) */}
             {humanPlayers.length > 0 && (
-              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-1 sm:pt-2 lg:pt-4 mt-1 sm:mt-2 lg:mt-4 border-yellow-600/50">
+              <div className="flex-shrink-0 border-t-2 sm:border-t-4 lg:border-t-4 pt-2 sm:pt-3 lg:pt-4 mt-2 sm:mt-3 lg:mt-4 border-yellow-600/50">
                 {humanPlayers.length > 1 ? (
                   // Multiple human players (Local mode) - show in a grid
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-4">
                     {humanPlayers.map((player) => {
                       const originalIndex = gameState.players?.findIndex(p => p.id === player.id) ?? -1;
                       return (
@@ -837,7 +837,7 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
       {(localPlayer || humanPlayer || currentHumanPlayer) && (
         <div
           data-action-buttons
-          className="flex-shrink-0 pt-3 sm:pt-4 pb-3 sm:pb-4 border-t-2 border-gray-600 space-y-1 sm:space-y-2 md:space-y-3 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[120px] sm:min-h-[140px] md:min-h-[160px]"
+          className="flex-shrink-0 pt-3 sm:pt-4 pb-3 sm:pb-4 border-t-2 border-gray-600 space-y-2 sm:space-y-3 mt-auto flex flex-col justify-center bg-gradient-to-t from-gray-900 via-gray-900 to-transparent min-h-[120px] sm:min-h-[140px] md:min-h-[160px]"
           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
         >
           {false && onNewGame ? (
@@ -894,8 +894,8 @@ export default function GameBoard({ onNewGame, onRematch, onBack }: GameBoardPro
           ) : currentHumanPlayer &&
             currentHumanPlayer.isActive &&
             !currentHumanPlayer.hasBusted ? (
-            <div className="flex flex-col gap-1 sm:gap-2 md:gap-3">
-              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 justify-center flex-wrap">
+            <div className="flex flex-col gap-2 sm:gap-3">
+              <div className="flex items-center gap-3 sm:gap-4 justify-center flex-wrap">
                 <ActionButtons playerId={currentHumanPlayer.id} />
                 <ActionCardButtons playerId={currentHumanPlayer.id} actionCards={currentHumanPlayer.actionCards} />
               </div>
