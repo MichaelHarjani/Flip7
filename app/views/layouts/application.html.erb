@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <title><%= content_for(:title) || "Flip 7" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="h-full bg-gray-950 text-gray-100 antialiased">
+    <% if flash[:error] %>
+      <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-600/90 text-white px-6 py-3 rounded-lg shadow-lg text-sm backdrop-blur" data-controller="flash" data-flash-target="message">
+        <%= flash[:error] %>
+      </div>
+    <% end %>
+    <% if flash[:notice] %>
+      <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-600/90 text-white px-6 py-3 rounded-lg shadow-lg text-sm backdrop-blur" data-controller="flash" data-flash-target="message">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
+    <%= yield %>
+  </body>
+</html>

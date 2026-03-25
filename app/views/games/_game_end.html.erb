@@ -1,0 +1,56 @@
+<%
+  winner = state[:players].max_by { |p| p[:score] }
+%>
+
+<div class="space-y-8 animate-fade-up">
+  <!-- Winner Announcement -->
+  <div class="text-center space-y-4">
+    <div class="text-5xl animate-trophy">🏆</div>
+    <h2 class="text-2xl font-bold text-white">Game Over!</h2>
+    <div class="text-lg text-amber-300 font-semibold animate-glow-gold inline-block px-6 py-2 rounded-full bg-amber-500/10">
+      <%= winner[:name] %> wins with <%= winner[:score] %> points
+    </div>
+  </div>
+
+  <!-- Final Standings -->
+  <div class="bg-gray-900/40 rounded-xl border border-gray-800/50 divide-y divide-gray-800/50 overflow-hidden">
+    <% state[:players].sort_by { |p| -p[:score] }.each_with_index do |player, rank| %>
+      <div class="flex items-center justify-between px-5 py-4 animate-fade-up fade-delay-<%= [rank + 1, 4].min %>">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold <%= rank == 0 ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30' : 'bg-gray-800/60 text-gray-500' %>">
+            <%= rank + 1 %>
+          </span>
+          <span class="font-semibold text-sm <%= rank == 0 ? 'text-white' : 'text-gray-300' %>"><%= player[:name] %></span>
+          <% if player[:is_ai] %>
+            <span class="text-[10px] text-gray-600 uppercase">AI</span>
+          <% end %>
+        </div>
+        <span class="text-lg font-black <%= rank == 0 ? 'text-amber-400' : 'text-gray-400' %>"><%= player[:score] %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Game Stats -->
+  <div class="bg-gray-900/30 rounded-xl border border-gray-800/30 p-5">
+    <h3 class="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mb-3">Game Stats</h3>
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <span class="text-gray-600 text-xs">Rounds</span>
+        <div class="text-white font-bold"><%= state[:round] %></div>
+      </div>
+      <% if state[:largest_round] %>
+        <div>
+          <span class="text-gray-600 text-xs">Best Round</span>
+          <div class="text-white font-bold"><%= state[:largest_round][:score] %> pts</div>
+          <div class="text-gray-600 text-[10px]"><%= state[:largest_round][:player_name] %>, R<%= state[:largest_round][:round_number] %></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-3 justify-center">
+    <%= link_to "Play Again", new_game_path, class: "bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-8 py-3 rounded-xl font-semibold transition-all btn-press" %>
+    <%= link_to "Home", root_path, class: "bg-gray-800 hover:bg-gray-700 active:scale-95 text-gray-300 px-8 py-3 rounded-xl font-medium transition-all border border-gray-700/50 btn-press" %>
+  </div>
+</div>

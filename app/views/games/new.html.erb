@@ -1,0 +1,80 @@
+<% mode = params[:mode] || "single_player" %>
+<% is_local = mode == "local_multiplayer" %>
+
+<div class="min-h-full flex flex-col items-center justify-center px-4">
+  <div class="w-full max-w-sm">
+    <%= form_with url: games_path, method: :post, class: "space-y-6" do |f| %>
+      <%= f.hidden_field :mode, value: mode %>
+
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-white"><%= is_local ? "Local Game" : "Play vs AI" %></h2>
+        <%= link_to "← Back", root_path, class: "text-gray-400 hover:text-gray-300 text-sm" %>
+      </div>
+
+      <div class="space-y-4">
+        <% if is_local %>
+          <!-- Local multiplayer: player count and names -->
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Number of Players</label>
+            <div class="flex gap-2">
+              <% [2, 3, 4].each do |count| %>
+                <label class="flex-1">
+                  <input type="radio" name="player_count" value="<%= count %>" <%= count == 2 ? "checked" : "" %> class="peer hidden" data-controller="player-count" data-action="change->player-count#update">
+                  <div class="peer-checked:bg-indigo-600 peer-checked:border-indigo-500 bg-gray-900 border border-gray-700 rounded-lg py-2.5 text-center cursor-pointer hover:border-gray-600 transition-colors text-sm font-medium">
+                    <%= count %>
+                  </div>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <div id="player-names" class="space-y-2">
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Player Names</label>
+            <% 4.times do |i| %>
+              <div class="player-name-field <%= i >= 2 ? 'hidden' : '' %>" data-player-index="<%= i %>">
+                <input type="text" name="player_names[]" value="Player <%= i + 1 %>" placeholder="Player <%= i + 1 %>" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" autocomplete="off">
+              </div>
+            <% end %>
+          </div>
+
+        <% else %>
+          <!-- Single player: name, AI count, difficulty -->
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Your Name</label>
+            <%= f.text_field :player_name, value: "You", class: "w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent", autocomplete: "off" %>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">AI Opponents</label>
+            <div class="flex gap-2">
+              <% [1, 2, 3].each do |count| %>
+                <label class="flex-1">
+                  <input type="radio" name="ai_count" value="<%= count %>" <%= count == 2 ? "checked" : "" %> class="peer hidden">
+                  <div class="peer-checked:bg-indigo-600 peer-checked:border-indigo-500 bg-gray-900 border border-gray-700 rounded-lg py-2.5 text-center cursor-pointer hover:border-gray-600 transition-colors text-sm font-medium">
+                    <%= count %>
+                  </div>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-1.5">Difficulty</label>
+            <div class="flex gap-2">
+              <% [["conservative", "Easy"], ["moderate", "Medium"], ["aggressive", "Hard"]].each do |value, label| %>
+                <label class="flex-1">
+                  <input type="radio" name="ai_difficulty" value="<%= value %>" <%= value == "moderate" ? "checked" : "" %> class="peer hidden">
+                  <div class="peer-checked:bg-indigo-600 peer-checked:border-indigo-500 bg-gray-900 border border-gray-700 rounded-lg py-2.5 text-center cursor-pointer hover:border-gray-600 transition-colors text-sm font-medium">
+                    <%= label %>
+                  </div>
+                </label>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%= f.submit "Start Game", class: "w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 rounded-xl font-semibold transition-colors cursor-pointer" %>
+    <% end %>
+  </div>
+</div>

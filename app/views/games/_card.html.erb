@@ -1,0 +1,24 @@
+<%
+  gradient = card_gradient(card)
+  label = card_label(card)
+  sublabel = card_sublabel(card)
+  card_index ||= 0
+
+  # Bust card override
+  is_bust_card = player[:has_busted] && card[:type] == "number" &&
+    card[:id] == player[:cards].select { |c| c[:type] == "number" }.last&.dig(:id)
+
+  if is_bust_card
+    gradient = "from-red-600 to-red-700 border-red-400/70 ring-2 ring-red-500/40"
+  end
+
+  # Animation delay based on card position
+  delay_class = "animate-delay-#{[card_index + 1, 7].min}"
+%>
+
+<div class="game-card card-shadow inline-flex flex-col items-center justify-center w-12 h-17 rounded-xl border bg-gradient-to-br text-white select-none animate-card-in <%= delay_class %> <%= gradient %> <%= is_bust_card ? 'animate-shake' : '' %>">
+  <span class="text-base font-black leading-none drop-shadow-sm"><%= label %></span>
+  <% if sublabel %>
+    <span class="text-[8px] font-semibold uppercase tracking-wider opacity-60 mt-0.5"><%= sublabel %></span>
+  <% end %>
+</div>

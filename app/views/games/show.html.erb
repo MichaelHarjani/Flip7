@@ -1,0 +1,83 @@
+<div id="game-board" data-game-id="<%= @game.id %>" data-controller="keyboard" class="min-h-full flex flex-col">
+  <!-- Header -->
+  <header class="bg-gray-900/80 border-b border-gray-800/50 px-4 py-3 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <%= link_to root_path, class: "text-gray-500 hover:text-gray-300 text-sm transition-colors", data: { turbo_method: :get } do %>
+          ← Exit
+        <% end %>
+        <h1 class="text-base font-bold text-white tracking-tight">Flip 7</h1>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-gray-500">
+        <span>Round <span class="text-gray-300 font-semibold"><%= @state[:round] %></span></span>
+        <span class="w-px h-3 bg-gray-800"></span>
+        <span>Deck <span class="text-gray-300 font-semibold"><%= @state[:deck]&.length || 0 %></span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Score Bar -->
+  <div class="bg-gray-900/30 border-b border-gray-800/30 px-4 py-2.5">
+    <div class="max-w-4xl mx-auto flex items-center gap-5 overflow-x-auto">
+      <% @players.each_with_index do |player, idx| %>
+        <%
+          is_active_player = idx == @state[:current_player_index] && @state[:game_status] == "playing"
+          bar_color = player_bar_color(idx)
+        %>
+        <div class="flex items-center gap-2 whitespace-nowrap">
+          <span class="w-1.5 h-1.5 rounded-full <%= is_active_player ? "bg-#{bar_color}-400" : 'bg-gray-700' %>" style="<%= is_active_player ? 'animation: pulse-soft 2s ease-in-out infinite' : '' %>"></span>
+          <span class="text-xs font-medium <%= is_active_player ? 'text-gray-200' : 'text-gray-600' %>"><%= player[:name] %></span>
+          <span class="text-xs font-bold <%= player[:has_busted] ? 'text-red-400/70' : is_active_player ? 'text-white' : 'text-gray-500' %>"><%= player[:score] %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Main Game Area -->
+  <main class="flex-1 px-4 py-5">
+    <div class="max-w-4xl mx-auto space-y-3">
+
+      <% if @state[:game_status] == "game_end" %>
+        <%= render "games/game_end", state: @state, game: @game %>
+
+      <% elsif @state[:game_status] == "round_end" %>
+        <%= render "games/round_end", state: @state, game: @game %>
+
+      <% else %>
+        <% if @is_local && @current_player %>
+          <div class="text-center pb-1">
+            <span class="inline-flex items-center gap-2 bg-indigo-500/15 text-indigo-300 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-400" style="animation: pulse-soft 2s ease-in-out infinite"></span>
+              <%= @current_player[:name] %>'s Turn
+            </span>
+          </div>
+        <% end %>
+
+        <% @players.each_with_index do |player, idx| %>
+          <%= render "games/player_area", player: player, idx: idx, state: @state, is_me: idx == @my_player_index %>
+        <% end %>
+      <% end %>
+
+    </div>
+  </main>
+
+  <% if @state[:game_status] == "playing" && @is_my_turn && @my_player && @my_player[:is_active] && !@my_player[:has_busted] %>
+    <!-- Action Bar -->
+    <div class="sticky bottom-0 bg-gray-950/95 border-t border-gray-800/50 px-4 py-4 backdrop-blur-sm safe-bottom">
+      <div class="max-w-4xl mx-auto">
+        <% if @state[:pending_action_card] && @state[:pending_action_card][:player_id] == @my_player[:id] %>
+          <%= render "games/action_card_target", state: @state, game: @game, my_player: @my_player %>
+        <% else %>
+          <div class="grid grid-cols-2 gap-3">
+            <%= button_to hit_game_path(@game), method: :post, class: "w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-3.5 rounded-xl font-bold transition-all text-base cursor-pointer btn-press", data: { keyboard_target: "hitBtn" } do %>
+              Hit <span class="text-indigo-300/50 text-xs font-normal ml-1">(H)</span>
+            <% end %>
+            <%= button_to stay_game_path(@game), method: :post, class: "w-full bg-gray-800 hover:bg-gray-700 active:scale-95 text-white py-3.5 rounded-xl font-bold transition-all text-base cursor-pointer border border-gray-700/50 btn-press", data: { keyboard_target: "stayBtn" } do %>
+              Stay <span class="text-gray-500 text-xs font-normal ml-1">(S)</span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

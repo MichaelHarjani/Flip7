@@ -1,0 +1,31 @@
+<%
+  pending = state[:pending_action_card]
+  action_type = pending[:action_type]
+  card_id = pending[:card_id]
+  active = GameLogic.active_players(state[:players]).reject { |p| p[:id] == my_player[:id] }
+
+  label = case action_type
+  when "freeze" then "❄ Freeze — Choose a player to freeze"
+  when "flip_three" then "×3 Flip Three — Choose a target"
+  else "Choose a target"
+  end
+%>
+
+<div class="space-y-3">
+  <div class="text-center text-sm text-amber-300 font-medium"><%= label %></div>
+  <div class="flex gap-2 justify-center flex-wrap">
+    <% active.each do |target| %>
+      <%= button_to target[:name],
+        play_action_card_game_path(game, card_id: card_id, target_player_id: target[:id]),
+        method: :post,
+        class: "bg-amber-600 hover:bg-amber-500 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm" %>
+    <% end %>
+    <%# Allow targeting self for Flip Three %>
+    <% if action_type == "flip_three" %>
+      <%= button_to "Myself",
+        play_action_card_game_path(game, card_id: card_id, target_player_id: my_player[:id]),
+        method: :post,
+        class: "bg-gray-600 hover:bg-gray-500 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm" %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+<%
+  is_current = idx == state[:current_player_index] && state[:game_status] == "playing"
+
+  container_class = if is_current && is_me
+    "border-indigo-500/50 bg-indigo-950/20 player-glow-active"
+  elsif is_current
+    "border-amber-500/30 bg-amber-950/10"
+  elsif player[:has_busted]
+    "border-red-500/20 bg-red-950/10 player-glow-bust"
+  elsif !player[:is_active]
+    "border-gray-700/30 bg-gray-900/20 opacity-50"
+  else
+    "border-gray-800/50 bg-gray-900/20"
+  end
+
+  round_score = state[:round_scores]&.dig(player[:id].to_sym) || state[:round_scores]&.dig(player[:id])
+  progress = player_progress_percent(player)
+  bar_color = player_bar_color(idx)
+%>
+
+<div class="rounded-xl border p-4 transition-all duration-300 animate-fade-up fade-delay-<%= [idx + 1, 4].min %> <%= container_class %>">
+  <!-- Player Header -->
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <% if is_me %>
+        <span class="text-[10px] bg-indigo-500/25 text-indigo-300 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide">You</span>
+      <% end %>
+      <% if player[:is_ai] %>
+        <span class="text-[10px] bg-gray-700/40 text-gray-500 px-1.5 py-0.5 rounded-full uppercase tracking-wide">AI</span>
+      <% end %>
+      <span class="font-semibold text-white text-sm"><%= player[:name] %></span>
+      <% if player[:frozen_by] %>
+        <span class="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full font-medium">❄ Frozen</span>
+      <% end %>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <% if player[:has_busted] %>
+        <span class="text-red-400 font-semibold text-xs bg-red-500/15 px-2 py-0.5 rounded-full">Bust!</span>
+      <% elsif !player[:is_active] && round_score %>
+        <span class="text-emerald-400 font-medium text-xs">✓ Stayed (<%= round_score %>)</span>
+      <% end %>
+      <span class="text-gray-500 text-xs">
+        <span class="text-white font-bold text-sm"><%= player[:score] %></span>
+        <span class="text-gray-600">/200</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Score Progress Bar -->
+  <div class="h-1 bg-gray-800/60 rounded-full mb-3 overflow-hidden">
+    <div class="h-full rounded-full progress-fill bg-<%= bar_color %>-500/70" style="width: <%= progress %>%"></div>
+  </div>
+
+  <!-- Cards -->
+  <% if player[:cards].any? %>
+    <div class="flex flex-wrap gap-2">
+      <% player[:cards].each_with_index do |card, card_idx| %>
+        <%= render "games/card", card: card, player: player, card_index: card_idx %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-gray-700 text-xs">No cards yet</div>
+  <% end %>
+
+  <% if player[:has_second_chance] %>
+    <div class="mt-2.5 text-[10px] text-amber-400/80 font-medium">🛡 Second Chance protection active</div>
+  <% end %>
+  <% if player[:second_chance_used_by] %>
+    <div class="mt-2.5 text-[10px] text-amber-300/40">🛡 Second Chance saved you from duplicate <%= player[:second_chance_used_by][:value] %></div>
+  <% end %>
+</div>

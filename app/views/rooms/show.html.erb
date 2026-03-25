@@ -1,0 +1,56 @@
+<div id="room-lobby" data-game-id="<%= @game.id %>" class="min-h-full flex flex-col items-center justify-center px-4">
+  <div class="w-full max-w-sm space-y-6">
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl font-bold text-white">Game Lobby</h2>
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-gray-400 text-sm">Room Code:</span>
+        <span class="text-2xl font-mono font-bold tracking-widest text-indigo-400" data-controller="copy" data-copy-text-value="<%= @room_code %>">
+          <%= @room_code %>
+        </span>
+        <button data-action="click->copy#copy" class="text-gray-500 hover:text-gray-300 text-sm transition-colors">
+          📋
+        </button>
+      </div>
+    </div>
+
+    <!-- Players -->
+    <div class="bg-gray-900/50 rounded-xl border border-gray-800 divide-y divide-gray-800">
+      <% @players.each_with_index do |player, idx| %>
+        <div class="flex items-center justify-between px-5 py-3.5">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-indigo-600/30 flex items-center justify-center text-sm font-medium text-indigo-300">
+              <%= player.name[0].upcase %>
+            </div>
+            <span class="font-medium text-white"><%= player.name %></span>
+          </div>
+          <% if idx == 0 %>
+            <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Host</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="text-center text-sm text-gray-500">
+      <%= @players.count %> player<%= @players.count == 1 ? "" : "s" %> in lobby
+      <% if @players.count < 2 %>
+        <br><span class="text-amber-400/70">Need at least 2 players to start</span>
+      <% end %>
+    </div>
+
+    <% if @is_host %>
+      <% if @players.count >= 2 %>
+        <%= button_to "Start Game", start_room_path(@game), method: :post, class: "w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 rounded-xl font-semibold transition-colors" %>
+      <% else %>
+        <div class="w-full bg-gray-800 text-gray-500 py-3.5 rounded-xl font-semibold text-center cursor-not-allowed">
+          Waiting for players...
+        </div>
+      <% end %>
+    <% else %>
+      <div class="w-full bg-gray-800/50 text-gray-400 py-3.5 rounded-xl font-medium text-center">
+        Waiting for host to start...
+      </div>
+    <% end %>
+
+    <%= link_to "← Leave Lobby", root_path, class: "block text-center text-sm text-gray-500 hover:text-gray-400 transition-colors" %>
+  </div>
+</div>
