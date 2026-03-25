@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+# Bridge PORT (set by Railway/PaaS) to HTTP_PORT (used by Thruster)
+export HTTP_PORT=${PORT:-80}
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
