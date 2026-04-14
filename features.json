@@ -15,8 +15,8 @@
     ],
     "related_docs": [],
     "prerequisites": [],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-install-core-gems",
