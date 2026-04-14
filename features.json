@@ -93,8 +93,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-tailwind-daisyui",
@@ -109,8 +109,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p1-rails-scaffold"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed e6eb422. DaisyUI 5.5.19 via Tailwind v4 @plugin directive with 6 themes (dark default). /daisy-test route verified at HTTP 200. Added /node_modules to .gitignore."
   },
   {
     "id": "p1-landing-page",
