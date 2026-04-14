@@ -15,8 +15,8 @@
     ],
     "related_docs": [],
     "prerequisites": [],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed be2e076 (102 files). Rails 8.1.3 + Postgres + Tailwind. Note: eslint.config.js added to satisfy global pre-commit hook — ignores all Rails-generated JS."
   },
   {
     "id": "p1-install-core-gems",
@@ -29,8 +29,8 @@
     ],
     "related_docs": [],
     "prerequisites": ["p1-rails-scaffold"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-rspec-setup",
