@@ -1,1 +1,607 @@
-[]
+[
+  {
+    "id": "p1-rails-scaffold",
+    "slug": "p1-rails-scaffold",
+    "title": "Rails 8 app scaffold with PostgreSQL",
+    "description": "Run `rails new . --force --database=postgresql --css=tailwind --skip-jbuilder --skip-test` inside /Users/michael/Projects/flip7-app (keep CLAUDE.md, README.md, app_spec.txt, docs/, features.json, .gitignore intact — merge with existing files). Install default gems. Verify with `bin/rails -v` and `bin/rails runner 'puts Rails.version'`. Acceptance criteria: (1) Gemfile exists and includes rails ~> 8.1, (2) bin/rails boots without error, (3) config/database.yml uses postgresql adapter, (4) app/, config/, db/ directories created.",
+    "related_files": [
+      "Gemfile",
+      "Gemfile.lock",
+      "config/application.rb",
+      "config/database.yml",
+      "config/environment.rb",
+      "bin/rails",
+      "bin/setup"
+    ],
+    "related_docs": [],
+    "prerequisites": [],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-install-core-gems",
+    "slug": "p1-install-core-gems",
+    "title": "Add core gems to Gemfile and bundle install",
+    "description": "Add to Gemfile: devise, omniauth, omniauth-google-oauth2, omniauth-rails_csrf_protection, sidekiq, redis, aasm, phlex-rails, with_advisory_lock, rspec-rails (development/test group), factory_bot_rails (dev/test), faker (dev/test). Run `bundle install`. Acceptance criteria: (1) Gemfile has all listed gems, (2) bundle install succeeds, (3) `bundle exec rails -v` still works.",
+    "related_files": [
+      "Gemfile",
+      "Gemfile.lock"
+    ],
+    "related_docs": [],
+    "prerequisites": ["p1-rails-scaffold"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-rspec-setup",
+    "slug": "p1-rspec-setup",
+    "title": "Install RSpec + FactoryBot",
+    "description": "Run `bin/rails generate rspec:install`. Configure FactoryBot in spec/rails_helper.rb. Create spec/factories/.keep. Acceptance criteria: (1) spec/rails_helper.rb exists, (2) spec/spec_helper.rb exists, (3) `bundle exec rspec --version` works, (4) an empty `bundle exec rspec` run reports 0 examples without error.",
+    "related_files": [
+      "spec/rails_helper.rb",
+      "spec/spec_helper.rb",
+      "spec/factories/.keep",
+      ".rspec"
+    ],
+    "related_docs": [],
+    "prerequisites": ["p1-install-core-gems"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-database-create",
+    "slug": "p1-database-create",
+    "title": "Create development and test databases",
+    "description": "Update config/database.yml if needed (use localhost/unix socket for dev). Run `bin/rails db:create`. If Postgres isn't running locally, note this in the return and mark success:false with a hint (workers after this feature can assume dev DB exists). Acceptance criteria: (1) `bin/rails db:version` works without error in both development and test.",
+    "related_files": [
+      "config/database.yml",
+      "db/schema.rb"
+    ],
+    "related_docs": [],
+    "prerequisites": ["p1-install-core-gems"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-user-model",
+    "slug": "p1-user-model",
+    "title": "User model with Devise + OmniAuth + game stats",
+    "description": "Create the User model per docs/data_model.md §users. Generate Devise install, generate User model with `bin/rails generate devise User`, then edit the migration to add all columns from data_model.md (provider, uid, name, avatar_url, elo_rating, games_played, games_won, total_rounds_played, total_flip7s, highest_round_score, ranked_wins, ranked_losses, current_win_streak, best_win_streak). Add `from_omniauth` class method to User model per docs/realtime.md §Authentication. Run migration. Write a simple RSpec model spec covering validations and `from_omniauth`. Acceptance criteria: (1) `bin/rails db:migrate` succeeds, (2) `User.new.valid?` works, (3) `bundle exec rspec spec/models/user_spec.rb` passes, (4) `User.from_omniauth` creates a user from an OpenStruct mock.",
+    "related_files": [
+      "config/initializers/devise.rb",
+      "db/migrate/*_devise_create_users.rb",
+      "db/migrate/*_add_stats_to_users.rb",
+      "app/models/user.rb",
+      "spec/models/user_spec.rb",
+      "spec/factories/users.rb"
+    ],
+    "related_docs": ["docs/data_model.md", "docs/realtime.md"],
+    "prerequisites": ["p1-rspec-setup", "p1-database-create"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-google-oauth-config",
+    "slug": "p1-google-oauth-config",
+    "title": "Google OAuth config and callback controller",
+    "description": "Configure omniauth-google-oauth2 in config/initializers/devise.rb using Rails credentials (placeholder GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET). Create OmniauthCallbacksController at app/controllers/users/omniauth_callbacks_controller.rb with `google_oauth2` action calling `User.from_omniauth`. Update routes. Write request spec for the callback with a mock auth hash. Acceptance criteria: (1) routes include `/users/auth/google_oauth2/callback`, (2) callback controller exists, (3) request spec passes with a mocked auth hash.",
+    "related_files": [
+      "config/initializers/devise.rb",
+      "config/routes.rb",
+      "app/controllers/users/omniauth_callbacks_controller.rb",
+      "spec/requests/users/omniauth_callbacks_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-tailwind-daisyui",
+    "slug": "p1-tailwind-daisyui",
+    "title": "Tailwind + DaisyUI 5 setup",
+    "description": "Install DaisyUI as a Tailwind plugin (DaisyUI 5). Configure tailwind.config.js (or equivalent Rails 8 config) to include the daisyui plugin with themes: dark (default), light, cyberpunk, retro, dracula, night. Verify by rendering a DaisyUI button component in the default landing view. Acceptance criteria: (1) DaisyUI classes (like `btn btn-primary`) render with DaisyUI styling, (2) theme switching via `data-theme` attribute works, (3) `bin/rails assets:precompile` succeeds.",
+    "related_files": [
+      "package.json",
+      "config/tailwind.config.js",
+      "app/assets/stylesheets/application.tailwind.css",
+      "app/views/layouts/application.html.erb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p1-rails-scaffold"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-landing-page",
+    "slug": "p1-landing-page",
+    "title": "Landing page with play options",
+    "description": "Create PagesController with `home` action. Route root to it. Build the landing view with a hero section, three CTA buttons (Play Solo, Join Casual, Ranked Duel), and a Devise sign-in-with-Google link. Use DaisyUI components. Request spec: GET / returns 200 and includes 'Flip 7' and 'Play Solo'. Acceptance criteria: (1) GET / returns 200, (2) response body includes the three CTAs, (3) request spec passes.",
+    "related_files": [
+      "app/controllers/pages_controller.rb",
+      "app/views/pages/home.html.erb",
+      "config/routes.rb",
+      "spec/requests/pages_spec.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p1-tailwind-daisyui", "p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p1-profile-page",
+    "slug": "p1-profile-page",
+    "title": "Profile page with user stats",
+    "description": "Create ProfilesController with `show` action at route `/profile` (own) and `/profile/:id` (public). Display: name, avatar_url, elo_rating, games_played, games_won, total_flip7s, highest_round_score. Require auth for `/profile`, public for `/profile/:id`. Acceptance criteria: (1) unauthenticated GET /profile redirects to sign-in, (2) authenticated GET /profile shows stats, (3) GET /profile/:id works for any user, (4) request spec passes.",
+    "related_files": [
+      "app/controllers/profiles_controller.rb",
+      "app/views/profiles/show.html.erb",
+      "config/routes.rb",
+      "spec/requests/profiles_spec.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p1-landing-page"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p2-game-models",
+    "slug": "p2-game-models",
+    "title": "Game, GamePlayer, MatchResult models",
+    "description": "Create migrations and models for games, game_players, match_results per docs/data_model.md. Use jsonb columns as specified. Include AASM setup on Game (states: waiting, in_progress, completed, abandoned, expired) per docs/game_engine.md. Add associations. Write factories and model specs for each. Acceptance criteria: (1) migrations run cleanly, (2) `Game.new.valid?` works, (3) AASM state machine transitions work, (4) model specs pass.",
+    "related_files": [
+      "db/migrate/*_create_games.rb",
+      "db/migrate/*_create_game_players.rb",
+      "db/migrate/*_create_match_results.rb",
+      "app/models/game.rb",
+      "app/models/game_player.rb",
+      "app/models/match_result.rb",
+      "spec/models/game_spec.rb",
+      "spec/models/game_player_spec.rb",
+      "spec/models/match_result_spec.rb",
+      "spec/factories/games.rb",
+      "spec/factories/game_players.rb",
+      "spec/factories/match_results.rb"
+    ],
+    "related_docs": ["docs/data_model.md", "docs/game_engine.md"],
+    "prerequisites": ["p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p2-game-engine",
+    "slug": "p2-game-engine",
+    "title": "GameEngine service — full game logic",
+    "description": "Implement app/services/game_engine.rb per docs/game_engine.md. Include: start_round, hit, stay, resolve_action, check_round_end, score_round, check_game_end, timeout_turn, validate_turn, draw_card, check_bust, bust_probability. Implement deck generation (94 cards × deck_count, pyramid distribution, action cards, modifiers). Implement full reshuffle at round start. Write exhaustive RSpec service spec covering the critical test cases from app_spec.txt §14 (drawing each card type, bust detection, Second Chance saves, Flip 7 detection, scoring order, action cards, multi-deck). Acceptance criteria: (1) all spec/services/game_engine_spec.rb examples pass, (2) covers at least 20 distinct test cases including multi-deck and full reshuffle.",
+    "related_files": [
+      "app/services/game_engine.rb",
+      "spec/services/game_engine_spec.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": ["p2-game-models"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p2-bot-brain-basic",
+    "slug": "p2-bot-brain-basic",
+    "title": "BotBrain with conservative/balanced/aggressive strategies",
+    "description": "Implement app/services/bot_brain.rb per docs/game_engine.md §Simulation Engine. Implement conservative, balanced, and aggressive strategies (NOT optimal — that's Phase 7). Include choose_action_target with strategy-specific targeting logic. Write service spec covering decide() for each strategy given various hand states. Acceptance criteria: (1) BotBrain.new(strategy:, game_state:, player_id:).decide returns :hit or :stay, (2) each strategy produces measurably different outputs on the same inputs, (3) spec passes.",
+    "related_files": [
+      "app/services/bot_brain.rb",
+      "spec/services/bot_brain_spec.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": ["p2-game-engine"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p2-solo-game-flow",
+    "slug": "p2-solo-game-flow",
+    "title": "Solo game controller + views",
+    "description": "Create GamesController (new, create, show) and MovesController (hit, stay, target) per app_spec.txt §12. Solo setup page at /play/solo (bot count 1-9, difficulty per bot). POST /games creates a solo Game with bot GamePlayers. GET /games/:id renders the game board. Basic HTML (Hotwire enhancements come later). BotTurnJob fires after each human turn in solo mode to advance bot turns. Acceptance criteria: (1) full solo game can be played from creation to round completion via request specs, (2) bot players take turns automatically, (3) round scoring matches GameEngine output.",
+    "related_files": [
+      "app/controllers/games_controller.rb",
+      "app/controllers/moves_controller.rb",
+      "app/views/games/new.html.erb",
+      "app/views/games/show.html.erb",
+      "app/jobs/bot_turn_job.rb",
+      "config/routes.rb",
+      "spec/requests/games_spec.rb",
+      "spec/requests/moves_spec.rb"
+    ],
+    "related_docs": ["docs/game_engine.md", "docs/realtime.md"],
+    "prerequisites": ["p2-game-engine", "p2-bot-brain-basic"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p2-card-flip-animation",
+    "slug": "p2-card-flip-animation",
+    "title": "Card flip animation + card_flip Stimulus controller",
+    "description": "Add the CSS from docs/frontend.md §Card Flip Animation to the stylesheet. Create app/javascript/controllers/card_flip_controller.js (15-40 lines) that toggles the `.flipped` class on elements with `data-controller='card-flip'`. Render cards in views using the card partial with data attributes. Acceptance criteria: (1) app/assets/stylesheets contains the card flip CSS, (2) card_flip_controller.js exists and toggles class on connect or click, (3) visual verification: a test page shows a card flipping on click.",
+    "related_files": [
+      "app/assets/stylesheets/cards.css",
+      "app/javascript/controllers/card_flip_controller.js",
+      "app/views/games/_card.html.erb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p2-solo-game-flow", "p1-tailwind-daisyui"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p2-mobile-responsive-board",
+    "slug": "p2-mobile-responsive-board",
+    "title": "Mobile-responsive game board layout",
+    "description": "Apply DaisyUI + Tailwind mobile-first breakpoints to the game view per docs/frontend.md §Mobile Responsiveness. Hit/Stay buttons bottom-anchored (thumb-reachable, min 44px touch target). Cards in horizontal scroll on mobile, grid on desktop. Sticky turn timer top bar. Acceptance criteria: (1) game view renders correctly at mobile (375px), tablet (768px), and desktop (1280px) widths, (2) Hit/Stay buttons are always accessible.",
+    "related_files": [
+      "app/views/games/show.html.erb",
+      "app/views/games/_player_hand.html.erb",
+      "app/views/games/_action_bar.html.erb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p2-card-flip-animation"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p3-achievement-seed",
+    "slug": "p3-achievement-seed",
+    "title": "Achievement model + seed data (32 achievements)",
+    "description": "Create Achievement and UserAchievement models + migrations per docs/data_model.md. Write db/seeds/achievements.yml with all 32 entries from docs/achievements.md (20 regular + 12 anti). Add a seed loader that idempotently upserts achievements from YAML. Run `bin/rails db:seed`. Acceptance criteria: (1) 32 achievements in the database after seeding, (2) running seed twice does not duplicate, (3) Achievement.where(is_anti: true).count == 12.",
+    "related_files": [
+      "db/migrate/*_create_achievements.rb",
+      "db/migrate/*_create_user_achievements.rb",
+      "app/models/achievement.rb",
+      "app/models/user_achievement.rb",
+      "db/seeds/achievements.yml",
+      "db/seeds.rb",
+      "spec/models/achievement_spec.rb",
+      "spec/models/user_achievement_spec.rb"
+    ],
+    "related_docs": ["docs/data_model.md", "docs/achievements.md"],
+    "prerequisites": ["p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p3-achievement-evaluator",
+    "slug": "p3-achievement-evaluator",
+    "title": "AchievementEvaluator service",
+    "description": "Implement app/services/achievement_evaluator.rb that takes a game, a user, and round results, and checks all 32 achievements for eligibility. For tiered achievements (flip7_*), increment progress and unlock when tier_target is met. Creates/updates UserAchievement records. Acceptance criteria: (1) unit spec covers at least 10 distinct achievement unlock scenarios, (2) tiered progression works (flip7_first → flip7_5 → ...), (3) idempotent — evaluating the same state twice does not double-unlock.",
+    "related_files": [
+      "app/services/achievement_evaluator.rb",
+      "spec/services/achievement_evaluator_spec.rb"
+    ],
+    "related_docs": ["docs/achievements.md", "docs/game_engine.md"],
+    "prerequisites": ["p3-achievement-seed", "p2-game-engine"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p3-achievement-ui",
+    "slug": "p3-achievement-ui",
+    "title": "Achievement display on profile page",
+    "description": "Update ProfilesController#show to load user achievements grouped by category and rarity. Render a grid of unlocked + locked achievements with icons and tooltips. Show progress bars for tiered achievements. Acceptance criteria: (1) profile page shows all 32 achievements (unlocked highlighted, locked dimmed), (2) tiered progress bars show current/target, (3) category tabs work.",
+    "related_files": [
+      "app/controllers/profiles_controller.rb",
+      "app/views/profiles/show.html.erb",
+      "app/views/profiles/_achievement_card.html.erb",
+      "spec/requests/profiles_spec.rb"
+    ],
+    "related_docs": ["docs/achievements.md", "docs/frontend.md"],
+    "prerequisites": ["p3-achievement-evaluator", "p1-profile-page"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-action-cable-setup",
+    "slug": "p4-action-cable-setup",
+    "title": "Action Cable + Redis adapter setup",
+    "description": "Configure config/cable.yml to use redis adapter. Set REDIS_URL env var handling. Create ApplicationCable::Connection with current_user authentication via warden (Devise). Write a basic channels_spec to verify subscription works. Acceptance criteria: (1) cable.yml uses redis in dev and prod, (2) ApplicationCable::Connection authenticates via Devise, (3) a test subscription to a dummy channel succeeds.",
+    "related_files": [
+      "config/cable.yml",
+      "app/channels/application_cable/connection.rb",
+      "app/channels/application_cable/channel.rb",
+      "spec/channels/application_cable/connection_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-sidekiq-setup",
+    "slug": "p4-sidekiq-setup",
+    "title": "Sidekiq setup + Redis connection",
+    "description": "Configure Sidekiq as the ActiveJob queue adapter. Mount Sidekiq web UI at /sidekiq (protected by Devise admin later). Verify a trivial job can be enqueued and processed. Acceptance criteria: (1) config.active_job.queue_adapter = :sidekiq, (2) bundle exec sidekiq boots without error, (3) a TestJob runs successfully.",
+    "related_files": [
+      "config/application.rb",
+      "config/sidekiq.yml",
+      "config/initializers/sidekiq.rb",
+      "config/routes.rb",
+      "app/jobs/test_job.rb",
+      "spec/jobs/test_job_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p1-install-core-gems"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-game-channel",
+    "slug": "p4-game-channel",
+    "title": "GameChannel with state sync and disconnect handling",
+    "description": "Implement app/channels/game_channel.rb per docs/realtime.md. On subscribe: send full state_sync for reconnect scenarios. On unsubscribe: enqueue PlayerDisconnectJob with 30s delay. Acceptance criteria: (1) channel spec subscribes successfully, (2) state_sync broadcast contains full HTML, (3) PlayerDisconnectJob is enqueued on unsubscribe.",
+    "related_files": [
+      "app/channels/game_channel.rb",
+      "app/jobs/player_disconnect_job.rb",
+      "spec/channels/game_channel_spec.rb",
+      "spec/jobs/player_disconnect_job_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p4-action-cable-setup", "p4-sidekiq-setup", "p2-game-models"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-room-code-casual",
+    "slug": "p4-room-code-casual",
+    "title": "Room code generation + casual join flow",
+    "description": "Implement 4-char room code generation (A-H, J-N, P-Z, 2-9; excludes I/O/0/1) with offensive word blocklist. Add RoomExpiryJob (5min). Build /play/casual (host creates room), /join (code entry), /join/:code (direct join). Host-starts-game flow. Acceptance criteria: (1) unique room codes, (2) expired rooms marked via Sidekiq cron, (3) full host→join→start flow passes request specs.",
+    "related_files": [
+      "app/services/room_code_generator.rb",
+      "app/controllers/games_controller.rb",
+      "app/jobs/room_expiry_job.rb",
+      "app/views/games/new.html.erb",
+      "config/routes.rb",
+      "spec/services/room_code_generator_spec.rb",
+      "spec/requests/casual_games_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md", "docs/frontend.md"],
+    "prerequisites": ["p4-sidekiq-setup", "p2-game-models"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-lobby-ui",
+    "slug": "p4-lobby-ui",
+    "title": "Lobby UI with Turbo Stream player presence",
+    "description": "Render the lobby partial for games in waiting state. Subscribe to LobbyChannel for real-time player-joined broadcasts. Show avatars, allow host to add bots, show deck count (2 decks when 11+ players). Acceptance criteria: (1) lobby updates in real-time as players join (verified via Action Cable test), (2) host sees Start Game button, non-hosts don't, (3) deck count badge appears at 11+ players.",
+    "related_files": [
+      "app/channels/lobby_channel.rb",
+      "app/views/games/_lobby.html.erb",
+      "app/views/games/_lobby_player.html.erb",
+      "spec/channels/lobby_channel_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md", "docs/frontend.md"],
+    "prerequisites": ["p4-room-code-casual", "p4-action-cable-setup"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-live-broadcasts",
+    "slug": "p4-live-broadcasts",
+    "title": "Real-time game broadcasts via Turbo Streams",
+    "description": "Wire the GameEngine's event output to Turbo Stream broadcasts on GameChannel. On each move (hit/stay/target), broadcast HTML fragments to all subscribers. Acceptance criteria: (1) a move made by player A is visible to player B via Action Cable within 200ms in tests, (2) card reveal, stay status, bust animation, action resolution all broadcast correctly, (3) no dual update paths — only Turbo Streams drive UI state during gameplay.",
+    "related_files": [
+      "app/controllers/moves_controller.rb",
+      "app/views/games/_player_hand.html.erb",
+      "app/views/games/_deck_pile.html.erb",
+      "spec/requests/moves_broadcast_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md", "docs/game_engine.md"],
+    "prerequisites": ["p4-game-channel", "p2-solo-game-flow"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-turn-timer",
+    "slug": "p4-turn-timer",
+    "title": "Turn timer — Sidekiq enforced + client-side Stimulus countdown",
+    "description": "Implement TurnTimeoutJob with turn_number staleness guard. On turn start, update game.turn_expires_at and enqueue the job with 10s delay. Create timer_controller.js to render a countdown bar from the absolute timestamp. Expiry triggers auto-Stay server-side. Acceptance criteria: (1) TurnTimeoutJob ignores stale turn_number values, (2) auto-Stay fires exactly once per turn even with rapid actions, (3) client countdown bar matches server expiry within 1 second.",
+    "related_files": [
+      "app/jobs/turn_timeout_job.rb",
+      "app/javascript/controllers/timer_controller.js",
+      "app/views/games/_turn_timer.html.erb",
+      "spec/jobs/turn_timeout_job_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md", "docs/frontend.md"],
+    "prerequisites": ["p4-game-channel", "p4-live-broadcasts"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p4-reconnection",
+    "slug": "p4-reconnection",
+    "title": "Reconnection handling with 30s grace period",
+    "description": "On unsubscribe: PlayerDisconnectJob enqueued with 30s wait. On reconnect (new subscribe): cancel the pending job, send state_sync. If job fires: mark player as disconnected, forfeit ranked game or auto-Stay casual game. Acceptance criteria: (1) reconnect within 30s resumes gameplay, (2) reconnect after 30s shows forfeit screen, (3) job handles the race condition where reconnect and job fire simultaneously.",
+    "related_files": [
+      "app/jobs/player_disconnect_job.rb",
+      "app/channels/game_channel.rb",
+      "spec/jobs/player_disconnect_job_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p4-game-channel", "p4-sidekiq-setup"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p5-elo-calculator",
+    "slug": "p5-elo-calculator",
+    "title": "EloCalculator service",
+    "description": "Implement app/services/elo_calculator.rb per docs/realtime.md §Elo System. Formula: `new_rating = current + K * (actual - expected)` with K=48 for first 20 games, K=32 after. Elo floor 100. Returns new_rating for both players. Acceptance criteria: (1) unit spec with 10+ scenarios (underdog wins, favorite wins, provisional vs established), (2) floor is enforced, (3) result is deterministic for same inputs.",
+    "related_files": [
+      "app/services/elo_calculator.rb",
+      "spec/services/elo_calculator_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p5-matchmaking",
+    "slug": "p5-matchmaking",
+    "title": "Matchmaking — Redis queue + expanding Elo range worker",
+    "description": "Implement MatchmakingChannel, MatchmakingWorkerJob (runs every 5s via sidekiq-cron), and the expanding range algorithm (0s: ±50, 10s: ±100, 20s: ±200, 30s: ±500, 60s: any). Use Redis sorted set keyed by Elo. On match found, create a Game and broadcast to both players via MatchmakingChannel. Acceptance criteria: (1) two players in queue within Elo range get matched within 15s in tests, (2) expanding range works over time, (3) cancelled queue entries are removed from Redis.",
+    "related_files": [
+      "app/channels/matchmaking_channel.rb",
+      "app/jobs/matchmaking_worker_job.rb",
+      "app/services/matchmaking_queue.rb",
+      "spec/channels/matchmaking_channel_spec.rb",
+      "spec/jobs/matchmaking_worker_job_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p5-elo-calculator", "p4-sidekiq-setup", "p4-action-cable-setup"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p5-ranked-game-flow",
+    "slug": "p5-ranked-game-flow",
+    "title": "Ranked game flow (2-player, Elo update on completion)",
+    "description": "Create /play/ranked page that enters matchmaking queue. Require 5+ casual games before ranked unlocks. On game completion for ranked mode, update both players' Elo via EloCalculator and record MatchResult with elo_before/after/change. Acceptance criteria: (1) ranked game cannot start with <5 casual games played, (2) Elo updates correctly on game end, (3) MatchResult records include Elo delta.",
+    "related_files": [
+      "app/controllers/matchmaking_controller.rb",
+      "app/views/matchmaking/new.html.erb",
+      "app/services/game_finalizer.rb",
+      "spec/services/game_finalizer_spec.rb",
+      "spec/requests/matchmaking_spec.rb"
+    ],
+    "related_docs": ["docs/realtime.md"],
+    "prerequisites": ["p5-matchmaking", "p2-game-engine", "p2-game-models"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p5-leaderboard",
+    "slug": "p5-leaderboard",
+    "title": "Leaderboard page (ranked Elo)",
+    "description": "GET /leaderboard shows top 100 users by elo_rating. Include games_played, win_rate, and user avatar. Paginated. Cached for 5 minutes. Acceptance criteria: (1) page shows users ordered by elo DESC, (2) pagination works, (3) cache invalidates on game completion.",
+    "related_files": [
+      "app/controllers/leaderboard_controller.rb",
+      "app/views/leaderboard/index.html.erb",
+      "config/routes.rb",
+      "spec/requests/leaderboard_spec.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p5-elo-calculator", "p1-profile-page"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p6-friendships",
+    "slug": "p6-friendships",
+    "title": "Friendships model + friends list UI",
+    "description": "Create Friendship model per docs/data_model.md. FriendsController with index (list friends + pending requests), create (send request), accept, destroy, challenge (create ranked game invite). Acceptance criteria: (1) friend request flow works end-to-end, (2) bidirectional lookups use the index on friend_id, (3) cannot friend self, (4) duplicate requests merge.",
+    "related_files": [
+      "db/migrate/*_create_friendships.rb",
+      "app/models/friendship.rb",
+      "app/controllers/friends_controller.rb",
+      "app/views/friends/index.html.erb",
+      "spec/models/friendship_spec.rb",
+      "spec/requests/friends_spec.rb"
+    ],
+    "related_docs": ["docs/data_model.md"],
+    "prerequisites": ["p1-user-model"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p6-rematch-button",
+    "slug": "p6-rematch-button",
+    "title": "Rematch button (post-game one-click replay)",
+    "description": "POST /games/:id/rematch creates a new Game with the same players and settings, linking via rematch_of column. Show Rematch button on completed game view. Acceptance criteria: (1) rematch creates new game with same players, (2) rematch_of references the previous game, (3) both players get notified via Action Cable (if multiplayer).",
+    "related_files": [
+      "app/controllers/games_controller.rb",
+      "app/views/games/_post_game.html.erb",
+      "spec/requests/rematch_spec.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p5-ranked-game-flow", "p4-live-broadcasts"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p6-stats-dashboard",
+    "slug": "p6-stats-dashboard",
+    "title": "Stats dashboard (history, card frequency, trends)",
+    "description": "GET /stats shows personal dashboard. /stats/history: paginated MatchResult list. /stats/cards: most drawn / most busted on. /stats/trends: Elo line chart + win rate over time. Use Chart.js or Chartkick via Stimulus. Acceptance criteria: (1) all four routes render, (2) charts render on valid data, (3) empty state handled.",
+    "related_files": [
+      "app/controllers/stats_controller.rb",
+      "app/views/stats/index.html.erb",
+      "app/views/stats/history.html.erb",
+      "app/views/stats/cards.html.erb",
+      "app/views/stats/trends.html.erb",
+      "spec/requests/stats_spec.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p5-ranked-game-flow"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p7-optimal-bot",
+    "slug": "p7-optimal-bot",
+    "title": "Optimal bot strategy — port simulation engine",
+    "description": "Port the TypeScript simulation engine from /Users/michael/Projects/flip7-simulations to Ruby as an extension of BotBrain's optimal strategy. Read the TS code to understand the probability calculations. Implement bust_probability and expected_value_of_hitting in Ruby. Acceptance criteria: (1) optimal bot outperforms balanced bot in 100-game simulation (spec runs this), (2) bust_probability calculations match TS reference outputs for 5 known hand states.",
+    "related_files": [
+      "app/services/bot_brain.rb",
+      "spec/services/bot_brain_optimal_spec.rb",
+      "spec/services/bot_simulation_spec.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": ["p2-bot-brain-basic", "p2-game-engine"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p7-rules-tutorial",
+    "slug": "p7-rules-tutorial",
+    "title": "Interactive rules / tutorial page",
+    "description": "GET /rules shows an interactive walkthrough of Flip7 rules with animated examples (card flip, bust, Flip 7, action cards). Use Stimulus controllers to drive the animations. Acceptance criteria: (1) page covers all rules from app_spec.txt §1, (2) interactive card flip demo works, (3) responsive on mobile.",
+    "related_files": [
+      "app/controllers/rules_controller.rb",
+      "app/views/rules/show.html.erb",
+      "app/javascript/controllers/tutorial_controller.js",
+      "spec/requests/rules_spec.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p2-card-flip-animation"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p7-seo-og-tags",
+    "slug": "p7-seo-og-tags",
+    "title": "SEO metadata + OpenGraph tags",
+    "description": "Add meta description, OpenGraph tags (og:title, og:description, og:image), Twitter Card tags to layout. Create a static og:image for the landing page. Acceptance criteria: (1) layout includes meta tags, (2) landing page has unique og:title and og:description, (3) sharing a link on Slack/Twitter produces a preview.",
+    "related_files": [
+      "app/views/layouts/application.html.erb",
+      "app/helpers/meta_helper.rb",
+      "public/og-image.png"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p1-landing-page"],
+    "status": "pending",
+    "notes": ""
+  },
+  {
+    "id": "p7-railway-deploy",
+    "slug": "p7-railway-deploy",
+    "title": "Railway deployment config + Procfile",
+    "description": "Create Procfile per docs/frontend.md §Deployment. Add production env var documentation to README. Add a railway.toml or equivalent if needed. Do NOT actually deploy — just get the config files in place for the human to push. Acceptance criteria: (1) Procfile exists with web, worker, release lines, (2) README documents all required env vars, (3) bin/rails assets:precompile succeeds locally.",
+    "related_files": [
+      "Procfile",
+      "README.md",
+      "config/environments/production.rb"
+    ],
+    "related_docs": ["docs/frontend.md"],
+    "prerequisites": ["p4-sidekiq-setup", "p1-tailwind-daisyui"],
+    "status": "pending",
+    "notes": ""
+  }
+]
