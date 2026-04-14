@@ -141,8 +141,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p1-landing-page"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (parallel with p5-elo-calculator)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed be305a8. ProfilesController#show_self (auth-gated /profile) + show (public /profile/:id), DaisyUI stats view, updated home link. 5 request specs. Full suite was 36 before p5-elo-calculator's additions."
   },
   {
     "id": "p2-game-models",
@@ -165,8 +165,8 @@
     ],
     "related_docs": ["docs/data_model.md", "docs/game_engine.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (solo)"
   },
   {
     "id": "p2-game-engine",
@@ -439,8 +439,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (parallel with p1-profile-page)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed da09442. EloCalculator pure service class with K-factor (48 provisional < 20 games, 32 established), expected_score, Elo floor 100, duck-typed input. 31 (!) RSpec examples. Full suite: 67 examples 0 failures."
   },
   {
     "id": "p5-matchmaking",
