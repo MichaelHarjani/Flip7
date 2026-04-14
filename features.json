@@ -59,8 +59,8 @@
     ],
     "related_docs": [],
     "prerequisites": ["p1-install-core-gems"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 2f8b06d (empty commit — no file changes needed). flip7_app_development and flip7_app_test databases created. Rails 8 default Postgres config worked with /tmp socket."
   },
   {
     "id": "p1-user-model",
@@ -77,8 +77,8 @@
     ],
     "related_docs": ["docs/data_model.md", "docs/realtime.md"],
     "prerequisites": ["p1-rspec-setup", "p1-database-create"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-google-oauth-config",
