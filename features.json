@@ -45,8 +45,8 @@
     ],
     "related_docs": [],
     "prerequisites": ["p1-install-core-gems"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed d3ec01d. RSpec 3.13 + FactoryBot configured. Empty rspec run: 0 examples, 0 failures."
   },
   {
     "id": "p1-database-create",
@@ -59,8 +59,8 @@
     ],
     "related_docs": [],
     "prerequisites": ["p1-install-core-gems"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-user-model",
