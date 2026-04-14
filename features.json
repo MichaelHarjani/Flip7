@@ -165,8 +165,8 @@
     ],
     "related_docs": ["docs/data_model.md", "docs/game_engine.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (solo)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed d516ab5. Game model with AASM (waiting→in_progress→completed/abandoned/expired), enough_players? guard. GamePlayer + MatchResult models. 14 files, 39 new specs (12+11+13+3 association adds). Full suite: 106 examples 0 failures. Note: GameEngine.start_round after-hook omitted pending p2-game-engine feature."
   },
   {
     "id": "p2-game-engine",
@@ -263,8 +263,8 @@
     ],
     "related_docs": ["docs/data_model.md", "docs/achievements.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (parallel with p4-sidekiq-setup)"
   },
   {
     "id": "p3-achievement-evaluator",
@@ -327,8 +327,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-install-core-gems"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (parallel with p3-achievement-seed)"
   },
   {
     "id": "p4-game-channel",
