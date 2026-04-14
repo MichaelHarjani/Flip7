@@ -125,8 +125,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p1-tailwind-daisyui", "p1-user-model"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 869fafc. Pages#home at /, DaisyUI hero with 3 CTAs + Google sign-in button + welcome state. daisy-test removed. 7 new specs, full suite 31 examples 0 failures."
   },
   {
     "id": "p1-profile-page",
@@ -141,8 +141,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p1-landing-page"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (parallel with p5-elo-calculator)"
   },
   {
     "id": "p2-game-models",
@@ -439,8 +439,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (parallel with p1-profile-page)"
   },
   {
     "id": "p5-matchmaking",
