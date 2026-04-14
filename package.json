@@ -1,0 +1,20 @@
+{
+  "name": "flip7-app",
+  "version": "1.0.0",
+  "description": "Multiplayer web implementation of [Flip7](https://www.theop.games/products/flip-7) — the push-your-luck card game by Eric Olsen / The Op Games.",
+  "main": "eslint.config.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "daisyui": "^5.5.19"
+  }
+}

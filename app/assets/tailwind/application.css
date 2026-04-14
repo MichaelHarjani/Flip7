@@ -1,1 +1,4 @@
 @import "tailwindcss";
+@plugin "../../../node_modules/daisyui" {
+  themes: dark --default, light, cyberpunk, retro, dracula, night;
+}
