@@ -29,8 +29,8 @@
     ],
     "related_docs": [],
     "prerequisites": ["p1-rails-scaffold"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed e7fb3bf. 12 gems added: devise, omniauth, omniauth-google-oauth2, omniauth-rails_csrf_protection, sidekiq, redis, aasm, phlex-rails, with_advisory_lock, rspec-rails, factory_bot_rails, faker. 152 gems total after bundle install."
   },
   {
     "id": "p1-rspec-setup",
@@ -45,8 +45,8 @@
     ],
     "related_docs": [],
     "prerequisites": ["p1-install-core-gems"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-database-create",
