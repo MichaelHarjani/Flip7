@@ -1,0 +1,57 @@
+<div class="max-w-4xl mx-auto p-6" data-theme="dark">
+  <div class="flex items-center gap-4 mb-6">
+    <% if @user.avatar_url.present? %>
+      <div class="avatar">
+        <div class="w-24 rounded-full">
+          <img src="<%= @user.avatar_url %>" alt="<%= @user.name %>" />
+        </div>
+      </div>
+    <% end %>
+    <div>
+      <h1 class="text-4xl font-bold"><%= @user.name.presence || @user.email %></h1>
+      <p class="text-sm opacity-60"><%= @user.email %></p>
+    </div>
+  </div>
+
+  <div class="stats stats-vertical lg:stats-horizontal shadow w-full mb-4">
+    <div class="stat">
+      <div class="stat-title">Elo Rating</div>
+      <div class="stat-value"><%= @user.elo_rating %></div>
+      <div class="stat-desc"><%= @user.ranked_wins %>W &bull; <%= @user.ranked_losses %>L</div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Games Played</div>
+      <div class="stat-value"><%= @user.games_played %></div>
+      <div class="stat-desc">
+        <%= @user.games_won %> wins
+        <% if @user.games_played > 0 %>
+          (<%= ((@user.games_won.to_f / @user.games_played) * 100).round %>%)
+        <% end %>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Flip 7s</div>
+      <div class="stat-value"><%= @user.total_flip7s %></div>
+      <div class="stat-desc">Lifetime</div>
+    </div>
+  </div>
+
+  <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+    <div class="stat">
+      <div class="stat-title">Highest Round</div>
+      <div class="stat-value"><%= @user.highest_round_score %></div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Current Streak</div>
+      <div class="stat-value"><%= @user.current_win_streak %></div>
+    </div>
+    <div class="stat">
+      <div class="stat-title">Best Streak</div>
+      <div class="stat-value"><%= @user.best_win_streak %></div>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <%= link_to "← Back to home", root_path, class: "btn btn-ghost" %>
+  </div>
+</div>

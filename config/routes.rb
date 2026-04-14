@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  get "/profile", to: "profiles#show_self", as: :my_profile
+  get "/profile/:id", to: "profiles#show", as: :profile
+
   # Defines the root path route ("/")
   root "pages#home"
 end

@@ -16,7 +16,7 @@
 
       <% if user_signed_in? %>
         <p>Welcome, <strong><%= current_user.name.presence || current_user.email %></strong></p>
-        <%= link_to "My Profile", "#", class: "btn btn-outline btn-sm mt-2" %>
+        <%= link_to "My Profile", my_profile_path, class: "btn btn-outline btn-sm mt-2" %>
         <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-ghost btn-sm" %>
       <% else %>
         <%= button_to "Sign in with Google",
