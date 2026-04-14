@@ -1,0 +1,324 @@
+---
+# Seed data for Achievement records.
+# 32 total: 20 regular + 12 anti.
+# Source of truth: docs/achievements.md
+
+- key: flip7_first
+  name: Flip 7
+  description: Achieve a Flip 7
+  category: flip7
+  rarity: epic
+  icon: 🎯
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: flip7_5
+  name: Flip Master
+  description: Achieve Flip 7 five times
+  category: flip7
+  rarity: epic
+  icon: ⭐
+  is_anti: false
+  tier_target: 5
+  parent_key: flip7_first
+
+- key: flip7_10
+  name: Flip Legend
+  description: Achieve Flip 7 ten times
+  category: flip7
+  rarity: legendary
+  icon: 🌟
+  is_anti: false
+  tier_target: 10
+  parent_key: flip7_first
+
+- key: flip7_25
+  name: Flip Deity
+  description: Achieve Flip 7 twenty-five times
+  category: flip7
+  rarity: legendary
+  icon: 💫
+  is_anti: false
+  tier_target: 25
+  parent_key: flip7_first
+
+- key: flip7_50
+  name: Flip Prophet
+  description: Achieve Flip 7 fifty times
+  category: flip7
+  rarity: legendary
+  icon: 🏆
+  is_anti: false
+  tier_target: 50
+  parent_key: flip7_first
+
+- key: flip7_100
+  name: Flip God
+  description: Achieve Flip 7 one hundred times
+  category: flip7
+  rarity: legendary
+  icon: 👑
+  is_anti: false
+  tier_target: 100
+  parent_key: flip7_first
+
+- key: calculated_risk
+  name: Calculated Risk
+  description: Win with exactly 200 cumulative points
+  category: strategic
+  rarity: legendary
+  icon: 🧠
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: high_roller_50
+  name: High Roller
+  description: Score 50+ points in a single round
+  category: score
+  rarity: common
+  icon: 💰
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: high_roller_75
+  name: Big Spender
+  description: Score 75+ points in a single round
+  category: score
+  rarity: rare
+  icon: 💵
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: high_roller_100
+  name: Jackpot
+  description: Score 100+ points in a single round
+  category: score
+  rarity: epic
+  icon: 💎
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: zero_hero
+  name: Zero Hero
+  description: Win a round with a 0 card in your hand
+  category: risk
+  rarity: rare
+  icon: 🎲
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: extra_life
+  name: Extra Life
+  description: Achieve Flip 7 with an unused Second Chance
+  category: special
+  rarity: legendary
+  icon: ❤️
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: ice_cold
+  name: Ice Cold
+  description: Freeze someone within 10 points of winning, then win
+  category: strategic
+  rarity: epic
+  icon: 🧊
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: higher_score
+  name: Higher Score
+  description: Win when another player has exceeded 200 points
+  category: strategic
+  rarity: rare
+  icon: 📈
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: david_vs_goliath
+  name: David vs Goliath
+  description: Win a game despite an opponent being 50+ points ahead
+  category: strategic
+  rarity: epic
+  icon: 🗡️
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: speed_run
+  name: Speed Run
+  description: Win a game in 5 or fewer rounds
+  category: strategic
+  rarity: rare
+  icon: ⚡
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: action_taker
+  name: Action Taker
+  description: Draw all 3 action card types in one round
+  category: special
+  rarity: epic
+  icon: ✨
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: second_chance_saver
+  name: Second Chance Saver
+  description: Use a Second Chance to avoid a bust
+  category: special
+  rarity: common
+  icon: 🛡️
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: threes_company
+  name: Three's Company
+  description: Survive all three cards from a Flip Three
+  category: special
+  rarity: rare
+  icon: 🎴
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: sweep
+  name: Sweep
+  description: Win 3 consecutive rounds
+  category: strategic
+  rarity: epic
+  icon: 🧹
+  is_anti: false
+  tier_target:
+  parent_key:
+
+- key: the_repeater
+  name: The Repeater
+  description: Bust by drawing a duplicate number card
+  category: anti
+  rarity: common
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: zero_points
+  name: Zero Points
+  description: Bust in the very first round of a game
+  category: anti
+  rarity: common
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: zero_trust
+  name: Zero Trust
+  description: Draw a 0 and immediately bust on the next card
+  category: anti
+  rarity: rare
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: second_life_lost
+  name: Second Life Lost
+  description: Draw a Second Chance and bust on the very next card
+  category: anti
+  rarity: epic
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: glutton
+  name: Glutton
+  description: Bust while holding 50+ points in your hand
+  category: anti
+  rarity: rare
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: flip_three_flop
+  name: Flip Three Flop
+  description: Bust during a forced Flip Three draw
+  category: anti
+  rarity: rare
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: risky_business
+  name: Risky Business
+  description: Draw 5+ cards successfully then bust
+  category: anti
+  rarity: rare
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: modifier_misstep
+  name: Modifier Misstep
+  description: Bust while holding the ×2 multiplier
+  category: anti
+  rarity: rare
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: freeze_dried
+  name: Freeze Dried
+  description: Get Frozen while within 10 points of winning
+  category: anti
+  rarity: epic
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: so_close
+  name: So Close
+  description: Bust while holding 190+ cumulative points
+  category: anti
+  rarity: epic
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: flip_flop
+  name: Flip Flop
+  description: Get 6 unique number cards then bust on the 7th draw
+  category: anti
+  rarity: epic
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:
+
+- key: all_in_all_out
+  name: All In, All Out
+  description: Bust with 80+ points worth of cards in hand
+  category: anti
+  rarity: epic
+  icon: 💀
+  is_anti: true
+  tier_target:
+  parent_key:

@@ -8,6 +8,8 @@ class User < ApplicationRecord
   has_many :game_players, dependent: :destroy
   has_many :games, through: :game_players
   has_many :match_results, dependent: :destroy
+  has_many :user_achievements, dependent: :destroy
+  has_many :achievements, through: :user_achievements
 
   def self.from_omniauth(auth)
     where(provider: auth.provider, uid: auth.uid).first_or_create do |user|

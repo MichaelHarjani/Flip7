@@ -10,9 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_103019) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_14_103601) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "achievements", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.string "icon", null: false
+    t.boolean "is_anti", default: false, null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.string "parent_key"
+    t.string "rarity", null: false
+    t.integer "tier_target"
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_achievements_on_key", unique: true
+  end
 
   create_table "game_players", force: :cascade do |t|
     t.string "bot_strategy"
@@ -74,6 +89,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_103019) do
     t.index ["user_id"], name: "index_match_results_on_user_id"
   end
 
+  create_table "user_achievements", force: :cascade do |t|
+    t.bigint "achievement_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "game_id"
+    t.integer "progress", default: 0, null: false
+    t.datetime "unlocked_at"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["achievement_id"], name: "index_user_achievements_on_achievement_id"
+    t.index ["game_id"], name: "index_user_achievements_on_game_id"
+    t.index ["user_id", "achievement_id"], name: "index_user_achievements_on_user_id_and_achievement_id", unique: true
+    t.index ["user_id"], name: "index_user_achievements_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "avatar_url"
     t.integer "best_win_streak", default: 0, null: false
@@ -104,4 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_103019) do
   add_foreign_key "game_players", "users"
   add_foreign_key "match_results", "games"
   add_foreign_key "match_results", "users"
+  add_foreign_key "user_achievements", "achievements"
+  add_foreign_key "user_achievements", "games"
+  add_foreign_key "user_achievements", "users"
 end
