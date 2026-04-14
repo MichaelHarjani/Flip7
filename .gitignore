@@ -1,0 +1,36 @@
+# Rails
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/storage/*
+!/storage/.keep
+/public/assets
+/public/packs
+/node_modules
+/yarn-error.log
+/yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+/config/master.key
+/config/credentials/*.key
+
+# OS / IDE
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Build
+/dist
+/build
+*.log
+
+# Autonomous loop scratch
+.worktrees/
+.claude-progress.tmp
