@@ -93,8 +93,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 3a9fe23. Users::OmniauthCallbacksController with google_oauth2 action, Devise config updated, 2 request specs (new user + duplicate prevention). Full suite: 24 examples, 0 failures."
   },
   {
     "id": "p1-tailwind-daisyui",
@@ -125,8 +125,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p1-tailwind-daisyui", "p1-user-model"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-profile-page",
