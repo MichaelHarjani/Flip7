@@ -77,8 +77,8 @@
     ],
     "related_docs": ["docs/data_model.md", "docs/realtime.md"],
     "prerequisites": ["p1-rspec-setup", "p1-database-create"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 5a8a021. Devise User + OmniAuth (google_oauth2) + 14 columns (provider/uid/name/avatar_url + 10 game stats). 22 RSpec examples passing."
   },
   {
     "id": "p1-google-oauth-config",
@@ -109,8 +109,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p1-rails-scaffold"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14"
   },
   {
     "id": "p1-landing-page",
