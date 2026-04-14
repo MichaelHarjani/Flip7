@@ -1,0 +1,437 @@
+# Flip7 App Spec
+
+**Domain:** flip7.michaelharjani.com
+**Framework:** Ruby on Rails 8
+**Deployment:** Railway (PostgreSQL + Redis)
+**Real-time:** Action Cable (WebSockets)
+**Frontend:** Hotwire (Turbo + Stimulus) + Tailwind CSS + DaisyUI
+**Auth:** Devise + OmniAuth (Google OAuth)
+
+This file contains the essentials. Deep references live in `docs/`:
+- `docs/data_model.md` — database schemas (users, games, game_players, match_results, achievements, friendships)
+- `docs/achievements.md` — full list of 32 achievements + seed data
+- `docs/game_engine.md` — GameEngine service interface, AASM state machine, concurrency control, BotBrain AI
+- `docs/realtime.md` — Action Cable channels, Sidekiq jobs, Devise/OAuth auth details
+- `docs/frontend.md` — Stimulus controllers, CSS card flip, mobile responsiveness, Railway deployment
+
+---
+
+## 1. Game Rules Reference
+
+Flip7 is a push-your-luck card game designed by Eric Olsen, published by The Op Games (2024). This digital version supports 2+ players with no upper limit.
+
+### 1.1 The Deck (94 cards per deck)
+
+**Multi-Deck Scaling:** A single deck of 94 cards is used for games of up to 10 players. For every 10 players beyond the first 10, an additional deck is shuffled in (11–20 players = 2 decks / 188 cards, 21–30 = 3 decks / 282 cards, etc.). With multiple decks, duplicate number cards from different decks ARE in play — bust detection still triggers when a player's hand contains two cards of the same value, regardless of which deck they came from.
+
+**Full Reshuffle Between Rounds:** At the start of every round, the entire deck (or multi-deck) is freshly shuffled. No cards carry over from the previous round.
+
+**Number Cards (79 per deck):** Pyramid distribution — each number N (0–12) has exactly N copies in the deck.
+
+| Value | Copies | Points |
+|-------|--------|--------|
+| 0 | 1 | 0 |
+| 1 | 1 | 1 |
+| 2 | 2 | 2 |
+| 3 | 3 | 3 |
+| 4 | 4 | 4 |
+| 5 | 5 | 5 |
+| 6 | 6 | 6 |
+| 7 | 7 | 7 |
+| 8 | 8 | 8 |
+| 9 | 9 | 9 |
+| 10 | 10 | 10 |
+| 11 | 11 | 11 |
+| 12 | 12 | 12 |
+
+**Action Cards (9 per deck):**
+- 3× Freeze — Forces a target player (including yourself) to immediately Stay
+- 3× Flip Three — Forces a target player to draw three consecutive cards
+- 3× Second Chance — Held by the drawer; when they would bust, they may discard the duplicate instead. Only one Second Chance can be held at a time; drawing a second replaces the first.
+
+**Modifier Cards (6 per deck):**
+- +2, +4, +6, +8, +10 — Added to final score after all other calculations
+- ×2 — Doubles the sum of number cards only (applied before +N modifiers)
+
+### 1.2 Round Flow
+
+1. **Initial Deal:** One card is dealt face-up to each player in turn order. If an action card is dealt during the initial deal, it resolves immediately before dealing continues — a player may start the round with 0, 1, or multiple cards depending on what they draw.
+2. **Turn Order:** Starting from the player left of the dealer, proceeding clockwise. Each active player chooses:
+   - **Hit** — Draw one card from the deck
+   - **Stay** — Bank current score, become inactive for the round
+3. **Card Resolution on Hit:**
+   - **Number card (unique):** Added to hand, play continues
+   - **Number card (duplicate):** Player busts — scores 0 for the round, unless they hold a Second Chance
+   - **Action card:** Resolves immediately
+   - **Modifier card:** Added to hand, affects scoring
+4. **Round End Conditions:**
+   - All players have Stayed or Busted
+   - A player achieves **Flip 7** (7 unique number cards) — round ends immediately, that player earns +15 bonus points
+
+### 1.3 Action Card Resolution
+
+**Freeze:** The drawer chooses any active player (including themselves) to immediately Stay. The target banks their current score.
+
+**Flip Three:** The drawer chooses any active player to draw three consecutive cards. Each card resolves normally — the target can bust mid-sequence. A held Second Chance can save them from one bust.
+
+**Second Chance:** Passive — used automatically when the player would bust. If a player draws a Second Chance while already holding one, the old one is discarded. Self-targeting is always valid.
+
+### 1.4 Scoring
+
+Order of operations for a single round:
+1. Sum all number cards in hand → `number_sum`
+2. If ×2 modifier is held: `number_sum = number_sum × 2`
+3. Add all +N modifiers: `round_score = number_sum + sum_of_plus_modifiers`
+4. If Flip 7 achieved: `round_score = round_score + 15`
+5. If busted: `round_score = 0`
+
+The ×2 modifier doubles only the number card sum — NOT +N modifiers or the Flip 7 bonus.
+
+### 1.5 Game End
+
+First player to reach **200 cumulative points** wins. The round in which a player reaches 200 completes fully — if multiple players reach 200 in the same round, the highest cumulative score wins. Ties are broken by who Stayed earliest in the final round.
+
+---
+
+## 2. Architecture Overview
+
+### 2.1 Tech Stack
+
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| Framework | Rails 8.0+ | Ruby 3.3+ |
+| Database | PostgreSQL 16 | Railway managed |
+| Cache/Pub-Sub | Redis 7 | Railway managed, Action Cable adapter |
+| Real-time | Action Cable | WebSocket layer for game updates |
+| Background Jobs | Sidekiq | Turn timers, matchmaking, cleanup |
+| Auth | Devise + OmniAuth | Google OAuth 2.0 |
+| Frontend | Hotwire (Turbo + Stimulus) | No separate JS framework |
+| CSS | Tailwind CSS 4 + DaisyUI 5 | via tailwindcss-rails gem |
+| View Components | Phlex | Ruby-based view components |
+| State Machine | AASM | Game lifecycle management |
+| Deployment | Railway | Git-push deploys, managed Postgres + Redis |
+
+### 2.2 Why This Stack
+
+**Rails 8 + Hotwire over React/Next.js:** Flip7 is a turn-based game with discrete state transitions — the sweet spot for server-rendered HTML over WebSockets. Every player action is a server round-trip that validates the move, updates canonical state, and broadcasts result HTML to all clients. No client-side game engine needed, no state synchronization bugs, no duplicated logic. The server IS the game engine.
+
+**Hotwire specifically:**
+- Bundle size: Turbo (~25KB) + Stimulus (~7KB) = 32KB vs React ecosystem at 200KB+
+- Action Cable integration is automatic with `turbo_stream_from`
+- All game logic stays server-side — no cheating vectors
+- Card flip animations are pure CSS (GPU-accelerated transforms)
+- Mobile 3G load time matters — 32KB vs 200KB+
+
+**Railway:** Git-push deploys, managed PostgreSQL and Redis, WebSocket support with no connection limits on paid plans. No sysadmin overhead.
+
+**Devise + OmniAuth:** Most documentation, fastest path to working Google login.
+
+---
+
+## 3. Data Model (Summary)
+
+Full schemas in `docs/data_model.md`. Tables:
+
+- **users** — Devise core + OAuth + game stats (elo_rating, games_played, total_flip7s, etc.)
+- **games** — room_code, mode, status (AASM), current_round, turn state, deck (jsonb), round_state (jsonb), cumulative_scores, winner_id, lock_version
+- **game_players** — join table (game_id, user_id, seat_position, is_bot, bot_strategy, connected)
+- **match_results** — denormalized for fast leaderboard queries (final_score, placement, elo_before/after/change)
+- **achievements** + **user_achievements** — 32 achievements, tiered variants, unlock tracking
+- **friendships** — pending/accepted, bidirectional
+
+---
+
+## 4. Achievement System (Summary)
+
+20 regular achievements + 12 anti-achievements. Full table in `docs/achievements.md`.
+
+Categories: flip7 (tiered: 1/5/10/25/50/100), risk, score, strategic, special, anti.
+Rarities: common, rare, epic, legendary.
+
+Evaluated at two points:
+- **End of each round:** round-specific (Flip 7, High Roller, busts, action card achievements)
+- **End of each game:** game-specific (Calculated Risk, Speed Run, David vs Goliath)
+
+The `AchievementEvaluator` service receives game state + round results, checks uncompleted achievements, creates/updates `UserAchievement` records. New unlocks broadcast via Action Cable for toast notifications.
+
+---
+
+## 5. Game Modes (Summary)
+
+### 5.1 Solo Mode (vs Bots)
+
+- No account required (guest play supported; achievements and stats only for logged-in users)
+- Player selects number of bots (1–9 for single deck, 10+ triggers multi-deck) and difficulty per bot
+- Game starts immediately
+- Bot strategies: conservative, balanced, aggressive, optimal (probability-based from simulation engine)
+- Bot turn delay: 1–2 seconds (randomized) for natural feel; no 10s timer for bots
+
+### 5.2 Casual Multiplayer (Room Codes)
+
+- Requires Google login
+- Host creates game → 4-character room code (A-H, J-N, P-Z, 2-9; excludes ambiguous I/O/0/1)
+- 331,776 possible codes; unique index on active games only; offensive word blocklist
+- Lobby with avatars, bot backfill, host-starts
+- Rooms expire after 5 minutes of waiting (Sidekiq cron)
+- When player count > 10, second deck is automatically added
+- No Elo impact; counts toward achievements and lifetime stats
+
+### 5.3 Ranked Duel (Head-to-Head)
+
+- Requires account. Minimum 5 casual games before ranked unlocks.
+- Redis sorted set queue keyed by Elo rating
+- `MatchmakingWorkerJob` every 5s, matching algorithm expands range:
+  - 0s: ±50 Elo
+  - 10s: ±100
+  - 20s: ±200
+  - 30s: ±500
+  - 60s: any available
+- 2-player, no bots, first to 200 wins
+- Turn timer: 10s server-enforced (auto-Stay on expiry)
+- Elo: starting 1000, K-factor 48 (provisional, first 20) → 32, floor 100
+- Disconnect: 30s grace, then forfeit + Elo loss. 3+ disconnects/24h = 15-min matchmaking cooldown.
+
+---
+
+## 6. Game Engine (Summary)
+
+Full interface in `docs/game_engine.md`. Key points:
+
+- Server-authoritative. NO game state computed client-side.
+- `GameEngine` is a pure-function service at `app/services/game_engine.rb`
+- Methods: `start_round`, `hit`, `stay`, `resolve_action`, `check_round_end`, `score_round`, `check_game_end`, `timeout_turn`
+- AASM state machine on Game: `waiting → in_progress → completed/abandoned/expired`
+- Concurrency: optimistic locking (`lock_version` column) + PostgreSQL advisory locks for critical sections (Sidekiq/web race conditions)
+- Turn timer: `turn_expires_at` timestamp + `TurnTimeoutJob` with `turn_number` guard against stale execution
+
+---
+
+## 7. Real-Time Layer (Summary)
+
+Full details in `docs/realtime.md`. Channels:
+
+- `GameChannel` — broadcasts game state updates via Turbo Streams; sends `state_sync` on reconnect; `PlayerDisconnectJob` on unsubscribe
+- `LobbyChannel` — player presence in waiting rooms
+- `MatchmakingChannel` — personal matchmaking updates
+
+All game state updates go through Action Cable. Turbo Streams are the sole update path during active gameplay (avoids the "Turbo + ActionCable trap" of dual update paths).
+
+Private vs public info: Flip7 deals all cards face-up, so there's no hidden info between players. Only hidden state is remaining deck composition.
+
+---
+
+## 8. Authentication (Summary)
+
+Full details in `docs/realtime.md` §Auth. Uses Devise + `omniauth-google-oauth2` gem. User model has `from_omniauth` class method. Google Cloud Console OAuth 2.0 Client ID with redirect URI `https://flip7.michaelharjani.com/users/auth/google_oauth2/callback`, scopes `email` + `profile`. Guest play supported for solo mode only.
+
+---
+
+## 9. Frontend (Summary)
+
+Full details in `docs/frontend.md`. Pages:
+
+```
+/                 Landing + play options
+/play/solo        Solo setup (bot count + difficulty)
+/play/casual      Create or join room
+/join, /join/:code  Room code entry
+/play/ranked      Ranked matchmaking queue
+/game/:id         Active game
+/profile, /profile/:id  Stats + achievements
+/friends          Friends list + requests
+/stats            Personal dashboard
+/leaderboard      Ranked Elo leaderboard
+/rules            Interactive tutorial
+```
+
+Stimulus controllers (each 15–40 lines):
+- card_flip, timer, action_target, toast, lobby, matchmaking, score_animation, sound
+
+Card flip animation is pure CSS (perspective + rotateY + backface-visibility), toggled by a Stimulus controller.
+
+Mobile-first with DaisyUI breakpoints. Bottom-anchored thumb-reachable Hit/Stay buttons. Action targeting via bottom sheet modal, not dropdown.
+
+Themes: dark (default), light, cyberpunk, retro, dracula, night.
+
+---
+
+## 10. Deployment (Summary)
+
+Full details in `docs/frontend.md` §Deployment. Railway services:
+
+- Web (Rails 8 + Puma, handles HTTP + WebSocket)
+- Worker (Sidekiq)
+- PostgreSQL (managed)
+- Redis (managed, Action Cable + Sidekiq + matchmaking queue)
+
+Procfile:
+```
+web: bin/rails server -p $PORT
+worker: bundle exec sidekiq
+release: bin/rails db:migrate
+```
+
+Custom domain `flip7.michaelharjani.com` via CNAME. Railway handles SSL.
+
+Note from parent CLAUDE.md: Railway deploys frequently get SKIPPED due to build caching — force redeploy if SKIPPED is seen.
+
+---
+
+## 11. Background Jobs (Sidekiq)
+
+| Job | Trigger | Purpose |
+|-----|---------|---------|
+| `TurnTimeoutJob` | Turn start (10s delay) | Auto-Stay if player doesn't act |
+| `MatchmakingWorkerJob` | Recurring (every 5s) | Pair ranked queue players |
+| `PlayerDisconnectJob` | WebSocket disconnect (30s delay) | Forfeit if no reconnect |
+| `RoomExpiryJob` | Room creation (5min delay) | Expire empty waiting rooms |
+| `AchievementCheckJob` | Round/game end | Evaluate and unlock achievements |
+| `CleanupAbandonedGamesJob` | Recurring (hourly) | Mark stale games as abandoned |
+| `BotTurnJob` | Bot's turn (1-2s delay) | Execute bot decision |
+
+---
+
+## 12. API Endpoints
+
+Standard Rails controller actions (not JSON API). All responses are Turbo Stream or HTML.
+
+```
+POST   /games                    Create game (solo/casual)
+GET    /games/:id                Show game
+PATCH  /games/:id/join           Join via room code
+PATCH  /games/:id/start          Host starts
+POST   /games/:id/rematch        Create rematch
+DELETE /games/:id                Leave/abandon
+
+POST   /games/:id/moves/hit      Draw a card
+POST   /games/:id/moves/stay     Bank score
+POST   /games/:id/moves/target   Choose action card target
+
+POST   /matchmaking/queue        Enter ranked queue
+DELETE /matchmaking/queue        Leave ranked queue
+
+GET    /profile                  Own profile
+GET    /profile/:id              Public profile
+GET    /leaderboard              Ranked leaderboard
+
+GET    /friends                  Friends list
+POST   /friends                  Send friend request
+PATCH  /friends/:id/accept       Accept request
+DELETE /friends/:id              Remove / decline
+POST   /friends/:id/challenge    Challenge to duel
+
+GET    /stats                    Personal stats
+GET    /stats/history            Match history
+GET    /stats/cards              Card frequency analysis
+GET    /stats/trends             Elo / win rate trends
+```
+
+---
+
+## 13. Simulation Engine (Bot AI)
+
+Full details in `docs/game_engine.md`. The existing Flip7 simulation engine (TypeScript, at `/Users/michael/Projects/flip7-simulations`) should be ported to Ruby as `app/services/bot_brain.rb` for bot decisions.
+
+Key insight from the original simulation: optimal strategy is NOT a simple threshold. It depends on specific cards held and remaining deck composition. A hand with low cards (1, 2, 3) is safer to hit; a hand with 10 and 12 is much more dangerous.
+
+---
+
+## 14. Testing Strategy
+
+| Layer | Framework | What to test |
+|-------|-----------|-------------|
+| Models | RSpec + FactoryBot | Validations, associations, scopes |
+| Services | RSpec | GameEngine (exhaustive), BotBrain, EloCalculator, AchievementEvaluator |
+| Controllers | RSpec request specs | Auth, game actions, error cases |
+| Channels | RSpec + ActionCable testing | Subscriptions, broadcasts, connection auth |
+| System | Capybara + Playwright | Critical user flows |
+
+### Critical GameEngine test cases
+
+- Drawing each card type (number, action, modifier)
+- Bust detection (duplicate number)
+- Second Chance saves bust
+- Second Chance replacement (drawing a second one)
+- Flip 7 detection and +15 bonus
+- Scoring order of operations (×2 before +N before Flip7)
+- Freeze targeting (self and others)
+- Flip Three full sequence (including mid-sequence bust)
+- Flip Three with Second Chance save mid-sequence
+- Round end conditions (all stayed, all busted, Flip 7)
+- Game end (200+ points, tiebreaking)
+- Turn timeout behavior
+- Initial deal with action card resolution
+- Optimistic locking conflict resolution
+- Deck depletion edge case (deck runs out mid-round)
+- Multi-deck generation (correct card counts)
+- Full reshuffle between rounds (deck is fresh each round)
+- Multi-deck bust detection (duplicates from different decks still bust)
+
+---
+
+## 15. Development Phases
+
+### Phase 1: Foundation (Week 1–2)
+- Rails 8 new app with PostgreSQL
+- Devise + Google OAuth
+- User model with stats columns
+- Tailwind + DaisyUI setup
+- Landing page, profile page
+- Deploy to Railway with custom domain
+
+### Phase 2: Solo Mode (Week 3–4)
+- GameEngine service (full game logic)
+- Game / GamePlayer / MatchResult models
+- Solo game controller + views
+- Bot strategies (conservative, balanced, aggressive)
+- Card flip animations (CSS + Stimulus)
+- Mobile-responsive game board
+- Round scoring + cumulative tracking
+
+### Phase 3: Achievements (Week 5)
+- Achievement seed data (32 achievements)
+- AchievementEvaluator service
+- UserAchievement tracking
+- Achievement display UI
+- Toast notifications via Action Cable
+
+### Phase 4: Casual Multiplayer (Week 6–7)
+- Action Cable channels (GameChannel, LobbyChannel)
+- Room code generation + join flow
+- Lobby UI with player presence
+- Real-time game broadcasts (Turbo Streams)
+- Turn timer (server-side Sidekiq + client-side Stimulus)
+- Reconnection handling (30s grace period)
+- Bot backfill in casual rooms
+
+### Phase 5: Ranked Duels (Week 8–9)
+- MatchmakingChannel + Redis queue
+- MatchmakingWorkerJob (expanding Elo range)
+- EloCalculator service
+- Ranked game flow (2-player, no bots)
+- Disconnect forfeit logic
+- Leaderboard page
+
+### Phase 6: Social & Stats (Week 10–11)
+- Friends list (add by username/email, challenge to duel)
+- Rematch button
+- Statistics dashboard (win rate by mode, card frequency, trends, score distribution)
+- PWA setup (manifest.json, service worker)
+
+### Phase 7: Polish (Week 12)
+- Optimal bot strategy (simulation port from `/Users/michael/Projects/flip7-simulations`)
+- Sound effects (toggleable)
+- Theme selector
+- Interactive rules / tutorial page
+- SEO + OpenGraph tags
+- Performance optimization (N+1, caching)
+- Multi-deck visual indicator
+
+---
+
+## 16. Future Considerations (Post-Launch)
+
+- **Spectator mode:** Watch active ranked games
+- **Seasons:** Elo resets with seasonal leaderboards
+- **Tournaments:** Bracket-style elimination
+- **Replays:** Step through completed games
