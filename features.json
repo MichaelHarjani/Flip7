@@ -263,8 +263,8 @@
     ],
     "related_docs": ["docs/data_model.md", "docs/achievements.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (parallel with p4-sidekiq-setup)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed e0f7e39. Achievement + UserAchievement models, 32-entry YAML seed (20 regular + 12 anti, 6 tiered flip7 variants), idempotent seed loader. 20 new specs (11 Achievement + 9 UserAchievement). Note: extra_life reassigned from flip7 to special category to satisfy count check. Full suite: 129 examples."
   },
   {
     "id": "p3-achievement-evaluator",
@@ -327,8 +327,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-install-core-gems"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (parallel with p3-achievement-seed)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 52ef5de. Sidekiq adapter configured (config.active_job.queue_adapter = :sidekiq), /sidekiq web UI mounted (TODO: admin auth), config/sidekiq.yml with default/critical/low queues, TestJob + 3 specs. Redis ping OK."
   },
   {
     "id": "p4-game-channel",
