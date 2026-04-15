@@ -309,8 +309,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p1-user-model"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (parallel with p4-room-code-casual, Round 1 of button-fix sprint)"
   },
   {
     "id": "p4-sidekiq-setup",
@@ -362,8 +362,8 @@
     ],
     "related_docs": ["docs/realtime.md", "docs/frontend.md"],
     "prerequisites": ["p4-sidekiq-setup", "p2-game-models"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (parallel with p4-action-cable-setup, Round 1 of button-fix sprint)"
   },
   {
     "id": "p4-lobby-ui",
