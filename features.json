@@ -216,8 +216,8 @@
     ],
     "related_docs": ["docs/game_engine.md", "docs/realtime.md"],
     "prerequisites": ["p2-game-engine", "p2-bot-brain-basic"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (Round 4 solo — modifies shared casual files)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 256905d. Solo flow complete: /play/solo form (1-9 bots × 3 strategies), GamesController#create_solo_game with lazy bot User creation, MovesController (hit/stay/target with 403 guards), BotTurnJob with self-re-enqueue + iteration cap, real game board view (waiting/in_progress/completed branches), landing page Play Solo button wired up. 15 new specs. Full suite 272."
   },
   {
     "id": "p2-card-flip-animation",
@@ -471,13 +471,15 @@
       "app/controllers/matchmaking_controller.rb",
       "app/views/matchmaking/new.html.erb",
       "app/services/game_finalizer.rb",
+      "app/views/pages/home.html.erb",
+      "config/routes.rb",
       "spec/services/game_finalizer_spec.rb",
       "spec/requests/matchmaking_spec.rb"
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p5-matchmaking", "p2-game-engine", "p2-game-models"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (Round 5 solo — final button wire-up)"
   },
   {
     "id": "p5-leaderboard",
