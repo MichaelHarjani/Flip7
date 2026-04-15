@@ -193,8 +193,8 @@
     ],
     "related_docs": ["docs/game_engine.md"],
     "prerequisites": ["p2-game-engine"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (Round 3 parallel with p5-matchmaking)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 00e18b3. BotBrain with threshold-based decide() for conservative/balanced/aggressive + choose_action_target. 22 spec examples (duck-typed). Full suite 254 after bot-brain commit."
   },
   {
     "id": "p2-solo-game-flow",
@@ -206,15 +206,18 @@
       "app/controllers/moves_controller.rb",
       "app/views/games/new.html.erb",
       "app/views/games/show.html.erb",
+      "app/views/games/_solo_form.html.erb",
+      "app/views/games/_casual_form.html.erb",
       "app/jobs/bot_turn_job.rb",
+      "app/views/pages/home.html.erb",
       "config/routes.rb",
       "spec/requests/games_spec.rb",
       "spec/requests/moves_spec.rb"
     ],
     "related_docs": ["docs/game_engine.md", "docs/realtime.md"],
     "prerequisites": ["p2-game-engine", "p2-bot-brain-basic"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (Round 4 solo — modifies shared casual files)"
   },
   {
     "id": "p2-card-flip-animation",
@@ -456,8 +459,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p5-elo-calculator", "p4-sidekiq-setup", "p4-action-cable-setup"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (Round 3 parallel with p2-bot-brain-basic)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 3c11a37. MatchmakingQueue (Redis sorted set + entered_at hash), MatchmakingChannel (per-user stream), MatchmakingWorkerJob (expanding Elo range 50/100/200/500/any). 25 new specs. Full suite 257."
   },
   {
     "id": "p5-ranked-game-flow",
