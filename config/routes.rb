@@ -17,6 +17,16 @@ Rails.application.routes.draw do
   get "/profile", to: "profiles#show_self", as: :my_profile
   get "/profile/:id", to: "profiles#show", as: :profile
 
+  # Casual multiplayer flow
+  get "/play/casual", to: "games#new", defaults: { mode: "casual" }
+  get "/join", to: "joins#new", as: :join
+  get "/join/:code", to: "joins#show", as: :join_code
+  resources :games, only: [:create, :show] do
+    member do
+      patch :join, to: "games#join"
+    end
+  end
+
   # Defines the root path route ("/")
   root "pages#home"
 end

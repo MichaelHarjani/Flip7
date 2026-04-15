@@ -1,0 +1,44 @@
+<% content_for :title, "Join Game" %>
+
+<div class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      <h1 class="text-4xl font-bold">Join Game</h1>
+      <p class="py-4">Enter the 4-character room code from your host.</p>
+
+      <form id="join-form" class="flex flex-col gap-4"
+            data-base-url="<%= join_code_path(code: "____") %>">
+        <div class="form-control">
+          <%= label_tag :code, "Room code", class: "label" %>
+          <%= text_field_tag :code, nil,
+                maxlength: 4,
+                minlength: 4,
+                autocomplete: "off",
+                pattern: "[A-HJ-NP-Z2-9]{4}",
+                class: "input input-bordered w-full uppercase text-2xl font-mono tracking-widest text-center",
+                required: true %>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">Join</button>
+      </form>
+
+      <%= link_to "Cancel", root_path, class: "btn btn-ghost btn-sm mt-2" %>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  (function() {
+    var form = document.getElementById("join-form");
+    if (!form) { return; }
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      var input = form.querySelector('input[name="code"]');
+      if (!input) { return; }
+      var code = (input.value || "").toUpperCase().trim();
+      if (code.length !== 4) { return; }
+      var base = form.getAttribute("data-base-url") || "/join/____";
+      window.location.href = base.replace("____", code);
+    });
+  })();
+</script>
