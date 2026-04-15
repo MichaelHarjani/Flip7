@@ -3,27 +3,16 @@ class GamesController < ApplicationController
   before_action :set_game, only: [:show, :join]
 
   def new
+    @mode = params[:mode] || "casual"
     @game = Game.new
   end
 
   def create
     mode = params.dig(:game, :mode) || "casual"
-    min_players = params.dig(:game, :min_players)&.to_i || 2
-    max_players = params.dig(:game, :max_players)&.to_i
-
-    @game = Game.new(
-      mode: mode,
-      min_players: min_players,
-      max_players: max_players,
-      room_code: mode == "casual" ? RoomCodeGenerator.generate : nil
-    )
-
-    if @game.save
-      @game.game_players.create!(user: current_user, seat_position: 0)
-      RoomExpiryJob.set(wait: 5.minutes).perform_later(@game.id) if mode == "casual"
-      redirect_to @game, notice: "Game created"
+    if mode == "solo"
+      create_solo_game
     else
-      render :new, status: :unprocessable_entity
+      create_casual_game
     end
   end
 
@@ -54,5 +43,82 @@ class GamesController < ApplicationController
     @game = Game.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     redirect_to root_path, alert: "Game not found"
+  end
+
+  def create_casual_game
+    min_players = params.dig(:game, :min_players)&.to_i || 2
+    max_players = params.dig(:game, :max_players)&.to_i
+
+    @game = Game.new(
+      mode: "casual",
+      min_players: min_players,
+      max_players: max_players,
+      room_code: RoomCodeGenerator.generate
+    )
+
+    if @game.save
+      @game.game_players.create!(user: current_user, seat_position: 0)
+      RoomExpiryJob.set(wait: 5.minutes).perform_later(@game.id)
+      redirect_to @game, notice: "Game created"
+    else
+      @mode = "casual"
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def create_solo_game
+    bot_count = params.dig(:game, :bot_count).to_i
+    bot_count = 1 if bot_count < 1
+    bot_count = 9 if bot_count > 9
+
+    raw_strategies = Array(params.dig(:game, :bot_strategies))
+    strategies = bot_count.times.map do |i|
+      strat = raw_strategies[i].to_s
+      BotBrain::STRATEGIES.include?(strat) ? strat : "balanced"
+    end
+
+    @game = Game.new(
+      mode: "solo",
+      min_players: 2,
+      max_players: bot_count + 1,
+      room_code: nil
+    )
+
+    Game.transaction do
+      @game.save!
+      @game.game_players.create!(
+        user: current_user,
+        seat_position: 0,
+        is_bot: false
+      )
+      strategies.each_with_index do |strategy, i|
+        bot_user = find_or_create_bot_user(strategy: strategy)
+        @game.game_players.create!(
+          user: bot_user,
+          seat_position: i + 1,
+          is_bot: true,
+          bot_strategy: strategy
+        )
+      end
+      @game.start! if @game.may_start?
+      GameEngine.start_round(@game)
+    end
+
+    BotTurnJob.perform_later(@game.id)
+    redirect_to @game, notice: "Game started"
+  rescue ActiveRecord::RecordInvalid, AASM::InvalidTransition => e
+    @mode = "solo"
+    @game ||= Game.new(mode: "solo")
+    flash.now[:alert] = "Could not start solo game: #{e.message}"
+    render :new, status: :unprocessable_entity
+  end
+
+  def find_or_create_bot_user(strategy:)
+    suffix = SecureRandom.hex(4)
+    User.create!(
+      email: "bot-#{strategy}-#{suffix}@flip7.local",
+      password: SecureRandom.hex(16),
+      name: "Bot (#{strategy.capitalize})"
+    )
   end
 end

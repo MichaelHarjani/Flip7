@@ -1,0 +1,26 @@
+<div class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      <h1 class="text-4xl font-bold">Create Casual Game</h1>
+      <p class="py-4">Set up a room and share the code with your friends.</p>
+
+      <%= form_with model: @game, url: games_path, local: true, class: "flex flex-col gap-4" do |f| %>
+        <%= f.hidden_field :mode, value: "casual" %>
+
+        <div class="form-control">
+          <%= f.label :min_players, "Minimum players", class: "label" %>
+          <%= f.number_field :min_players, value: 2, min: 2, max: 18, class: "input input-bordered w-full" %>
+        </div>
+
+        <div class="form-control">
+          <%= f.label :max_players, "Maximum players", class: "label" %>
+          <%= f.number_field :max_players, value: 8, min: 2, max: 18, class: "input input-bordered w-full" %>
+        </div>
+
+        <%= f.submit "Create Game", class: "btn btn-primary btn-lg" %>
+      <% end %>
+
+      <%= link_to "Cancel", root_path, class: "btn btn-ghost btn-sm mt-2" %>
+    </div>
+  </div>
+</div>

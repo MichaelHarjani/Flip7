@@ -1,0 +1,49 @@
+<div class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-2xl">
+      <h1 class="text-4xl font-bold">Play Solo vs Bots</h1>
+      <p class="py-4">Choose how many bots you want to play against, and pick each bot's strategy.</p>
+
+      <%= form_with model: @game, url: games_path, local: true, class: "flex flex-col gap-4" do |f| %>
+        <%= f.hidden_field :mode, value: "solo" %>
+
+        <div class="form-control">
+          <%= f.label :bot_count, "Number of bots", class: "label" %>
+          <%= f.select :bot_count,
+              (1..9).map { |i| [i, i] },
+              { selected: 3 },
+              class: "select select-bordered w-full",
+              id: "bot_count_select" %>
+        </div>
+
+        <div class="card bg-base-100 shadow-md">
+          <div class="card-body">
+            <h2 class="card-title">Bot strategies</h2>
+            <p class="text-sm opacity-70">Pick a strategy for each bot slot. Unused slots are ignored.</p>
+            <% (1..9).each do |slot| %>
+              <div class="form-control" data-bot-slot="<%= slot %>">
+                <label class="label">
+                  <span class="label-text">Bot <%= slot %></span>
+                </label>
+                <%= select_tag "game[bot_strategies][]",
+                    options_for_select(
+                      [
+                        ["Conservative", "conservative"],
+                        ["Balanced", "balanced"],
+                        ["Aggressive", "aggressive"]
+                      ],
+                      "balanced"
+                    ),
+                    class: "select select-bordered w-full" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <%= f.submit "Start Game", class: "btn btn-primary btn-lg" %>
+      <% end %>
+
+      <%= link_to "Cancel", root_path, class: "btn btn-ghost btn-sm mt-2" %>
+    </div>
+  </div>
+</div>

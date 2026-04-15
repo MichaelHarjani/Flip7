@@ -19,11 +19,20 @@ Rails.application.routes.draw do
 
   # Casual multiplayer flow
   get "/play/casual", to: "games#new", defaults: { mode: "casual" }
+  # Solo (vs bots) flow
+  get "/play/solo", to: "games#new", defaults: { mode: "solo" }
   get "/join", to: "joins#new", as: :join
   get "/join/:code", to: "joins#show", as: :join_code
   resources :games, only: [:create, :show] do
     member do
       patch :join, to: "games#join"
+    end
+    resources :moves, only: [] do
+      collection do
+        post :hit
+        post :stay
+        post :target
+      end
     end
   end
 
