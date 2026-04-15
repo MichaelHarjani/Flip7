@@ -179,8 +179,8 @@
     ],
     "related_docs": ["docs/game_engine.md"],
     "prerequisites": ["p2-game-models"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (Round 2 solo — the big one)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 5970901. GameEngine pure service with full Flip7 rules: deck generation (pyramid 0-12 + 9 actions + 6 modifiers = 94 per deck, multi-deck), hit/stay/resolve_action, Freeze + Flip Three + Second Chance, Flip 7 detection, scoring (×2 before +N), bust probability for bot AI, timeout_turn with stale-guard. 63 spec examples! Full suite 210."
   },
   {
     "id": "p2-bot-brain-basic",
@@ -193,8 +193,8 @@
     ],
     "related_docs": ["docs/game_engine.md"],
     "prerequisites": ["p2-game-engine"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (Round 3 parallel with p5-matchmaking)"
   },
   {
     "id": "p2-solo-game-flow",
@@ -456,8 +456,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p5-elo-calculator", "p4-sidekiq-setup", "p4-action-cable-setup"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (Round 3 parallel with p2-bot-brain-basic)"
   },
   {
     "id": "p5-ranked-game-flow",
