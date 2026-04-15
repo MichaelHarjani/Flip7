@@ -55,6 +55,12 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
+  # Run background jobs in-process via a thread pool. No separate Sidekiq
+  # worker is required for `bin/rails server` — BotTurnJob etc. fire
+  # immediately on the web process. Production uses :solid_queue (see
+  # config/environments/production.rb).
+  config.active_job.queue_adapter = :async
+
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
 

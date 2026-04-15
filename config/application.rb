@@ -39,6 +39,8 @@ module Flip7App
     # Don't generate system test files.
     config.generators.system_tests = nil
 
-    config.active_job.queue_adapter = :sidekiq
+    # ActiveJob adapter is set per-environment: :async in development
+    # (jobs run in-process so no Sidekiq worker is required for `bin/rails
+    # server`), :sidekiq in production. Test env is handled by RSpec.
   end
 end
