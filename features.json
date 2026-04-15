@@ -179,8 +179,8 @@
     ],
     "related_docs": ["docs/game_engine.md"],
     "prerequisites": ["p2-game-models"],
-    "status": "pending",
-    "notes": ""
+    "status": "in_progress",
+    "notes": "Dispatched by manager 2026-04-14 (Round 2 solo — the big one)"
   },
   {
     "id": "p2-bot-brain-basic",
