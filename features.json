@@ -478,8 +478,8 @@
     ],
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p5-matchmaking", "p2-game-engine", "p2-game-models"],
-    "status": "in_progress",
-    "notes": "Dispatched by manager 2026-04-14 (Round 5 solo — final button wire-up)"
+    "status": "done",
+    "notes": "Done 2026-04-14. Worker committed 165cc41. MatchmakingController + /play/ranked unlock gate (5+ casual games), GameFinalizer service (idempotent, Elo update, MatchResult creation), landing page Ranked Duel wired up. 18 new specs. Full suite 290."
   },
   {
     "id": "p5-leaderboard",
