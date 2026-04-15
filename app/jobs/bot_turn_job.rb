@@ -14,7 +14,7 @@ class BotTurnJob < ApplicationJob
     return unless current_player&.is_bot
 
     # Light pacing for UX, but skip in tests so the suite stays fast.
-    sleep(rand(1.0..2.0)) unless Rails.env.test?
+    sleep(rand(0.05..0.25)) unless Rails.env.test?
 
     perform_bot_turn(game, current_player)
 
