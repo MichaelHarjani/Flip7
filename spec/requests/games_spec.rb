@@ -25,10 +25,9 @@ RSpec.describe "Games (solo flow)", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Play Solo vs Bots")
       expect(response.body).to include("Number of bots")
-      # Bot strategy selects appear
-      expect(response.body).to include("Conservative")
-      expect(response.body).to include("Balanced")
-      expect(response.body).to include("Aggressive")
+      # Strategies are assigned automatically — form should NOT expose them
+      expect(response.body).not_to include("Bot strategies")
+      expect(response.body).not_to match(/Bot 1|Bot 2|Bot 3/)
     end
   end
 
@@ -39,8 +38,7 @@ RSpec.describe "Games (solo flow)", type: :request do
         post "/games", params: {
           game: {
             mode: "solo",
-            bot_count: 3,
-            bot_strategies: %w[conservative balanced aggressive]
+            bot_count: 3
           }
         }
       }.to change(Game, :count).by(1)
@@ -57,7 +55,8 @@ RSpec.describe "Games (solo flow)", type: :request do
       bot_seats = seats.drop(1)
       expect(bot_seats.size).to eq(3)
       expect(bot_seats.map(&:is_bot)).to all(be(true))
-      expect(bot_seats.map(&:bot_strategy)).to eq(%w[conservative balanced aggressive])
+      # Strategies are auto-assigned — each one must be a valid BotBrain strategy
+      expect(bot_seats.map(&:bot_strategy)).to all(be_in(BotBrain::STRATEGIES))
 
       # GameEngine.start_round must have been called: deck dealt, round_state populated
       expect(game.current_round).to be >= 1
@@ -73,8 +72,7 @@ RSpec.describe "Games (solo flow)", type: :request do
         post "/games", params: {
           game: {
             mode: "solo",
-            bot_count: 2,
-            bot_strategies: %w[balanced balanced]
+            bot_count: 2
           }
         }
       }.to have_enqueued_job(BotTurnJob)
@@ -86,8 +84,7 @@ RSpec.describe "Games (solo flow)", type: :request do
         post "/games", params: {
           game: {
             mode: "solo",
-            bot_count: 2,
-            bot_strategies: %w[balanced aggressive]
+            bot_count: 2
           }
         }
       }.to change(User, :count).by(2) # 2 bot users created
@@ -103,8 +100,7 @@ RSpec.describe "Games (solo flow)", type: :request do
       post "/games", params: {
         game: {
           mode: "solo",
-          bot_count: 1,
-          bot_strategies: %w[balanced]
+          bot_count: 1
         }
       }
       game = Game.last

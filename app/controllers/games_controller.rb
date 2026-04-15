@@ -71,11 +71,8 @@ class GamesController < ApplicationController
     bot_count = 1 if bot_count < 1
     bot_count = 9 if bot_count > 9
 
-    raw_strategies = Array(params.dig(:game, :bot_strategies))
-    strategies = bot_count.times.map do |i|
-      strat = raw_strategies[i].to_s
-      BotBrain::STRATEGIES.include?(strat) ? strat : "balanced"
-    end
+    # Bot strategies are assigned automatically for variety — random per bot.
+    strategies = Array.new(bot_count) { BotBrain::STRATEGIES.sample }
 
     @game = Game.new(
       mode: "solo",
