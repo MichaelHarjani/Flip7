@@ -1,0 +1,30 @@
+<% content_for :title, "Ranked Duel" %>
+
+<div class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      <h1 class="text-4xl font-bold">Ranked Duel</h1>
+
+      <% if @unlocked %>
+        <% if @in_queue %>
+          <p class="py-4">Searching for an opponent...</p>
+          <div class="loading loading-spinner loading-lg text-primary my-6"></div>
+          <%= button_to "Leave Queue", matchmaking_queue_path, method: :delete, class: "btn btn-outline" %>
+          <p class="text-xs opacity-60 mt-4">You'll be redirected when a match is found.</p>
+        <% else %>
+          <p class="py-4">2-player head-to-head. First to 200 wins.</p>
+          <%= button_to "Find Match", matchmaking_queue_path, method: :post, class: "btn btn-primary btn-lg w-full" %>
+        <% end %>
+      <% else %>
+        <p class="py-4">
+          Play <strong><%= @min_required - @casual_games_played %></strong> more casual game(s) to unlock ranked.
+        </p>
+        <%= link_to "Play Casual", "/play/casual", class: "btn btn-secondary" %>
+      <% end %>
+
+      <div class="mt-6">
+        <%= link_to "← Back to home", root_path, class: "btn btn-ghost btn-sm" %>
+      </div>
+    </div>
+  </div>
+</div>
