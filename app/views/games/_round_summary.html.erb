@@ -1,0 +1,61 @@
+<%# Locals: game, board. Shown between rounds; any seated player can advance. %>
+<% last = board.last_round %>
+<div class="space-y-5 animate-fade-up">
+  <div class="text-center space-y-3">
+    <h2 class="text-xl font-bold">Round <%= last["round"] %> complete</h2>
+    <% if (winner = last["flip7_winner_id"] && board.seat_for(last["flip7_winner_id"])) %>
+      <div class="inline-flex items-center gap-2 bg-warning/20 text-warning px-5 py-2 rounded-full text-sm font-semibold animate-glow-gold">
+        🎉 <%= winner.name %> flipped 7! (+15 bonus)
+      </div>
+    <% end %>
+  </div>
+
+  <div class="card bg-base-100 divide-y divide-base-300">
+    <% board.seats.sort_by { |s| -last["scores"][s.user_id.to_s].to_i }.each_with_index do |seat, rank| %>
+      <% score = last["scores"][seat.user_id.to_s].to_i %>
+      <div class="flex items-center justify-between px-5 py-3 animate-fade-up fade-delay-<%= [rank + 1, 4].min %>">
+        <div class="flex items-center gap-2">
+          <span class="font-medium"><%= seat.name %></span>
+          <% if Array(last["busted"]).include?(seat.user_id.to_s) %><span class="badge badge-error badge-sm">Bust</span><% end %>
+          <% if seat.frozen %><span class="badge badge-info badge-sm">Frozen</span><% end %>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+          <span class="font-bold <%= score.positive? ? 'text-success' : 'opacity-40' %>">+<%= score %></span>
+          <span class="text-xs opacity-60">Total <strong class="text-sm text-base-content opacity-100"><%= seat.total %></strong></span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="space-y-3">
+    <% board.seats.each do |seat| %>
+      <% next if seat.cards.empty? && !seat.busted_with %>
+      <div class="space-y-1.5">
+        <div class="text-xs opacity-60"><%= seat.name %>'s cards</div>
+        <div class="flex flex-wrap gap-2">
+          <% seat.cards.each_with_index do |card, i| %>
+            <%= render "games/card", card: card, dom_id: "summary-r#{last["round"]}-s#{seat.user_id}-c#{i}" %>
+          <% end %>
+          <% if seat.busted_with %>
+            <%= render "games/card", card: { "type" => "number", "value" => seat.busted_with }, dom_id: "summary-r#{last["round"]}-s#{seat.user_id}-bust", bust: true %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if board.controlled_user_ids.any? %>
+    <%# Online games give people longer to read the summary before auto-advancing. %>
+    <div class="text-center pt-2 space-y-2" data-controller="round-timer"
+         data-round-timer-seconds-value="<%= game.game_players.where(is_bot: false).count > 1 && game.mode != "local" ? 10 : 5 %>">
+      <%= form_with url: next_round_game_moves_path(game), method: :post, data: { round_timer_target: "form" } do %>
+        <%= hidden_field_tag :round, game.current_round %>
+        <%= hidden_field_tag :as_user_id, board.controlled_user_ids.first %>
+        <button type="submit" class="btn btn-primary px-10 btn-press" data-keyboard-target="nextRoundBtn">
+          Next round → <span class="text-xs font-normal opacity-60">(Enter)</span>
+        </button>
+      <% end %>
+      <div class="text-xs opacity-60" data-round-timer-target="countdown"></div>
+    </div>
+  <% end %>
+</div>

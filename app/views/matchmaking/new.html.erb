@@ -7,6 +7,7 @@
 
       <% if @unlocked %>
         <% if @in_queue %>
+          <div data-controller="poll"></div>
           <p class="py-4">Searching for an opponent...</p>
           <div class="loading loading-spinner loading-lg text-primary my-6"></div>
           <%= button_to "Leave Queue", matchmaking_queue_path, method: :delete, class: "btn btn-outline" %>

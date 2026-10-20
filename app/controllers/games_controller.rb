@@ -1,6 +1,9 @@
 class GamesController < ApplicationController
+  # Bot seat names (from the earlier f7 build).
+  BOT_NAMES = %w[Ada Boris Cleo Dex Ember Flynn Gus Hana Ivy Juno Kaz Lux].freeze
+
   before_action :authenticate_user!, except: [:show]
-  before_action :set_game, only: [:show, :join]
+  before_action :set_game, only: [:show, :join, :start]
 
   def new
     @mode = params[:mode] || "casual"
@@ -17,7 +20,28 @@ class GamesController < ApplicationController
   end
 
   def show
-    # Stub view — real game board comes in p2-solo-game-flow
+    @board = GameBoard.new(@game, controlled_user_ids: controlled_user_ids)
+  end
+
+  # The host (seat 0) starts a casual game once enough players have joined.
+  def start
+    host = @game.game_players.order(:seat_position).first
+    unless host&.user_id == current_user.id
+      redirect_to @game, alert: "Only the host can start the game", status: :see_other
+      return
+    end
+
+    @game.with_lock do
+      if @game.may_start?
+        @game.start!
+        GameEngine.start_round(@game)
+        GameFlow.after_move(@game)
+      end
+    end
+    BotTurnJob.perform_later(@game.id) if @game.game_players.exists?(is_bot: true)
+    redirect_to @game, status: :see_other
+  rescue AASM::InvalidTransition
+    redirect_to @game, alert: "Not enough players yet", status: :see_other
   end
 
   def join
@@ -38,6 +62,12 @@ class GamesController < ApplicationController
   end
 
   private
+
+  # Seats the viewer may act for on this device.
+  def controlled_user_ids
+    return [] unless user_signed_in?
+    @game.game_players.exists?(user_id: current_user.id) ? [current_user.id] : []
+  end
 
   def set_game
     @game = Game.find(params[:id])
@@ -88,13 +118,15 @@ class GamesController < ApplicationController
         seat_position: 0,
         is_bot: false
       )
+      bot_names = BOT_NAMES.sample(bot_count)
       strategies.each_with_index do |strategy, i|
         bot_user = find_or_create_bot_user(strategy: strategy)
         @game.game_players.create!(
           user: bot_user,
           seat_position: i + 1,
           is_bot: true,
-          bot_strategy: strategy
+          bot_strategy: strategy,
+          display_name: bot_names[i]
         )
       end
       @game.start! if @game.may_start?

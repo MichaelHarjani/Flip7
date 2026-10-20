@@ -38,14 +38,14 @@ class MovesController < ApplicationController
     yield
     GameFlow.after_move(@game)
     maybe_advance_bots
-    redirect_to @game
+    redirect_to @game, status: :see_other
   rescue GameEngine::InvalidTurnError
     head :forbidden
   rescue ActiveRecord::StaleObjectError
     # Another player moved at the same moment; show them the fresh state.
-    redirect_to @game
+    redirect_to @game, status: :see_other
   rescue GameEngine::Error, ActiveRecord::RecordInvalid => e
-    redirect_to @game, alert: e.message
+    redirect_to @game, alert: e.message, status: :see_other
   end
 
   def maybe_advance_bots

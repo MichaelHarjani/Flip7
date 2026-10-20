@@ -1,0 +1,75 @@
+<%# Locals: game, board %>
+<% standings = board.standings %>
+<% winner = standings.first %>
+<div class="min-h-screen bg-base-200 px-4 py-10">
+  <div class="max-w-2xl mx-auto space-y-8 animate-fade-up">
+    <div class="text-center space-y-4">
+      <div class="text-5xl animate-trophy">🏆</div>
+      <h1 class="text-2xl font-bold">Game <%= game.completed? ? "over" : game.status.humanize.downcase %>!</h1>
+      <% if game.completed? && winner %>
+        <div class="text-lg text-warning font-semibold animate-glow-gold inline-block px-6 py-2 rounded-full bg-warning/10">
+          <%= winner.me ? "You win" : "#{winner.name} wins" %> with <%= winner.total %> points
+        </div>
+      <% end %>
+    </div>
+
+    <div class="card bg-base-100 divide-y divide-base-300">
+      <% standings.each_with_index do |seat, rank| %>
+        <div class="flex items-center justify-between px-5 py-4 animate-fade-up fade-delay-<%= [rank + 1, 4].min %>">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold <%= rank.zero? ? 'bg-warning/20 text-warning ring-1 ring-warning/30' : 'bg-base-200 opacity-70' %>"><%= rank + 1 %></span>
+            <span class="font-semibold"><%= seat.name %></span>
+            <% if seat.bot %><span class="badge badge-ghost badge-sm">Bot</span><% end %>
+            <% if seat.me %><span class="badge badge-primary badge-sm">You</span><% end %>
+          </div>
+          <span class="text-lg font-black <%= rank.zero? ? 'text-warning' : 'opacity-60' %>"><%= seat.total %></span>
+        </div>
+      <% end %>
+    </div>
+
+    <% history = Array(game.round_history) %>
+    <div class="card bg-base-100 p-5 space-y-4">
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <div class="text-xs opacity-60">Rounds</div>
+          <div class="font-bold"><%= history.size %></div>
+        </div>
+        <% if (best = board.largest_round) %>
+          <div>
+            <div class="text-xs opacity-60">Best round</div>
+            <div class="font-bold"><%= best["score"] %> pts</div>
+            <div class="text-xs opacity-60"><%= best["name"] %>, round <%= best["round"] %></div>
+          </div>
+        <% end %>
+      </div>
+
+      <% if history.any? %>
+        <div class="overflow-x-auto">
+          <table class="table table-xs">
+            <thead>
+              <tr><th>Round</th><% standings.each do |seat| %><th class="text-right"><%= seat.name %></th><% end %></tr>
+            </thead>
+            <tbody>
+              <% history.each do |entry| %>
+                <tr>
+                  <td><%= entry["round"] %></td>
+                  <% standings.each do |seat| %>
+                    <% uid = seat.user_id.to_s %>
+                    <td class="text-right <%= 'text-error' if Array(entry["busted"]).include?(uid) %> <%= 'text-warning font-bold' if entry["flip7_winner_id"].to_s == uid %>">
+                      <%= Array(entry["busted"]).include?(uid) ? "bust" : entry["scores"][uid].to_i %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex gap-3 justify-center">
+      <%= link_to "Play again", "/play/#{game.mode == "ranked" ? "ranked" : game.mode}", class: "btn btn-primary btn-press" %>
+      <%= link_to "Home", root_path, class: "btn btn-ghost btn-press" %>
+    </div>
+  </div>
+</div>

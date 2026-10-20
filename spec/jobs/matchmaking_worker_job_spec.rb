@@ -53,7 +53,8 @@ RSpec.describe MatchmakingWorkerJob, type: :job do
 
       game = Game.last
       expect(game.mode).to eq("ranked")
-      expect(game.status).to eq("waiting")
+      expect(game.status).to eq("in_progress")
+      expect(game.current_round).to eq(1)
       expect(game.game_players.pluck(:user_id)).to contain_exactly(user_a.id, user_b.id)
     end
 

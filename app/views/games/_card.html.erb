@@ -1,0 +1,10 @@
+<%# Locals: card, dom_id, bust (optional) %>
+<% bust = local_assigns.fetch(:bust, false) %>
+<div id="<%= dom_id %>"
+     class="game-card card-shadow inline-flex flex-col items-center justify-center w-12 h-16 rounded-xl border bg-gradient-to-br text-white select-none animate-card-in <%= bust ? GameHelper::BUST_COLORS + ' animate-shake' : card_gradient(card) %>"
+     title="<%= bust ? "Duplicate #{card_label(card)} — bust" : card_sublabel(card) || card_label(card) %>">
+  <span class="text-base font-black leading-none drop-shadow-sm"><%= card_label(card) %></span>
+  <% if (sub = card_sublabel(card)) %>
+    <span class="text-[8px] font-semibold uppercase tracking-wider opacity-70 mt-0.5"><%= sub %></span>
+  <% end %>
+</div>

@@ -1,0 +1,44 @@
+<%# Locals: seat (GameBoard::Seat), game %>
+<%
+  frame = if seat.current && seat.me then "border-primary/60 bg-primary/5 player-glow-active"
+          elsif seat.current then "border-warning/50 bg-warning/5"
+          elsif seat.busted? then "border-error/40 bg-error/5 player-glow-bust"
+          elsif !seat.active? then "border-base-300 opacity-60"
+          else "border-base-300"
+          end
+%>
+<div id="seat-<%= seat.user_id %>" class="rounded-xl border bg-base-100 p-4 transition-all duration-300 <%= frame %>">
+  <div class="flex items-center justify-between gap-2 mb-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <% if seat.me %><span class="badge badge-primary badge-sm">You</span><% end %>
+      <% if seat.bot %><span class="badge badge-ghost badge-sm">Bot</span><% end %>
+      <span class="font-semibold truncate"><%= seat.name %></span>
+      <% if seat.frozen %><span class="badge badge-info badge-sm">❄ Frozen</span><% end %>
+      <% if seat.second_chance %><span class="badge badge-warning badge-sm" title="Second Chance: survives one duplicate">🛡</span><% end %>
+    </div>
+    <div class="flex items-center gap-3 text-sm shrink-0">
+      <% if seat.busted? %>
+        <span class="badge badge-error">Bust!</span>
+      <% elsif seat.stayed? %>
+        <span class="text-success text-xs font-medium">✓ Banked <%= seat.round_score %></span>
+      <% elsif seat.round_score.positive? %>
+        <span class="text-xs opacity-70">this round <strong><%= seat.round_score %></strong></span>
+      <% end %>
+      <span class="text-xs opacity-60"><strong class="text-base text-base-content opacity-100"><%= seat.total %></strong>/<%= GameEngine::WINNING_SCORE %></span>
+    </div>
+  </div>
+
+  <progress class="progress <%= seat_progress_class(seat) %> h-1 mb-3" value="<%= score_progress(seat.total) %>" max="100"></progress>
+
+  <div class="flex flex-wrap gap-2 min-h-16">
+    <% seat.cards.each_with_index do |card, i| %>
+      <%= render "games/card", card: card, dom_id: "r#{game.current_round}-s#{seat.user_id}-c#{i}" %>
+    <% end %>
+    <% if seat.busted_with %>
+      <%= render "games/card", card: { "type" => "number", "value" => seat.busted_with }, dom_id: "r#{game.current_round}-s#{seat.user_id}-bust", bust: true %>
+    <% end %>
+    <% if seat.cards.empty? && !seat.busted_with %>
+      <span class="text-xs opacity-40 self-center">No cards yet</span>
+    <% end %>
+  </div>
+</div>

@@ -32,6 +32,7 @@ Rails.application.routes.draw do
   resources :games, only: [:create, :show] do
     member do
       patch :join, to: "games#join"
+      post :start
     end
     resources :moves, only: [] do
       collection do

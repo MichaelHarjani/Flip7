@@ -1,0 +1,18 @@
+<%# Locals: board, game %>
+<% pending = board.pending_action %>
+<div class="space-y-3">
+  <div class="text-center text-sm font-medium text-warning">
+    <% if board.controlled_user_ids.size > 1 %><strong><%= board.pending_seat.name %></strong>: <% end %>
+    <%= action_prompt(pending["type"]) %>
+  </div>
+  <div class="flex gap-2 justify-center flex-wrap">
+    <% board.target_options.each do |target| %>
+      <%= button_to target_game_moves_path(game),
+            params: { action_type: pending["type"], target_id: target.user_id, as_user_id: board.pending_seat.user_id },
+            class: "btn #{target.user_id == board.pending_seat.user_id ? 'btn-neutral' : 'btn-warning'} btn-press" do %>
+        <%= target.user_id == board.pending_seat.user_id ? "Myself" : target.name %>
+        <span class="text-xs opacity-60"><%= target.round_score %> pts</span>
+      <% end %>
+    <% end %>
+  </div>
+</div>

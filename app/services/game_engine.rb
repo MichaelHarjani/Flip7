@@ -144,6 +144,7 @@ class GameEngine
     when "freeze"
       discard!(game, action_card_hash("freeze"))
       mark_stayed(round_state, target_id)
+      round_state["frozen_ids"] = Array(round_state["frozen_ids"]) | [target_id.to_i]
       push_event(round_state, { "type" => "freeze_applied", "drawer_id" => user_id, "target_id" => target_id })
     when "flip_three"
       discard!(game, action_card_hash("flip_three"))
@@ -462,6 +463,7 @@ class GameEngine
         else
           discard!(game, card)
           rs["player_statuses"][uid] = "busted"
+          (rs["busted_with"] ||= {})[uid] = value
           push_event(rs, { "type" => "busted", "user_id" => user_id, "value" => value })
           return [true, !initial_deal]
         end

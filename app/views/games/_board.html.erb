@@ -1,0 +1,81 @@
+<%# Locals: game, board %>
+<div id="game-board" data-controller="keyboard" class="min-h-screen flex flex-col bg-base-200">
+  <header class="navbar bg-base-100/90 border-b border-base-300 sticky top-0 z-40 backdrop-blur-sm px-4">
+    <div class="flex-1 gap-3">
+      <%= link_to "← Exit", root_path, class: "btn btn-ghost btn-sm" %>
+      <span class="font-bold">Flip 7</span>
+      <span class="badge badge-outline badge-sm"><%= game.mode %></span>
+    </div>
+    <div class="flex-none gap-4 text-xs opacity-70">
+      <span>Round <strong><%= board.round %></strong></span>
+      <span>Deck <strong><%= board.deck_size %></strong></span>
+    </div>
+  </header>
+
+  <div class="bg-base-100/50 border-b border-base-300 px-4 py-2 overflow-x-auto">
+    <div class="max-w-4xl mx-auto flex items-center gap-5 text-xs whitespace-nowrap">
+      <% board.seats.each do |seat| %>
+        <span class="flex items-center gap-1.5 <%= seat.current ? 'font-semibold' : 'opacity-60' %>">
+          <span class="w-1.5 h-1.5 rounded-full <%= seat.current ? seat_dot_class(seat) : 'bg-base-300' %>" <%= 'style="animation: pulse-soft 2s ease-in-out infinite"'.html_safe if seat.current %>></span>
+          <%= seat.name %> <strong><%= seat.total %></strong>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <main class="flex-1 px-4 py-5">
+    <div class="max-w-4xl mx-auto space-y-3">
+      <% if board.round_over? %>
+        <%= render "games/round_summary", game: game, board: board %>
+      <% else %>
+        <div class="text-center">
+          <% if board.pending_seat %>
+            <span class="badge badge-warning gap-1 py-3"><%= board.pending_seat.name %> is playing <%= action_name(board.pending_action["type"]) %>…</span>
+          <% elsif board.my_turn? %>
+            <span class="badge badge-primary gap-1 py-3"><%= board.controlled_user_ids.size > 1 ? "#{board.current_seat.name}'s turn" : "Your turn" %></span>
+          <% elsif board.current_seat %>
+            <span class="badge badge-ghost gap-1 py-3">Waiting for <%= board.current_seat.name %>…</span>
+          <% end %>
+        </div>
+
+        <% log = board.recent_events.filter_map { |e| describe_event(e, board) } %>
+        <% if log.any? %>
+          <div id="event-log" class="text-center text-xs opacity-60 space-x-2">
+            <% log.each do |line| %><span><%= line %></span><% end %>
+          </div>
+        <% end %>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <% board.seats.each do |seat| %>
+            <%= render "games/seat", seat: seat, game: game %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </main>
+
+  <% if !board.round_over? && (board.my_pending_choice? || board.my_turn?) %>
+    <div id="action-bar" class="sticky bottom-0 bg-base-100/95 border-t border-base-300 px-4 py-4 backdrop-blur-sm safe-bottom">
+      <div class="max-w-4xl mx-auto">
+        <% if board.my_pending_choice? %>
+          <%= render "games/target_picker", game: game, board: board %>
+        <% else %>
+          <% acting = board.acting_seat %>
+          <div class="grid grid-cols-2 gap-3">
+            <%= button_to hit_game_moves_path(game), params: { as_user_id: acting.user_id },
+                  class: "btn btn-primary btn-lg w-full btn-press", form_class: "w-full",
+                  data: { keyboard_target: "hitBtn" } do %>
+              Hit <span class="text-xs font-normal opacity-60">(H)</span>
+            <% end %>
+            <%= button_to stay_game_moves_path(game), params: { as_user_id: acting.user_id },
+                  class: "btn btn-neutral btn-lg w-full btn-press", form_class: "w-full",
+                  disabled: acting.cards.empty?,
+                  data: { keyboard_target: "stayBtn" } do %>
+              Stay <span class="text-xs font-normal opacity-60">(S)</span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -116,12 +116,14 @@ RSpec.describe "Games (solo flow)", type: :request do
       get game_path(game)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Round")
-      # Score column shown for each player
-      expect(response.body).to include("Seat 0")
-      expect(response.body).to include("Seat 1")
-      # Hit/Stay buttons present
-      expect(response.body).to include(">Hit<")
-      expect(response.body).to include(">Stay<")
+      # A seat panel with name and score for each player
+      game.game_players.each { |gp| expect(response.body).to include("seat-#{gp.user_id}") }
+      expect(response.body).to include(user.name)
+      # Hit/Stay buttons present, wired to keyboard shortcuts
+      expect(response.body).to include('data-keyboard-target="hitBtn"')
+      expect(response.body).to include('data-keyboard-target="stayBtn"')
+      # Live updates subscription
+      expect(response.body).to include("turbo-cable-stream-source")
     end
   end
 end

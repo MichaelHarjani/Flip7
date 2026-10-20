@@ -1,6 +1,10 @@
 class Game < ApplicationRecord
   include AASM
 
+  # Every save (moves, bot turns, round changes) tells subscribed pages to
+  # refresh; the layout morphs them in place, so all players stay in sync.
+  broadcasts_refreshes
+
   has_many :game_players, dependent: :destroy
   has_many :users, through: :game_players
   has_many :match_results, dependent: :destroy

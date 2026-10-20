@@ -40,6 +40,10 @@ class MatchmakingWorkerJob < ApplicationJob
     )
     game.game_players.create!(user_id: user_a_id, seat_position: 0)
     game.game_players.create!(user_id: user_b_id, seat_position: 1)
+    # Both seats are filled, so the duel starts right away.
+    game.start!
+    GameEngine.start_round(game)
+    GameFlow.after_move(game)
 
     MatchmakingChannel.broadcast_match(user_a_id, game.id)
     MatchmakingChannel.broadcast_match(user_b_id, game.id)

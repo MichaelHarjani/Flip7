@@ -1,0 +1,58 @@
+<%# Locals: game, board. Waiting room: players join by code, the host starts. %>
+<% seated = user_signed_in? && game.game_players.exists?(user_id: current_user.id) %>
+<% host = game.game_players.order(:seat_position).first %>
+<% count = game.game_players.count %>
+<div class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-md w-full space-y-4">
+      <h1 class="text-4xl font-bold">Waiting room</h1>
+      <p class="opacity-70"><%= game.mode.capitalize %> game · first to <%= GameEngine::WINNING_SCORE %> wins</p>
+
+      <% if game.room_code.present? %>
+        <div class="card bg-base-100 shadow-md" data-controller="copy" data-copy-text-value="<%= join_code_url(game.room_code) %>">
+          <div class="card-body items-center">
+            <h2 class="card-title">Room code</h2>
+            <p class="text-4xl font-mono tracking-widest"><%= game.room_code %></p>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="copy#copy" data-copy-target="label">Copy invite link</button>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+          <h2 class="card-title">Players (<%= count %><%= "/#{game.max_players}" if game.max_players %>)</h2>
+          <ul class="text-left space-y-1">
+            <% board.seats.each do |seat| %>
+              <li class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+                <%= seat.name %>
+                <% if seat.game_player == host %><span class="badge badge-ghost badge-sm">host</span><% end %>
+                <% if seat.me %><span class="badge badge-primary badge-sm">you</span><% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+
+      <% if !user_signed_in? %>
+        <p class="text-sm opacity-70">Sign in from the home page to join this game.</p>
+      <% elsif !seated %>
+        <% if game.max_players.nil? || count < game.max_players %>
+          <%= button_to "Join game", join_game_path(game), method: :patch, class: "btn btn-primary btn-lg w-full" %>
+        <% else %>
+          <p class="text-sm opacity-70">This game is full.</p>
+        <% end %>
+      <% elsif host&.user_id == current_user.id %>
+        <% if game.may_start? %>
+          <%= button_to "Start game", start_game_path(game), method: :post, class: "btn btn-primary btn-lg w-full" %>
+        <% else %>
+          <p class="text-sm opacity-70">Waiting for at least <%= game.min_players %> players…</p>
+        <% end %>
+      <% else %>
+        <p class="text-sm opacity-70">Waiting for <%= board.seat_for(host.user_id)&.name %> to start…</p>
+      <% end %>
+
+      <%= link_to "Back home", root_path, class: "btn btn-ghost btn-sm" %>
+    </div>
+  </div>
+</div>
