@@ -859,4 +859,52 @@ RSpec.describe GameEngine do
       expect(described_class.winner_id(game)).to eq(users[1].id)
     end
   end
+
+  # ────────────────────────────────────────────────────────────────
+  # Action cards revealed during a Flip Three
+  # ────────────────────────────────────────────────────────────────
+  describe "Flip Three with an action card inside it" do
+    def flip_three_on(game, users, deck)
+      seed_round!(game, users, deck: [action_card("flip_three")] + deck)
+      described_class.hit(game, users[0].id)
+      described_class.resolve_action(game.reload, users[0].id, "flip_three", users[1].id)
+      game.reload
+    end
+
+    it "draws all three cards before the revealed Freeze is played" do
+      game, users = build_game(player_count: 3)
+      flip_three_on(game, users, [action_card("freeze"), number_card(3), number_card(8), number_card(11)])
+      hand = game.round_state["player_hands"][users[1].id.to_s]
+      expect(hand["number_cards"]).to eq([3, 8])
+      expect(game.round_state["pending_action"]).to eq("type" => "freeze", "drawer_id" => users[1].id)
+
+      described_class.resolve_action(game, users[1].id, "freeze", users[2].id)
+      game.reload
+      expect(game.round_state["player_statuses"][users[2].id.to_s]).to eq("stayed")
+      expect(game.round_state["pending_action"]).to be_nil
+      expect(game.current_turn_player_index).to eq(1)
+    end
+
+    it "discards the deferred card if the target busts during the Flip Three" do
+      game, users = build_game(player_count: 2)
+      flip_three_on(game, users, [action_card("freeze"), number_card(4), number_card(4)])
+      expect(game.round_state["player_statuses"][users[1].id.to_s]).to eq("busted")
+      expect(game.round_state["pending_action"]).to be_nil
+      expect(game.discard_pile).to include(action_card("freeze"))
+    end
+
+    it "finishes the initial deal after a Flip Three dealt with a Freeze inside" do
+      game, users = build_game(player_count: 3)
+      deck = [action_card("flip_three"), action_card("freeze"), number_card(2), number_card(5),
+              number_card(9), number_card(10)] + Array.new(40) { number_card(12) }
+      allow(described_class).to receive(:build_shuffled_deck).and_return(deck)
+      described_class.start_round(game)
+      described_class.resolve_action(game.reload, users[0].id, "flip_three", users[2].id)
+      described_class.resolve_action(game.reload, users[2].id, "freeze", users[0].id)
+      game.reload
+      expect(game.round_state["deal_phase"]).to be(false)
+      expect(game.round_state["player_hands"][users[1].id.to_s]["number_cards"]).to eq([9])
+      expect(game.round_state["player_statuses"][users[0].id.to_s]).to eq("stayed")
+    end
+  end
 end

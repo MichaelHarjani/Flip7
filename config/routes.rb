@@ -38,6 +38,7 @@ Rails.application.routes.draw do
         post :hit
         post :stay
         post :target
+        post :next_round
       end
     end
   end

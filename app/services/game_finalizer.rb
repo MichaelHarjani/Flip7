@@ -10,18 +10,19 @@ class GameFinalizer
     return nil if MatchResult.where(game: game).exists?
 
     cumulative = game.cumulative_scores || {}
-    sorted = cumulative.sort_by { |_id, score| -score.to_i }
-    return nil if sorted.size < 2
+    return nil if cumulative.size < 2
 
-    winner_id = sorted.first[0].to_i
-    loser_id  = sorted.last[0].to_i
-    winner = User.find(winner_id)
-    loser  = User.find(loser_id)
+    # Final standings: the engine's tie-broken winner first, then everyone
+    # else by score.
+    winner_id = GameEngine.winner_id(game)
+    standing_ids = [winner_id] +
+      cumulative.sort_by { |_id, score| -score.to_i }.map { |id, _| id.to_i }.reject { |id| id == winner_id }
+    standings = User.find(standing_ids).index_by(&:id).values_at(*standing_ids)
 
     if game.mode == "ranked"
-      finalize_ranked(game, winner, loser, cumulative)
+      finalize_ranked(game, standings.first, standings.last, cumulative)
     else
-      finalize_unranked(game, winner, loser, cumulative)
+      finalize_unranked(game, standings, cumulative)
     end
   end
 
@@ -78,41 +79,32 @@ class GameFinalizer
     { winner: winner, loser: loser, match_results: [winner_match, loser_match] }
   end
 
-  def self.finalize_unranked(game, winner, loser, cumulative)
-    winner_match = nil
-    loser_match  = nil
+  # Every seat gets a MatchResult with its placement (solo / casual games
+  # can have up to 10+ players); only the winner's games_won increments.
+  def self.finalize_unranked(game, standings, cumulative)
+    match_results = []
 
     ActiveRecord::Base.transaction do
-      winner_match = MatchResult.create!(
-        game: game,
-        user: winner,
-        final_score: (cumulative[winner.id.to_s] || 0).to_i,
-        placement: 1,
-        rounds_played: game.current_round.to_i,
-        mode: game.mode
-      )
-      loser_match = MatchResult.create!(
-        game: game,
-        user: loser,
-        final_score: (cumulative[loser.id.to_s] || 0).to_i,
-        placement: 2,
-        rounds_played: game.current_round.to_i,
-        mode: game.mode
-      )
+      standings.each_with_index do |user, idx|
+        match_results << MatchResult.create!(
+          game: game,
+          user: user,
+          final_score: (cumulative[user.id.to_s] || 0).to_i,
+          placement: idx + 1,
+          rounds_played: game.current_round.to_i,
+          mode: game.mode
+        )
+        user.update!(
+          games_played: user.games_played + 1,
+          games_won: user.games_won + (idx.zero? ? 1 : 0)
+        )
+      end
 
-      winner.update!(
-        games_played: winner.games_played + 1,
-        games_won: winner.games_won + 1
-      )
-      loser.update!(
-        games_played: loser.games_played + 1
-      )
-
-      game.update!(winner_id: winner.id)
+      game.update!(winner_id: standings.first.id)
       complete_game(game)
     end
 
-    { winner: winner, loser: loser, match_results: [winner_match, loser_match] }
+    { winner: standings.first, loser: standings.last, match_results: match_results }
   end
 
   def self.complete_game(game)

@@ -158,8 +158,12 @@ class GameEngine
       raise InvalidActionError, "unknown action: #{action_type}"
     end
 
-    # Advance turn logic, unless we are still mid-deal or a new pending_action fired.
-    if !drawer_was_dealing && round_state["pending_action"].nil? && round_state["pending_flip_three"]["remaining"] == 0
+    # Finish whatever this action interrupted (a paused Flip Three, action
+    # cards deferred until after one) before the turn moves on.
+    settled = continue_pending_work(game)
+
+    # Advance turn logic, unless we are still mid-deal or more input is needed.
+    if settled && !drawer_was_dealing
       after_action_advance(game, user_id, busted_out: false)
     end
 
@@ -167,9 +171,7 @@ class GameEngine
     game.save!
 
     # Continue initial deal if we were in one and nothing else is pending.
-    if drawer_was_dealing && round_state["pending_action"].nil? && round_state["pending_flip_three"]["remaining"] == 0
-      perform_initial_deal(game)
-    end
+    perform_initial_deal(game) if settled && drawer_was_dealing
 
     { events: round_state["events"], game: game }
   end
@@ -406,6 +408,12 @@ class GameEngine
       break if cursor >= players.size
 
       target_user_id = players[(cursor + round_start_offset(game, players.size)) % players.size]
+      # Advance the cursor first so a deal paused by an action card resumes
+      # with the NEXT seat rather than dealing this one again.
+      rs["deal_cursor"] = cursor + 1
+      # Players frozen (or busted by a Flip Three) earlier in the deal sit out.
+      next unless rs["player_statuses"][target_user_id.to_s] == "active"
+
       card = draw_top_card(game)
       break if card.nil? # defensively stop if deck is somehow empty
 
@@ -419,8 +427,6 @@ class GameEngine
         game.save!
         return
       end
-
-      rs["deal_cursor"] = cursor + 1
     end
 
     rs["deal_phase"] = false
@@ -520,6 +526,10 @@ class GameEngine
     draw_flip_three_cards(game)
   end
 
+  # Per the rules, a Freeze or Flip Three revealed during a Flip Three is
+  # set aside and resolved only after all three cards are flipped (and only
+  # if the target is still in the round). Second Chance resolves at once —
+  # a surplus one pauses the sequence until it is passed on.
   def self.draw_flip_three_cards(game)
     rs = game.round_state
     pending = rs["pending_flip_three"]
@@ -534,22 +544,55 @@ class GameEngine
       end
 
       card = draw_top_card(game)
-      break if card.nil?
-
-      push_event(rs, { "type" => "flip_three_draw", "target_id" => target_id, "card" => card })
-      _busted, _advance = resolve_drawn_card_for(game, target_id, card, initial_deal: false)
-      pending["remaining"] = pending["remaining"].to_i - 1
-
-      # If drawing triggered a new pending_action (freeze/flip_three drawn again),
-      # pause here — the caller will resolve_action and we'll resume.
-      if rs["pending_action"]
+      if card.nil?
+        pending["remaining"] = 0
         break
       end
+
+      push_event(rs, { "type" => "flip_three_draw", "target_id" => target_id, "card" => card })
+      pending["remaining"] = pending["remaining"].to_i - 1
+
+      if card_type(card) == "action" && %w[freeze flip_three].include?(card["action"])
+        rs["deferred_actions"] = Array(rs["deferred_actions"]) + [{ "type" => card["action"], "drawer_id" => target_id }]
+        push_event(rs, { "type" => "action_deferred", "drawer_id" => target_id, "action" => card["action"] })
+        next
+      end
+
+      resolve_drawn_card_for(game, target_id, card, initial_deal: false)
+      break if rs["pending_action"]
     end
 
     if pending["remaining"].to_i == 0 && rs["pending_action"].nil?
       push_event(rs, { "type" => "flip_three_end", "target_id" => target_id })
       rs["pending_flip_three"] = { "target_id" => nil, "remaining" => 0, "drawer_id" => nil }
+    end
+  end
+
+  # Drives a paused Flip Three and any deferred action cards forward until
+  # a player has to choose a target (returns false) or nothing is left
+  # (returns true, and the turn / deal may continue).
+  def self.continue_pending_work(game)
+    rs = game.round_state
+    loop do
+      return false if rs["pending_action"]
+
+      if rs["pending_flip_three"]["remaining"].to_i > 0
+        draw_flip_three_cards(game)
+        next
+      end
+
+      deferred = Array(rs["deferred_actions"])
+      return true if deferred.empty?
+
+      action = deferred.shift
+      rs["deferred_actions"] = deferred
+      if rs["flip7_winner_id"].nil? && rs["player_statuses"][action["drawer_id"].to_s] == "active"
+        rs["pending_action"] = action
+        push_event(rs, { "type" => "action_pending", "drawer_id" => action["drawer_id"], "action" => action["type"] })
+      else
+        # Owner busted, Flip 7'd, or got frozen — the card is simply discarded.
+        discard!(game, action_card_hash(action["type"]))
+      end
     end
   end
 

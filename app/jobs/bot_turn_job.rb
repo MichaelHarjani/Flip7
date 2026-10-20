@@ -19,7 +19,9 @@ class BotTurnJob < ApplicationJob
     perform_bot_turn(game, current_player)
 
     game.reload
+    GameFlow.after_move(game)
     return unless game.in_progress?
+    return if game.round_state["round_over"]
 
     next_player = current_player_for(game)
     if next_player&.is_bot
@@ -29,7 +31,14 @@ class BotTurnJob < ApplicationJob
 
   private
 
+  # Whoever must act next: the owner of a pending action card (which can
+  # be a Flip Three target rather than the turn player), else the turn player.
   def current_player_for(game)
+    pending = (game.round_state || {})["pending_action"]
+    if pending
+      return game.game_players.find_by(user_id: pending["drawer_id"])
+    end
+
     idx = game.current_turn_player_index
     return nil if idx.nil?
 

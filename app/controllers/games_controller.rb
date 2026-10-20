@@ -99,6 +99,7 @@ class GamesController < ApplicationController
       end
       @game.start! if @game.may_start?
       GameEngine.start_round(@game)
+      GameFlow.after_move(@game)
     end
 
     BotTurnJob.perform_later(@game.id)

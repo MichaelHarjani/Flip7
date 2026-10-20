@@ -55,6 +55,9 @@ RSpec.describe BotTurnJob, type: :job do
     it "advances a bot's turn by calling GameEngine.hit or stay" do
       game = build_in_progress_solo_game(bot_count: 1, strategies: %w[conservative])
       force_turn_to_seat(game, 1) # bot is at seat 1
+      # A plain number on top, so the bot's hit can't draw a Freeze that
+      # legitimately hands the turn straight back to it.
+      game.update!(deck: [{ "type" => "number", "value" => 12 }] + game.deck)
 
       # The bot must call either hit or stay; assert state changes (turn advances or status changes)
       expect {
