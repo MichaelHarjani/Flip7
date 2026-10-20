@@ -220,14 +220,9 @@ RSpec.describe BotBrain do
       )
     end
 
-    it "returns nil for a surplus second_chance when nobody can receive it" do
+    it "returns nil for second_chance (self-only)" do
       brain = make("conservative", bot_hand)
       expect(brain.choose_action_target(:second_chance)).to be_nil
-    end
-
-    it "gives a surplus second_chance to the trailing opponent without one" do
-      brain = BotBrain.new(strategy: "balanced", game_state: multi_player_state, player_id: BOT_ID)
-      expect(brain.choose_action_target(:second_chance)).to eq(200)
     end
 
     it "conservative freezes the leading active player" do

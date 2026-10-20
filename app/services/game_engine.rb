@@ -26,14 +26,14 @@ class GameEngine
   # Start a new round: deal initial cards one per seat, starting with the
   # seat after the rotating dealer, and set the turn to the first active
   # player. Action cards dealt during the initial deal resolve immediately;
-  # if one requires targeting (Freeze / Flip Three / passing a Second
-  # Chance), dealing pauses and a pending_action is recorded for the caller
+  # if one requires targeting (Freeze / Flip Three), dealing pauses and a pending_action is recorded for the caller
   # to resolve via resolve_action.
   #
   # Per the official rules the deck is NOT rebuilt between rounds: the
   # previous round's cards go to the discard pile and the remaining deck
-  # carries over (so card counting matters). The discard pile is reshuffled
-  # only when the deck runs out. A fresh deck is built for round 1.
+  # carries over (so card counting matters). The discard pile is shuffled
+  # back in when the deck runs low at a round start, or runs out mid-round.
+  # A fresh deck is built for round 1.
   def self.start_round(game)
     players = ordered_player_ids(game)
     raise InvalidActionError, "no seated players" if players.empty?
@@ -44,6 +44,12 @@ class GameEngine
     else
       discard_round_cards(game)
       deck = game.deck || []
+      # Official rule: the deck carries over between rounds. House rule: once
+      # it runs low, shuffle the discards back in before dealing.
+      if deck.size < reshuffle_threshold(players.size)
+        deck = (deck + game.discard_pile).shuffle
+        game.discard_pile = []
+      end
     end
 
     round_state = {
@@ -149,12 +155,6 @@ class GameEngine
     when "flip_three"
       discard!(game, action_card_hash("flip_three"))
       apply_flip_three(game, user_id, target_id)
-    when "second_chance"
-      unless second_chance_recipient_ids(round_state, user_id).include?(target_id.to_s)
-        raise InvalidActionError, "Second Chance must go to another active player without one"
-      end
-      round_state["player_hands"][target_id.to_s]["has_second_chance"] = true
-      push_event(round_state, { "type" => "second_chance_given", "drawer_id" => user_id, "target_id" => target_id })
     else
       raise InvalidActionError, "unknown action: #{action_type}"
     end
@@ -364,17 +364,13 @@ class GameEngine
     game.discard_pile = (game.discard_pile || []) + cards
   end
 
-  # Active players (other than the drawer) who do not already hold a
-  # Second Chance — the legal recipients of a surplus Second Chance.
-  def self.second_chance_recipient_ids(round_state, drawer_id)
-    statuses = round_state["player_statuses"] || {}
-    hands = round_state["player_hands"] || {}
-    statuses.filter_map do |uid, status|
-      next if uid.to_s == drawer_id.to_s
-      next unless status == "active"
-      next if hands.dig(uid, "has_second_chance")
-      uid.to_s
-    end
+  # A round needs a few cards per player; below this the next round starts
+  # from a reshuffled deck (deck + discards).
+  RESHUFFLE_MIN_CARDS = 10
+  RESHUFFLE_CARDS_PER_PLAYER = 2
+
+  def self.reshuffle_threshold(player_count)
+    [RESHUFFLE_MIN_CARDS, RESHUFFLE_CARDS_PER_PLAYER * player_count].max
   end
 
   # Seats rotate each round: round 1 starts at seat 0, round 2 at seat 1, …
@@ -486,17 +482,11 @@ class GameEngine
     when "action"
       case card["action"]
       when "second_chance"
-        # A player may hold only one Second Chance. A second one must be
-        # given to another active player who has none; if nobody qualifies
-        # it is discarded.
+        # A player may hold only one Second Chance; drawing another replaces
+        # it (house rule from app_spec.txt §1 — the official rules pass it on).
         if hand["has_second_chance"]
-          if second_chance_recipient_ids(rs, user_id).any?
-            rs["pending_action"] = { "type" => "second_chance", "drawer_id" => user_id }
-            push_event(rs, { "type" => "action_pending", "drawer_id" => user_id, "action" => "second_chance" })
-            return [false, false]
-          end
           discard!(game, card)
-          push_event(rs, { "type" => "second_chance_discarded", "user_id" => user_id })
+          push_event(rs, { "type" => "second_chance_replaced", "user_id" => user_id })
           return [false, !initial_deal]
         end
         hand["has_second_chance"] = true
@@ -530,8 +520,7 @@ class GameEngine
 
   # Per the rules, a Freeze or Flip Three revealed during a Flip Three is
   # set aside and resolved only after all three cards are flipped (and only
-  # if the target is still in the round). Second Chance resolves at once —
-  # a surplus one pauses the sequence until it is passed on.
+  # if the target is still in the round). Second Chance resolves at once.
   def self.draw_flip_three_cards(game)
     rs = game.round_state
     pending = rs["pending_flip_three"]
@@ -561,7 +550,6 @@ class GameEngine
       end
 
       resolve_drawn_card_for(game, target_id, card, initial_deal: false)
-      break if rs["pending_action"]
     end
 
     if pending["remaining"].to_i == 0 && rs["pending_action"].nil?

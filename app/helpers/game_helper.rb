@@ -64,7 +64,6 @@ module GameHelper
     case type.to_s
     when "freeze"        then "❄ Freeze — choose a player to bank their points and sit out"
     when "flip_three"    then "3× Flip Three — choose who must flip the next three cards"
-    when "second_chance" then "🛡 You already hold a Second Chance — give this one away"
     end
   end
 
@@ -103,7 +102,7 @@ module GameHelper
         "#{name.(event["drawer_id"])} hit #{name.(event["target_id"])} with Flip Three"
       end
     when "second_chance_used" then "#{name.(event["user_id"])}'s Second Chance saved them"
-    when "second_chance_given" then "#{name.(event["drawer_id"])} gave a Second Chance to #{name.(event["target_id"])}"
+    when "second_chance_gained" then "#{name.(event["user_id"])} got a Second Chance"
     when "deck_reshuffled"    then "Discard pile reshuffled into the deck"
     end
   end

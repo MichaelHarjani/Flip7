@@ -182,6 +182,16 @@ RSpec.describe GameEngine do
       expect(game.deck.size + game.discard_pile.size + count_cards_in_hands(game)).to eq(94)
     end
 
+    it "shuffles the discards back in at a round start once the deck runs low" do
+      game, users = build_game(player_count: 2)
+      seed_round!(game, users, deck: Array.new(9) { number_card(1) })
+      game.update!(current_round: 3, discard_pile: Array.new(20) { number_card(7) })
+      described_class.start_round(game)
+      game.reload
+      expect(game.discard_pile).to eq([])
+      expect(game.deck.size + count_cards_in_hands(game)).to eq(29)
+    end
+
     it "reshuffles the discard pile into a new deck when the deck runs out" do
       game, users = build_game(player_count: 2)
       seed_round!(game, users, deck: [])
@@ -320,55 +330,20 @@ RSpec.describe GameEngine do
       expect(game.round_state["player_hands"][users[0].id.to_s]["has_second_chance"]).to be(true)
     end
 
-    it "a second Second Chance must be given to another active player" do
-      game, users = build_game(player_count: 3)
-      hands = {
-        users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
-        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false },
-        users[2].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false }
-      }
-      seed_round!(game, users, hands: hands, deck: [action_card("second_chance")])
-      described_class.hit(game, users[0].id)
-      game.reload
-      expect(game.round_state["pending_action"]).to eq("type" => "second_chance", "drawer_id" => users[0].id)
-      expect(game.current_turn_player_index).to eq(0)
-
-      described_class.resolve_action(game, users[0].id, "second_chance", users[2].id)
-      game.reload
-      expect(game.round_state["player_hands"][users[2].id.to_s]["has_second_chance"]).to be(true)
-      expect(game.round_state["pending_action"]).to be_nil
-      expect(game.current_turn_player_index).to eq(1)
-    end
-
-    it "rejects giving a surplus Second Chance to yourself or a holder" do
-      game, users = build_game(player_count: 3)
-      hands = {
-        users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
-        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
-        users[2].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false }
-      }
-      seed_round!(game, users, hands: hands, deck: [action_card("second_chance")])
-      described_class.hit(game, users[0].id)
-      expect {
-        described_class.resolve_action(game.reload, users[0].id, "second_chance", users[0].id)
-      }.to raise_error(GameEngine::InvalidActionError)
-      expect {
-        described_class.resolve_action(game.reload, users[0].id, "second_chance", users[1].id)
-      }.to raise_error(GameEngine::InvalidActionError)
-    end
-
-    it "discards a surplus Second Chance when nobody can receive it" do
+    it "replacing an existing Second Chance when drawing a second one" do
       game, users = build_game(player_count: 2)
       hands = {
         users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
-        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true }
+        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false }
       }
       seed_round!(game, users, hands: hands, deck: [action_card("second_chance")])
       described_class.hit(game, users[0].id)
       game.reload
+      expect(game.round_state["player_hands"][users[0].id.to_s]["has_second_chance"]).to be(true)
       expect(game.round_state["pending_action"]).to be_nil
       expect(game.discard_pile).to eq([action_card("second_chance")])
-      expect(game.round_state["events"].map { |e| e["type"] }).to include("second_chance_discarded")
+      events = game.round_state["events"]
+      expect(events.map { |e| e["type"] }).to include("second_chance_replaced")
     end
 
     it "sets pending_action when drawing a Freeze, without advancing turn" do

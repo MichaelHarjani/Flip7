@@ -88,13 +88,7 @@ class GameBoard
 
   def target_options
     return [] unless pending_action
-    drawer = pending_action["drawer_id"]
-    if pending_action["type"] == "second_chance"
-      ids = GameEngine.second_chance_recipient_ids(round_state, drawer).map(&:to_i)
-      seats.select { |s| ids.include?(s.user_id) }
-    else
-      seats.select(&:active?)
-    end
+    seats.select(&:active?)
   end
 
   def last_round
