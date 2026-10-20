@@ -169,6 +169,31 @@ RSpec.describe BotBrain do
   # ────────────────────────────────────────────────────────────────
   # Targeting
   # ────────────────────────────────────────────────────────────────
+  describe "#decide situational overrides" do
+    it "stays to lock in a win when banking this round reaches 200, even if aggressive" do
+      brain = make("aggressive", hand(number_cards: [2, 3]), cumulative: { "42" => 196, "100" => 50 })
+      expect(brain.decide).to eq(:stay)
+    end
+
+    it "chases Flip 7 at six unique cards when the bust risk is tolerable" do
+      six = [1, 2, 3, 4, 5, 6]
+      deck = [number_card(6)] + Array.new(3) { number_card(9) } # 25% bust
+      expect(make("balanced", hand(number_cards: six), deck: deck).decide).to eq(:hit)
+      expect(make("conservative", hand(number_cards: six), deck: deck).decide).to eq(:stay)
+    end
+
+    it "pushes past its bust ceiling when far behind the leader" do
+      held = [2, 3]
+      # 3 of 5 cards duplicate a held value: 0.6 bust risk, just over
+      # aggressive's 0.55 ceiling but within the +0.1 comeback allowance.
+      deck = Array.new(3) { number_card(2) } + Array.new(2) { number_card(9) }
+      far_behind = make("aggressive", hand(number_cards: held), deck: deck, cumulative: { "42" => 40, "100" => 140 })
+      close      = make("aggressive", hand(number_cards: held), deck: deck, cumulative: { "42" => 120, "100" => 140 })
+      expect(far_behind.decide).to eq(:hit)
+      expect(close.decide).to eq(:stay)
+    end
+  end
+
   describe "#choose_action_target" do
     let(:bot_hand) { hand(number_cards: [5]) }
     let(:opp_a_hand) { hand(number_cards: []) }

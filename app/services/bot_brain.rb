@@ -29,27 +29,48 @@ class BotBrain
     @player_id = player_id
   end
 
+  # Bust-probability ceilings per strategy.
+  BUST_LIMITS = { "conservative" => 0.25, "balanced" => 0.35, "aggressive" => 0.55 }.freeze
+  # How far behind the leader before balanced/aggressive bots push harder.
+  COMEBACK_DEFICIT = 50
+
   # Returns :hit or :stay based on the bot's strategy and current state.
+  #
+  # The threshold rules decide first; three situational overrides (ported
+  # from the earlier flip7 build's AiService, plus an endgame guard) then
+  # adjust that call:
+  #   1. Endgame: if banking this round reaches 200, stay — never risk a win.
+  #   2. Flip 7 chase: one card from Flip 7 (6 unique) with a tolerable bust
+  #      risk, balanced/aggressive bots go for the +15 and end the round.
+  #   3. Comeback: far behind the leader, balanced/aggressive bots keep
+  #      hitting a little past their usual bust ceiling.
   def decide
     hand = my_hand
     number_cards = Array(hand && (hand["number_cards"] || hand[:number_cards])) || []
     unique_count = number_cards.uniq.size
     total_value = number_cards.sum(&:to_i)
     bust_prob = GameEngine.bust_probability(hand || {}, deck_for_probability)
+    limit = BUST_LIMITS.fetch(@strategy)
 
-    case @strategy
-    when "conservative"
-      return :stay if unique_count >= 3 && total_value >= 20
-      return :stay if bust_prob > 0.25
-    when "balanced"
-      return :stay if unique_count >= 4 && total_value >= 30
-      return :stay if bust_prob > 0.35
-    when "aggressive"
-      return :stay if unique_count >= 5 && total_value >= 45
-      return :stay if bust_prob > 0.55
-    end
+    round_score = GameEngine.compute_round_score(hand || {}, "active", false)
+    return :stay if number_cards.any? && score_for(@player_id) + round_score >= GameEngine::WINNING_SCORE
 
-    :hit
+    decision =
+      case @strategy
+      when "conservative"
+        unique_count >= 3 && total_value >= 20 ? :stay : nil
+      when "balanced"
+        unique_count >= 4 && total_value >= 30 ? :stay : nil
+      when "aggressive"
+        unique_count >= 5 && total_value >= 45 ? :stay : nil
+      end
+    decision ||= bust_prob > limit ? :stay : :hit
+    return decision if @strategy == "conservative" || decision == :hit
+
+    return :hit if unique_count == GameEngine::FLIP7_UNIQUE_COUNT - 1 && bust_prob <= 0.45
+    return :hit if deficit_to_leader >= COMEBACK_DEFICIT && bust_prob <= limit + 0.1
+
+    :stay
   end
 
   # Returns target user_id for Freeze / Flip Three / a surplus Second
@@ -142,6 +163,12 @@ class BotBrain
   def active_trailing_id(active)
     return nil if active.empty?
     active.min_by { |id| score_for(id) }
+  end
+
+  def deficit_to_leader
+    others = cumulative_scores.reject { |id, _| id.to_s == @player_id.to_s }.values.map(&:to_i)
+    return 0 if others.empty?
+    others.max - score_for(@player_id).to_i
   end
 
   def score_for(id)
