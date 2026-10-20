@@ -1,0 +1,2948 @@
+[
+  {
+    "category": "functional",
+    "description": "Landing page loads at the root path and returns HTTP 200",
+    "steps": [
+      "Navigate to https://flip7.michaelharjani.com/",
+      "Verify HTTP status is 200",
+      "Verify page title contains 'Flip7'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Landing page hero section displays game branding and play options",
+    "steps": [
+      "Navigate to /",
+      "Take screenshot of hero section",
+      "Verify hero contains game title, tagline, and at least two play option buttons",
+      "Verify layout is centered and uses DaisyUI dark theme by default"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Google OAuth sign-in button is present and routes to the OmniAuth entry",
+    "steps": [
+      "Navigate to /",
+      "Locate the 'Sign in with Google' button",
+      "Click it and verify the browser navigates to /users/auth/google_oauth2"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Full Google OAuth round trip creates a user record from the omniauth payload",
+    "steps": [
+      "Navigate to /",
+      "Click 'Sign in with Google'",
+      "Complete the Google OAuth consent screen for a test account",
+      "Verify the browser is redirected to /users/auth/google_oauth2/callback",
+      "Verify the callback redirects to / or /profile when successful",
+      "Query the users table and verify a row exists with the test account's provider='google_oauth2' and uid",
+      "Verify the user's email, name, and avatar_url were populated from auth.info",
+      "Verify elo_rating defaults to 1000",
+      "Verify games_played defaults to 0",
+      "Verify the session cookie is set and the user appears logged in",
+      "Reload the landing page and verify the nav shows the user's name"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Sign out clears the session and returns the user to the landing page",
+    "steps": [
+      "Sign in as a test user",
+      "Click the sign out link in the nav",
+      "Verify redirect to /",
+      "Verify the nav no longer shows the user's name"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Guest users can access solo mode without logging in",
+    "steps": [
+      "Navigate to / without logging in",
+      "Click 'Play Solo'",
+      "Verify /play/solo loads and is usable",
+      "Verify no redirect to a login page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Guest users are blocked from casual multiplayer and ranked",
+    "steps": [
+      "Navigate to /play/casual as a guest",
+      "Verify the page prompts for Google sign-in or redirects",
+      "Navigate to /play/ranked as a guest",
+      "Verify the page blocks access and prompts for sign-in"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Guest solo sessions display a persistent 'Sign in to save progress' prompt",
+    "steps": [
+      "Start a solo game as a guest",
+      "Take a screenshot of the game view",
+      "Verify a visible banner or toast reads 'Sign in to save progress' and is not dismissible"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Logged-in nav exposes profile, friends, stats, and leaderboard links",
+    "steps": [
+      "Sign in as a test user",
+      "Open the primary nav",
+      "Verify links exist for /profile, /friends, /stats, and /leaderboard"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Custom domain serves HTTPS with Railway-managed SSL certificate",
+    "steps": [
+      "Open https://flip7.michaelharjani.com",
+      "Verify the certificate is valid and issued to the domain",
+      "Verify requesting the http:// version redirects to https://"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Solo setup page lets the user configure between 1 and 9 bots for a single-deck game",
+    "steps": [
+      "Navigate to /play/solo",
+      "Set bot count to 3",
+      "Verify the UI shows 3 bot seats",
+      "Verify the multi-deck badge is NOT shown"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Selecting 10 or more bots in solo mode triggers a multi-deck warning",
+    "steps": [
+      "Navigate to /play/solo",
+      "Set bot count to 10",
+      "Verify the UI shows a '2 decks in play' badge or warning"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Each bot seat can be assigned an independent difficulty strategy",
+    "steps": [
+      "Navigate to /play/solo",
+      "Add 3 bots",
+      "Set bot 1 to 'conservative', bot 2 to 'aggressive', bot 3 to 'optimal'",
+      "Start the game",
+      "Verify each game_player row reflects the chosen bot_strategy"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Starting a solo game creates a Game row with mode='solo' and status transitions to in_progress",
+    "steps": [
+      "Navigate to /play/solo",
+      "Configure 2 bots",
+      "Click 'Start Game'",
+      "Verify a Game row is created with mode='solo'",
+      "Verify the AASM status is 'in_progress'",
+      "Verify current_round equals 1",
+      "Verify the page redirects to /game/:id"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Solo setup layout uses Tailwind mobile-first grid and is thumb-reachable",
+    "steps": [
+      "Resize viewport to 375px width",
+      "Navigate to /play/solo",
+      "Take a screenshot",
+      "Verify bot count and difficulty controls are vertically stacked with ≥44px touch targets",
+      "Verify the 'Start Game' button is bottom-anchored"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Game board loads the current round's initial state from the server",
+    "steps": [
+      "Start a solo game",
+      "Verify /game/:id renders the player's hand, opponents' hands, and the Hit/Stay controls",
+      "Verify each seat has at least one card face-up from the initial deal"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Full solo game end-to-end: setup, play multiple rounds, reach 200, declare winner",
+    "steps": [
+      "Sign in as a test user",
+      "Navigate to /play/solo",
+      "Configure 2 conservative bots",
+      "Click 'Start Game'",
+      "Verify /game/:id loads and the initial deal has happened",
+      "On each of the player's turns, click 'Hit' until the server broadcasts a safe card, then click 'Stay'",
+      "Wait for bots to take their turns with 1-2s delays",
+      "Verify round_score is calculated and cumulative_scores is updated after each round",
+      "Continue playing rounds until a player's cumulative_scores reaches 200+",
+      "Verify the round completes fully rather than terminating immediately",
+      "Verify the Game row transitions to status='completed' and winner_id is set",
+      "Verify a MatchResult row is created per participant with correct placement",
+      "Verify the winner's games_won stat is incremented",
+      "Verify the results screen shows final standings with cumulative scores"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Hitting draws exactly one card from the deck and appends it to the player's hand",
+    "steps": [
+      "Start a solo game and wait for your turn",
+      "Record the deck length and current hand size",
+      "Click 'Hit'",
+      "Verify exactly one card was appended to round_state.player_hands[self]",
+      "Verify the deck length decremented by exactly one"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stay banks the current score and marks the player inactive for the round",
+    "steps": [
+      "Start a solo game and take your turn",
+      "Click 'Stay'",
+      "Verify round_state.player_statuses[self] equals 'stayed'",
+      "Verify round_state.stay_order includes self in the correct position",
+      "Verify turn advances to the next active player"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Drawing a duplicate number card busts the player and zeros their round score",
+    "steps": [
+      "Craft a test game state with a player holding a number card of value 5",
+      "Force the next draw to be another 5 via stubbed deck",
+      "Call GameEngine.hit on that player",
+      "Verify round_state.player_statuses[player] equals 'busted'",
+      "Verify round_state.player_scores[player] equals 0",
+      "Verify the event broadcast includes a 'bust' type"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Flip 7 triggers immediate round end and awards a +15 bonus to the achieving player",
+    "steps": [
+      "Craft a test state where a player holds 6 unique number cards",
+      "Force the next draw to be a 7th unique number card",
+      "Call GameEngine.hit",
+      "Verify round_state.player_hands[player].number_cards has 7 unique values",
+      "Verify check_round_end returns true",
+      "Verify round_score for that player includes the +15 Flip 7 bonus",
+      "Verify all other players' turns are skipped and the round advances"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Scoring order applies ×2 to number_sum before adding +N modifiers and Flip7 bonus",
+    "steps": [
+      "Craft a test hand with number cards summing to 20, a ×2 modifier, and a +4 modifier",
+      "Call GameEngine.score_round",
+      "Verify number_sum is doubled to 40",
+      "Verify round_score equals 40 + 4 = 44",
+      "Verify the +4 modifier was NOT doubled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Flip 7 bonus is added after modifiers and is not doubled by ×2",
+    "steps": [
+      "Craft a test hand with 7 unique number cards summing to 28, holding a ×2 modifier",
+      "Call GameEngine.score_round",
+      "Verify number_sum doubles to 56",
+      "Verify +15 Flip 7 bonus is added after, for a total of 71",
+      "Verify the bonus was NOT doubled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Busting zeros the round score regardless of modifiers held",
+    "steps": [
+      "Craft a test hand with number cards summing to 30, a ×2 modifier, and a +10 modifier",
+      "Force a bust by drawing a duplicate",
+      "Call GameEngine.score_round",
+      "Verify round_score equals 0"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Pyramid deck distribution contains exactly N copies of value N for N in 0..12",
+    "steps": [
+      "Call GameEngine to build a fresh single deck",
+      "Count cards of each number value",
+      "Verify value 0 has 0 copies, value 1 has 1 copy, up through value 12 having 12 copies",
+      "Verify the total number card count equals 79"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Each deck contains exactly 3 Freeze, 3 Flip Three, 3 Second Chance, and 6 modifier cards",
+    "steps": [
+      "Build a fresh single deck",
+      "Count action cards by type and verify 3 each of Freeze, Flip Three, Second Chance",
+      "Count modifier cards and verify one each of +2, +4, +6, +8, +10, and ×2",
+      "Verify total deck size equals 94"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Multi-deck scaling uses ceil(player_count / 10) decks",
+    "steps": [
+      "Create games with player counts of 2, 10, 11, 20, 21",
+      "Verify deck_count equals 1, 1, 2, 2, 3 respectively",
+      "Verify total deck size equals 94 × deck_count for each"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Multi-deck games still bust on duplicate values from different decks",
+    "steps": [
+      "Build a 2-deck game and deal a player a 5 from deck A",
+      "Force the next draw to be a 5 from deck B",
+      "Call GameEngine.hit",
+      "Verify the player busts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Full reshuffle occurs at the start of every round with no cards carried over",
+    "steps": [
+      "Play round 1 in a test game and note which card ids were dealt",
+      "Call GameEngine.start_round for round 2",
+      "Verify the new deck contains the full 94 cards (single deck) with no cards missing",
+      "Verify the previous round's discards and hands are cleared"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Initial deal resolves action cards immediately before continuing the deal",
+    "steps": [
+      "Stub the deck so the first card dealt is a Freeze targeting self",
+      "Call GameEngine.start_round with 3 players",
+      "Verify the Freeze resolves immediately before the next player is dealt",
+      "Verify the frozen player's status is 'stayed' before the round begins",
+      "Verify the remaining players still receive their initial cards"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Freeze card forces the target to immediately Stay and bank their score",
+    "steps": [
+      "Start a test game with 3 players",
+      "Force player 1 to draw a Freeze",
+      "Player 1 targets player 2",
+      "Verify player 2's status transitions to 'stayed'",
+      "Verify player 2's current hand is scored and banked",
+      "Verify the turn advances past player 2 in subsequent rounds"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Freeze can target the drawer themselves",
+    "steps": [
+      "Force a player to draw a Freeze",
+      "Choose self as target",
+      "Verify the player's status is 'stayed' and their current score is banked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Flip Three forces the target to draw exactly three consecutive cards",
+    "steps": [
+      "Start a test game",
+      "Force player 1 to draw a Flip Three targeting player 2",
+      "Stub the next three deck cards to be non-dup number cards 1, 2, 3",
+      "Verify player 2's hand gains cards 1, 2, 3",
+      "Verify round_state.pending_flip_three returns to {target_id: nil, remaining: 0} after",
+      "Verify control returns to the normal turn order"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Flip Three can bust the target mid-sequence",
+    "steps": [
+      "Force player 2 to hold a 4",
+      "Force player 1 to Flip Three player 2",
+      "Stub the next three cards to be 1, 4, 7",
+      "Verify player 2 busts after drawing the duplicate 4",
+      "Verify the third card is NOT drawn (or is drawn but the bust stands)",
+      "Verify player 2's round score is 0"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Second Chance mid-Flip-Three save allows the sequence to continue",
+    "steps": [
+      "Give player 2 a Second Chance and a number card 4",
+      "Force player 1 to Flip Three player 2",
+      "Stub the next three cards to be 1, 4, 7",
+      "Verify the duplicate 4 is discarded and the Second Chance is consumed",
+      "Verify player 2 does not bust and the remaining card 7 is drawn",
+      "Verify player 2's hand contains 1, 4 (original), and 7"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Second Chance is held by the drawer and saves them from a future bust",
+    "steps": [
+      "Force a player to draw a Second Chance",
+      "Verify has_second_chance becomes true in their hand state",
+      "Force the next draw to be a duplicate number card",
+      "Verify the duplicate is discarded and has_second_chance resets to false",
+      "Verify the player does not bust"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Drawing a second Second Chance replaces the first one and the old is discarded, not passed",
+    "steps": [
+      "Give a player a Second Chance",
+      "Force them to draw another Second Chance",
+      "Verify has_second_chance remains true",
+      "Verify only one Second Chance card is referenced in their hand state",
+      "Verify the replaced card is discarded and NOT given to another player"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Flip Three can target the drawer themselves",
+    "steps": [
+      "Force a player to draw a Flip Three",
+      "Choose self as target",
+      "Verify the three draws apply to the drawer",
+      "Verify bust or continuation resolves as normal"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Round ends when every player has either Stayed or Busted",
+    "steps": [
+      "Start a test game with 3 players",
+      "Have all three players either stay or bust",
+      "Verify check_round_end returns true",
+      "Verify the round advances and scores are banked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Game ends when any player reaches 200 cumulative points",
+    "steps": [
+      "Set a player's cumulative_scores to 195",
+      "Award them 8 points in a round",
+      "Verify check_game_end returns true",
+      "Verify the Game transitions to status='completed' with winner_id set"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "When multiple players cross 200 in the same round, highest cumulative wins",
+    "steps": [
+      "Set two players at 190 cumulative",
+      "Play a round where player A scores 20 and player B scores 15",
+      "Verify winner_id equals player A (210 > 205)",
+      "Verify match_results placement reflects this"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tiebreak on equal final cumulative scores goes to the player who Stayed earliest",
+    "steps": [
+      "Set two players at 190 cumulative",
+      "Play a round where both end with 200 cumulative",
+      "Ensure player A entered stay_order before player B",
+      "Verify winner_id equals player A"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Turn timer sets turn_expires_at to 10 seconds in the future on turn start",
+    "steps": [
+      "Start a ranked game",
+      "On turn start, verify turn_expires_at equals approximately now + 10 seconds",
+      "Verify turn_number incremented by 1"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Turn timer expiration auto-Stays the current player",
+    "steps": [
+      "Start a ranked game and wait for opponent's turn",
+      "Do not act for 11 seconds",
+      "Verify TurnTimeoutJob fires and calls GameEngine.timeout_turn",
+      "Verify the player's status becomes 'stayed' and their score is banked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stale TurnTimeoutJob executions are guarded by turn_number",
+    "steps": [
+      "Enqueue a TurnTimeoutJob with turn_number=5",
+      "Have the player act before the job fires, advancing turn_number to 6",
+      "Let the stale job fire",
+      "Verify the job no-ops because turn_number no longer matches"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Auto-stay on timeout for an action card target defaults to opponent (Freeze/Flip Three)",
+    "steps": [
+      "Start a ranked duel",
+      "Force the active player to draw a Freeze",
+      "Do not act for 11 seconds",
+      "Verify timeout auto-targets the opponent with Freeze"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Bot seats do not use the 10-second turn timer",
+    "steps": [
+      "Start a solo game with one bot",
+      "Observe the bot's turn",
+      "Verify no TurnTimeoutJob is enqueued for bot turns",
+      "Verify the bot acts within 1-2 seconds"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Bot turns are executed via BotTurnJob with a randomized 1-2 second delay",
+    "steps": [
+      "Trigger a bot turn",
+      "Verify BotTurnJob is enqueued with a wait time between 1 and 2 seconds",
+      "Verify the bot's action executes through GameEngine.hit or stay"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Conservative bot strategy stays at 3-4 cards or 20+ points",
+    "steps": [
+      "Instantiate BotBrain with strategy='conservative' and a hand of 4 unique numbers summing to 22",
+      "Call decide",
+      "Verify the decision is :stay"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Aggressive bot strategy pushes toward 5-6 cards or higher scores",
+    "steps": [
+      "Instantiate BotBrain with strategy='aggressive' and a hand of 3 unique numbers summing to 15",
+      "Call decide",
+      "Verify the decision is :hit"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Optimal bot strategy uses expected value of hitting vs staying",
+    "steps": [
+      "Instantiate BotBrain with strategy='optimal' and a hand where ev_hit > ev_stay",
+      "Call decide and verify :hit",
+      "Instantiate another BotBrain where ev_stay > ev_hit",
+      "Verify :stay"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Bot action card targeting follows strategy-specific rules",
+    "steps": [
+      "Force a conservative bot to draw a Freeze",
+      "Verify it targets the current leader",
+      "Force an aggressive bot to draw a Flip Three",
+      "Verify it may self-target to chase Flip 7"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Create a casual game generates a unique 4-character room code",
+    "steps": [
+      "Sign in as a host",
+      "Navigate to /play/casual and click 'Create Game'",
+      "Verify a Game row is created with mode='casual' and a 4-character room_code",
+      "Verify the room_code uses only A-H, J-N, P-Z, 2-9 (no I, O, 0, 1)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Room code generation filters against an offensive word blocklist",
+    "steps": [
+      "Mock the random generator to produce a blocked word",
+      "Call room code generator",
+      "Verify the blocked word is rejected and a different code is issued"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Room code has unique index scoped to active games only",
+    "steps": [
+      "Create a casual game with a known room_code 'AB23'",
+      "Mark it as completed",
+      "Create a new casual game",
+      "Verify it is allowed to reuse 'AB23' since the first is no longer active"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Joining a casual game via room code adds the user to game_players",
+    "steps": [
+      "Host creates a casual game with room_code XYZ2",
+      "Second user signs in and navigates to /join",
+      "Enters XYZ2 and submits",
+      "Verify a game_players row is created with correct seat_position",
+      "Verify the lobby page loads"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Direct join link /join/:code pre-fills and joins the room",
+    "steps": [
+      "Create a casual game with room_code ABCD",
+      "As another user, visit /join/ABCD directly",
+      "Verify the user is added to game_players and redirected to the lobby"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Casual lobby shows all connected players with Google avatars",
+    "steps": [
+      "Create a casual game with 3 joined users",
+      "Open the lobby page",
+      "Verify each joined user appears with their name and avatar_url",
+      "Verify connection status dots are green"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Host can add bots to fill seats in a casual lobby",
+    "steps": [
+      "Create a casual game as host",
+      "Click 'Add Bot' and select conservative difficulty",
+      "Verify a new game_players row with is_bot=true and bot_strategy='conservative'",
+      "Verify the lobby shows the bot"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Only the host can start a casual game",
+    "steps": [
+      "Create a casual game as host",
+      "Join as a second user",
+      "Verify the non-host user does not see a 'Start Game' button",
+      "Verify a direct POST to /games/:id/start by the non-host returns 403"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Casual game requires at least 2 players to start",
+    "steps": [
+      "Create a casual game as host with no other joined players",
+      "Click 'Start Game'",
+      "Verify an error flash says 'Minimum 2 players required'",
+      "Verify the game status remains 'waiting'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Casual games have no upper player limit",
+    "steps": [
+      "Create a casual game and add 15 joined users (mix of real and bots)",
+      "Click 'Start Game'",
+      "Verify the game starts successfully with 15 seated players",
+      "Verify deck_count auto-scales to 2"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Multi-deck badge appears in the casual lobby when player count exceeds 10",
+    "steps": [
+      "Create a casual game and add 11 players",
+      "Open the lobby",
+      "Verify a '2 decks in play' badge is visible"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Empty casual rooms expire after 5 minutes via Sidekiq",
+    "steps": [
+      "Create a casual game at time T",
+      "Do not have any additional players join",
+      "Fast-forward time by 5 minutes and let RoomExpiryJob fire",
+      "Verify the game status transitions to 'expired'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Completing a casual game does not affect Elo ratings",
+    "steps": [
+      "Sign in two users with elo_rating=1000",
+      "Play a casual game to completion",
+      "Verify neither user's elo_rating changed",
+      "Verify no MatchResult rows with non-null elo_change for this game"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Casual game wins still increment lifetime stats and achievements",
+    "steps": [
+      "Win a casual game",
+      "Verify games_played and games_won incremented",
+      "Verify any eligible achievements are unlocked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Ranked mode is locked until the user has played 5 casual games",
+    "steps": [
+      "Sign in as a new user with 0 games",
+      "Navigate to /play/ranked",
+      "Verify a message indicates ranked unlocks after 5 casual games",
+      "Verify no 'Find Match' button is present"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Ranked unlocks once the 5-casual-game threshold is reached",
+    "steps": [
+      "Seed a user with games_played=5",
+      "Navigate to /play/ranked",
+      "Verify a 'Find Match' button is rendered"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Full ranked matchmaking flow pairs two players and transitions to a live duel",
+    "steps": [
+      "Sign in user A with elo_rating=1000 and 5+ casual games",
+      "Sign in user B with elo_rating=1020 and 5+ casual games",
+      "User A clicks 'Find Match' on /play/ranked",
+      "Verify user A is added to the Redis sorted set 'matchmaking:queue'",
+      "User B clicks 'Find Match'",
+      "Verify MatchmakingWorkerJob pairs them within 5 seconds because ±50 Elo window",
+      "Verify a new Game row is created with mode='ranked', max_players=2",
+      "Verify both users are notified via MatchmakingChannel with the new game id",
+      "Verify both clients redirect to /game/:id",
+      "Verify the game status is 'in_progress' and the first round has been dealt",
+      "Verify no bots are seated in the ranked game",
+      "Verify turn_expires_at is set for the first player"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Matchmaking window expands from ±50 to ±500 over time",
+    "steps": [
+      "Place user A (Elo 1000) into the queue alone",
+      "Advance time by 10 seconds and verify window ±100",
+      "Advance by 10 more seconds (20s total) and verify ±200",
+      "Advance to 30s and verify ±500",
+      "Advance to 60s and verify matching against any available player"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "MatchmakingWorkerJob runs every 5 seconds via Sidekiq cron",
+    "steps": [
+      "Inspect the Sidekiq-cron schedule",
+      "Verify MatchmakingWorkerJob is scheduled at a 5-second cadence"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Leaving the ranked queue removes the user from the Redis sorted set",
+    "steps": [
+      "Enter ranked queue",
+      "Click 'Cancel'",
+      "Verify DELETE /matchmaking/queue is issued",
+      "Verify the user is removed from matchmaking:queue in Redis"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Ranked games use a 2-player format with no bots",
+    "steps": [
+      "Create a ranked game via matchmaking",
+      "Verify max_players equals 2",
+      "Verify no game_players row has is_bot=true"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Elo update applied after ranked game completion with K=48 for provisional players",
+    "steps": [
+      "Sign in user A with elo_rating=1000 and games_played=5 (provisional)",
+      "Play a ranked duel to completion where user A wins",
+      "Compute expected = 1 / (1 + 10**((1000-1000)/400)) = 0.5",
+      "Verify new_rating = 1000 + 48 * (1 - 0.5) = 1024",
+      "Verify user A's elo_rating is now 1024"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Elo update uses K=32 for non-provisional players (20+ games)",
+    "steps": [
+      "Sign in user A with games_played=25",
+      "Win a ranked duel against an equal-Elo opponent",
+      "Verify K=32 is used and new Elo equals 1016"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Elo floor of 100 cannot be breached on loss",
+    "steps": [
+      "Set a user's elo_rating to 110",
+      "Have them lose a ranked match to a 1500 opponent",
+      "Verify the computed new rating would drop below 100",
+      "Verify the stored rating clamps to exactly 100"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Ranked disconnect with 30-second grace period allows resume",
+    "steps": [
+      "Start a ranked duel",
+      "Force user A to disconnect the WebSocket",
+      "Verify PlayerDisconnectJob is enqueued with a 30-second delay",
+      "Reconnect user A within 30 seconds",
+      "Verify PlayerDisconnectJob is cancelled or no-ops",
+      "Verify game state_sync is broadcast to the reconnected client"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Ranked disconnect beyond 30 seconds forfeits the game and awards Elo loss",
+    "steps": [
+      "Start a ranked duel between user A and user B",
+      "Disconnect user A and wait 31 seconds",
+      "Verify PlayerDisconnectJob fires and marks the game as completed with winner_id=user B",
+      "Verify user A's elo_rating decreased and user B's increased",
+      "Verify user A's ranked_losses and user B's ranked_wins incremented"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Three or more ranked disconnects in 24 hours trigger a 15-minute matchmaking cooldown",
+    "steps": [
+      "Record 3 disconnect events for a user within 24 hours",
+      "Attempt to enter the ranked queue",
+      "Verify the request is rejected with a 'cooldown' message",
+      "Advance time 15 minutes and verify queue entry is allowed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Action Cable GameChannel streams state updates for the game id",
+    "steps": [
+      "Subscribe to GameChannel with params[:game_id]",
+      "Make a move via POST /games/:id/moves/hit",
+      "Verify a turbo_stream broadcast is received for the drawn card",
+      "Verify the hand partial is replaced in the DOM"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "GameChannel resubscribe sends a full state_sync HTML payload",
+    "steps": [
+      "Subscribe to GameChannel for an in-progress game",
+      "Disconnect and reconnect the channel",
+      "Verify a state_sync message with a full rendered game HTML payload is received",
+      "Verify the DOM reflects current round_state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "LobbyChannel broadcasts player-joined and player-left presence updates",
+    "steps": [
+      "Subscribe to LobbyChannel for a waiting game",
+      "Have another user join the game",
+      "Verify a turbo_stream append with the new player partial is received",
+      "Have them leave and verify a remove broadcast"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "MatchmakingChannel is personal per user and delivers match_found notifications",
+    "steps": [
+      "Subscribe to MatchmakingChannel as user A",
+      "Have user B also subscribe",
+      "Trigger a match between them",
+      "Verify user A and user B each receive a 'match_found' message with the game id on their own stream"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Optimistic locking raises StaleObjectError on concurrent game mutations and retries once",
+    "steps": [
+      "Load the same game in two contexts at lock_version=5",
+      "Save context A to advance to lock_version=6",
+      "Attempt to save context B",
+      "Verify StaleObjectError is raised",
+      "Verify the retry path reloads the game and reapplies the action"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Advisory lock serializes concurrent actions on the same game",
+    "steps": [
+      "Attempt to hit and timeout the same game id simultaneously from two processes",
+      "Verify Game.with_advisory_lock('game_:id') blocks the second until the first completes",
+      "Verify final state is consistent"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Server enforces that only the player whose turn it is can act",
+    "steps": [
+      "Start a game where it is player A's turn",
+      "Have player B POST /games/:id/moves/hit",
+      "Verify the request is rejected with a 403 or validation error",
+      "Verify no state change occurred"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Rematch creates a new game with the same players and settings linked via rematch_of",
+    "steps": [
+      "Complete a casual game with players [A, B, C]",
+      "Click 'Rematch' from the results screen",
+      "Verify POST /games/:id/rematch creates a new Game row",
+      "Verify the new game has mode='casual', same players, and rematch_of equal to the prior game id",
+      "Verify both players are redirected to the new lobby/game"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "flip7_first achievement unlocks when a player achieves their first Flip 7",
+    "steps": [
+      "Sign in a fresh user",
+      "Play a game and have the user achieve a Flip 7",
+      "Verify a UserAchievement row exists with achievement_key='flip7_first' and unlocked_at set",
+      "Verify a toast notification was broadcast via Action Cable"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Flip 7 tiered achievements progress through flip7_5, flip7_10, flip7_25, flip7_50, flip7_100",
+    "steps": [
+      "Seed a user with 4 Flip 7s",
+      "Achieve a 5th Flip 7",
+      "Verify flip7_5 unlocks",
+      "Seed user with 9 and achieve 10th, verify flip7_10",
+      "Seed user with 24 and achieve 25th, verify flip7_25",
+      "Repeat for 50 and 100",
+      "Verify each tier's parent_key chains correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "calculated_risk achievement unlocks when a player wins with exactly 200 cumulative points",
+    "steps": [
+      "Set a player's cumulative score so the winning round lands exactly at 200",
+      "Complete the game",
+      "Verify calculated_risk achievement is unlocked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "high_roller_50, _75, and _100 achievements trigger on single-round scores",
+    "steps": [
+      "Score exactly 50 in a round and verify high_roller_50 unlocks",
+      "Score 75 and verify high_roller_75",
+      "Score 100 and verify high_roller_100"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "zero_hero achievement unlocks when a player wins a round with a 0 card in hand",
+    "steps": [
+      "Craft a game state with a 0 card in the player's hand",
+      "Have the player win that round",
+      "Verify zero_hero is unlocked"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "extra_life achievement unlocks on a Flip 7 with an unused Second Chance",
+    "steps": [
+      "Have a player hold a Second Chance while achieving Flip 7",
+      "Verify extra_life unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "ice_cold achievement: Freeze a player within 10 of winning, then win",
+    "steps": [
+      "Set opponent's cumulative to 192",
+      "Player draws a Freeze and targets the opponent",
+      "Player then wins the game",
+      "Verify ice_cold unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "david_vs_goliath achievement: win a game despite being 50+ behind",
+    "steps": [
+      "Seed state with player at 100, opponent at 160",
+      "Have player rally and win the game",
+      "Verify david_vs_goliath unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "speed_run achievement: win a game in 5 or fewer rounds",
+    "steps": [
+      "Engineer a solo game that reaches 200 within 5 rounds",
+      "Verify speed_run unlocks on game completion"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "action_taker achievement: draw all 3 action card types in one round",
+    "steps": [
+      "Force a player to draw Freeze, Flip Three, and Second Chance in a single round",
+      "Verify action_taker unlocks at round end"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "second_chance_saver achievement: use a Second Chance to avoid a bust",
+    "steps": [
+      "Give player a Second Chance",
+      "Force a bust scenario",
+      "Verify Second Chance consumes, player avoids bust",
+      "Verify second_chance_saver unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "threes_company achievement: survive all three cards from a Flip Three",
+    "steps": [
+      "Force a Flip Three on a player",
+      "Stub three safe non-duplicate cards",
+      "Verify the player survives and threes_company unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "sweep achievement: win 3 consecutive rounds",
+    "steps": [
+      "Play a game where the same player wins rounds 1, 2, and 3",
+      "Verify sweep unlocks after round 3 scoring"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "the_repeater anti-achievement: bust by drawing a duplicate number",
+    "steps": [
+      "Force a player to bust by drawing a duplicate",
+      "Verify the_repeater unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "zero_points anti-achievement: bust in the very first round of a game",
+    "steps": [
+      "Start a fresh game",
+      "Force a player to bust in round 1",
+      "Verify zero_points unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "zero_trust anti: draw a 0 and immediately bust on the next card",
+    "steps": [
+      "Force a player to draw a 0",
+      "Force the next draw to cause a bust",
+      "Verify zero_trust unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "second_life_lost anti: draw a Second Chance and bust on the very next card",
+    "steps": [
+      "Force a player to draw a Second Chance",
+      "Force the next draw to be an un-savable scenario (after consumption, a second bust)",
+      "Verify second_life_lost unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "glutton anti: bust while holding 50+ points in your hand",
+    "steps": [
+      "Craft a hand summing to 55",
+      "Force a bust",
+      "Verify glutton unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "flip_three_flop anti: bust during a forced Flip Three draw",
+    "steps": [
+      "Force a Flip Three on a player who will bust mid-sequence",
+      "Verify flip_three_flop unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "risky_business anti: draw 5+ cards successfully then bust",
+    "steps": [
+      "Build a hand with 5 unique number cards",
+      "Force a bust on the 6th draw",
+      "Verify risky_business unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "modifier_misstep anti: bust while holding the ×2 multiplier",
+    "steps": [
+      "Give a player a ×2 modifier",
+      "Force a bust",
+      "Verify modifier_misstep unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "freeze_dried anti: get Frozen while within 10 points of winning",
+    "steps": [
+      "Set a player's cumulative to 192",
+      "Force an opponent to Freeze them",
+      "Verify freeze_dried unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "so_close anti: bust while holding 190+ cumulative points",
+    "steps": [
+      "Seed cumulative at 195",
+      "Force a bust that round",
+      "Verify so_close unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "flip_flop anti: get 6 unique number cards then bust on the 7th draw",
+    "steps": [
+      "Build hand with 6 unique number cards",
+      "Force the 7th draw to be a duplicate",
+      "Verify flip_flop unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "all_in_all_out anti: bust with 80+ points worth of cards in hand",
+    "steps": [
+      "Craft a hand with number cards summing to 85",
+      "Force a bust",
+      "Verify all_in_all_out unlocks"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Achievements are evaluated at round end for round-specific achievements",
+    "steps": [
+      "Play a round that triggers high_roller_50",
+      "Verify evaluation runs at round end, not game end",
+      "Verify the UserAchievement is created before the next round starts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Achievements are evaluated at game end for game-specific achievements",
+    "steps": [
+      "Complete a game triggering speed_run",
+      "Verify evaluation happens after the game transitions to 'completed'",
+      "Verify the toast is broadcast"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Achievement toast is broadcast via Action Cable when unlocked",
+    "steps": [
+      "Subscribe a client to GameChannel",
+      "Trigger an achievement unlock",
+      "Verify a 'notification' broadcast is received with the achievement name, icon, and rarity"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Achievement toast slides in from top and auto-dismisses after 3 seconds",
+    "steps": [
+      "Trigger an achievement unlock in the browser",
+      "Observe the toast animation",
+      "Take screenshots at 0s, 1s, and 4s",
+      "Verify the toast slides in from top and is gone by 4 seconds"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Friends list page renders for logged-in users",
+    "steps": [
+      "Sign in as a user",
+      "Navigate to /friends",
+      "Verify the page loads with sections for 'Friends' and 'Pending requests'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Send friend request by email creates a friendships row with status=pending",
+    "steps": [
+      "POST /friends with { email: 'bob@example.com' }",
+      "Verify a friendships row exists with user_id=current, friend_id=bob, status='pending'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Accept friend request transitions status to accepted and sets accepted_at",
+    "steps": [
+      "Create a pending friendship",
+      "As the recipient, PATCH /friends/:id/accept",
+      "Verify status='accepted' and accepted_at is populated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Decline or remove friend deletes the friendship row",
+    "steps": [
+      "Create a pending friendship",
+      "DELETE /friends/:id",
+      "Verify the row is removed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Challenge friend to a duel creates a ranked game invite",
+    "steps": [
+      "POST /friends/:id/challenge",
+      "Verify a new Game row is created with mode='ranked' and both players invited",
+      "Verify the recipient sees the invite"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Public profile page displays user stats and achievements",
+    "steps": [
+      "Navigate to /profile/:id for another user",
+      "Verify elo_rating, games_played, games_won, and total_flip7s are displayed",
+      "Verify unlocked achievements render with names and icons"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Leaderboard page lists top players by Elo rating",
+    "steps": [
+      "Seed 5 users with varying Elo",
+      "Navigate to /leaderboard",
+      "Verify users are sorted by elo_rating descending",
+      "Verify placement, name, and Elo columns are rendered"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Personal statistics dashboard renders at /stats",
+    "steps": [
+      "Sign in as a user with game history",
+      "Navigate to /stats",
+      "Verify the page shows win rate by mode, card frequency, and Elo trend"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Match history is paginated at /stats/history",
+    "steps": [
+      "Seed 25 match results",
+      "Navigate to /stats/history",
+      "Verify the first page shows 20 rows",
+      "Click 'Next' and verify page 2 shows the remaining 5"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Card frequency analysis shows most drawn and most busted on values",
+    "steps": [
+      "Seed match_results with card draw data",
+      "Navigate to /stats/cards",
+      "Verify a 'Most drawn' list and 'Most busted on' list are rendered"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Elo trend chart renders a time series of the user's rating",
+    "steps": [
+      "Seed 10 ranked match_results for a user with varying elo_after",
+      "Navigate to /stats/trends",
+      "Verify an SVG or canvas chart renders the Elo trend",
+      "Verify the x axis is chronological and the y axis spans the Elo range"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Round score distribution histogram is displayed on stats page",
+    "steps": [
+      "Navigate to /stats",
+      "Verify a histogram of round scores is rendered",
+      "Verify buckets for 0, 1-10, 11-25, 26-50, 51-100, 100+"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Interactive rules page teaches game mechanics step by step",
+    "steps": [
+      "Navigate to /rules",
+      "Verify a multi-step walkthrough with Next/Back controls",
+      "Verify the walkthrough covers deck composition, hit/stay, action cards, scoring, and Flip 7"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Theme selector in profile settings persists a theme choice",
+    "steps": [
+      "Navigate to /profile settings",
+      "Select 'cyberpunk' from the theme selector",
+      "Reload any page",
+      "Verify the data-theme attribute on <html> is 'cyberpunk'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Default theme for new users is 'dark'",
+    "steps": [
+      "Sign in as a fresh user",
+      "Navigate to /",
+      "Verify document.documentElement.dataset.theme equals 'dark'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Sound effects toggle controls card flip and bust SFX playback",
+    "steps": [
+      "Enable sound in profile settings",
+      "Trigger a card flip in a game",
+      "Verify an audio element plays the flip SFX",
+      "Disable sound and trigger another flip",
+      "Verify no audio plays"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "PWA manifest.json is served and contains required fields",
+    "steps": [
+      "GET /manifest.json",
+      "Verify 200 response",
+      "Verify the body contains name, short_name, start_url, display, icons"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Service worker is registered on first page load",
+    "steps": [
+      "Open / in a fresh browser",
+      "Inspect navigator.serviceWorker.controller",
+      "Verify a service worker is registered for /"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Add to Home Screen prompt surfaces on supported browsers",
+    "steps": [
+      "Open / in a PWA-capable mobile browser",
+      "Verify a beforeinstallprompt event fires",
+      "Verify the app shows a custom 'Add to Home Screen' hint"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "OpenGraph and SEO meta tags render on the landing page",
+    "steps": [
+      "GET /",
+      "Verify <meta property='og:title'>, og:description, og:image, and og:url are present",
+      "Verify <title> and <meta name='description'> are set"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Health check endpoint returns 200 for Railway probes",
+    "steps": [
+      "GET /up or /health",
+      "Verify 200 response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Database migrations run on Railway release phase via Procfile",
+    "steps": [
+      "Inspect Procfile",
+      "Verify the release line runs 'bin/rails db:migrate'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Sidekiq worker process is declared in Procfile",
+    "steps": [
+      "Inspect Procfile",
+      "Verify 'worker: bundle exec sidekiq' is present"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "CleanupAbandonedGamesJob marks stale waiting games as abandoned hourly",
+    "steps": [
+      "Seed a waiting game older than the stale threshold",
+      "Run CleanupAbandonedGamesJob",
+      "Verify the game status transitions to 'abandoned'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "AchievementCheckJob runs at round and game end",
+    "steps": [
+      "Play a round that should unlock an achievement",
+      "Verify AchievementCheckJob is enqueued and executes",
+      "Verify UserAchievement rows are updated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Turbo Streams are the sole update path during active gameplay",
+    "steps": [
+      "Start a game and observe network traffic",
+      "Verify game state updates arrive via Action Cable as turbo_stream messages",
+      "Verify there are no full-page reloads or JSON polling during the game"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Other players' card values are visible since Flip7 is open information",
+    "steps": [
+      "Start a multiplayer game with 3 players",
+      "Have player 2 draw a number card 5",
+      "Verify player 1's game view shows the 5 in player 2's hand"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Remaining deck count is visible but composition is hidden",
+    "steps": [
+      "Start a game",
+      "Verify the UI shows the deck size remaining",
+      "Verify no endpoint exposes the exact card order of the remaining deck to clients"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Player cannot Hit twice in a single turn",
+    "steps": [
+      "Submit POST /games/:id/moves/hit",
+      "Immediately submit a second /hit before the response returns",
+      "Verify only one card is drawn and the second request is rejected or no-ops"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Deck depletion mid-round is handled gracefully",
+    "steps": [
+      "Craft a game where the deck runs out mid-round",
+      "Call GameEngine.hit",
+      "Verify the round ends cleanly rather than crashing",
+      "Verify no duplicate cards are drawn"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Starting a new round creates a freshly shuffled deck of the correct size",
+    "steps": [
+      "Finish round 1",
+      "Call GameEngine.start_round for round 2",
+      "Verify the deck jsonb contains 94 × deck_count cards in a random order",
+      "Verify the order is NOT the same as a previously built deck"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "stay_order is preserved across the round and used for tiebreaking",
+    "steps": [
+      "Have players stay in order B, A, C",
+      "Verify round_state.stay_order equals [B_id, A_id, C_id]",
+      "Use stay_order in a game end tiebreak and verify B wins over A at equal scores"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "deal_phase flag is true during initial deal and false after",
+    "steps": [
+      "Call GameEngine.start_round",
+      "While dealing, verify round_state.deal_phase is true",
+      "After the deal completes, verify deal_phase is false"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "pending_flip_three state tracks remaining draws during a Flip Three sequence",
+    "steps": [
+      "Force a Flip Three targeting player B",
+      "After the first draw, verify round_state.pending_flip_three equals { target_id: B, remaining: 2 }",
+      "After the third draw, verify pending_flip_three resets to { target_id: nil, remaining: 0 }"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Seat position is 0-indexed and determines turn order",
+    "steps": [
+      "Create a game with 3 players at seat_position 0, 1, 2",
+      "Verify the initial deal proceeds in seat order",
+      "Verify turn order after the deal proceeds 0, 1, 2 clockwise"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Unique index prevents two players sharing a seat in the same game",
+    "steps": [
+      "Create a game_players row with seat_position=0",
+      "Attempt to create a second row with the same game_id and seat_position=0",
+      "Verify the database rejects it"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Unique index prevents a user from joining the same game twice",
+    "steps": [
+      "Create a game_players row for user A in game 1",
+      "Attempt to create a second row for user A in game 1",
+      "Verify the database rejects it"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Game cannot be started twice",
+    "steps": [
+      "Start a casual game",
+      "Attempt to call the start event again",
+      "Verify AASM raises an invalid transition error"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Abandoning a waiting game transitions status to 'abandoned'",
+    "steps": [
+      "Create a waiting casual game",
+      "DELETE /games/:id as host",
+      "Verify the game status is 'abandoned'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Rematch chain preserves rematch_of lineage",
+    "steps": [
+      "Create game A, complete, rematch to game B",
+      "Complete game B, rematch to game C",
+      "Verify game B.rematch_of = A.id and game C.rematch_of = B.id"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "current_win_streak and best_win_streak update correctly",
+    "steps": [
+      "Have a user win 3 games in a row",
+      "Verify current_win_streak=3 and best_win_streak=3",
+      "Have them lose the next",
+      "Verify current_win_streak resets to 0 and best_win_streak stays 3"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "highest_round_score tracks the user's best single-round score ever",
+    "steps": [
+      "Score a round of 65 points",
+      "Verify highest_round_score on the users row equals 65",
+      "Score a round of 50 later",
+      "Verify highest_round_score remains 65"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "total_rounds_played increments for every round the user participates in",
+    "steps": [
+      "Play a 5-round game",
+      "Verify total_rounds_played increased by 5"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Card flip animation uses CSS perspective and rotateY for 3D flip",
+    "steps": [
+      "Open a game in the browser",
+      "Inspect the .card element",
+      "Verify .card has perspective: 1000px",
+      "Verify .card-inner has transform-style: preserve-3d and transition on transform",
+      "Verify toggling .flipped class applies rotateY(180deg)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Card flip animation runs at 60fps on mobile hardware",
+    "steps": [
+      "Open the game view in Chrome DevTools Performance panel on mobile emulation",
+      "Record a card flip interaction",
+      "Verify the frame rate during the flip stays at or above 55fps",
+      "Verify no layout thrash warnings are logged"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Game board on mobile (375px) uses single column layout with horizontal card scroll",
+    "steps": [
+      "Resize viewport to 375px width",
+      "Open /game/:id for a test game",
+      "Take a screenshot",
+      "Verify opponent list stacks vertically",
+      "Verify the player's hand is in a horizontal scroll container",
+      "Verify Hit/Stay buttons span full width at the bottom"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Game board on tablet (768px) uses two-column layout",
+    "steps": [
+      "Resize viewport to 768px",
+      "Open /game/:id",
+      "Verify player list is sidebar-style on the left",
+      "Verify the central play area occupies the right portion"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Game board on desktop (1280px) shows all players simultaneously",
+    "steps": [
+      "Resize viewport to 1280px",
+      "Open /game/:id with 4 players",
+      "Verify all 4 player hands are visible without scrolling",
+      "Verify the deck and turn timer are in a persistent header"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Hit and Stay buttons have ≥44px touch targets on mobile",
+    "steps": [
+      "Resize to 375px",
+      "Open a solo game",
+      "Measure the Hit and Stay buttons' bounding boxes",
+      "Verify both are at least 44px tall and wide"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Turn timer countdown bar is visible and sticky at the top on mobile",
+    "steps": [
+      "Open a game on mobile",
+      "Scroll the content",
+      "Verify the turn timer bar remains fixed at the top of the viewport"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Action card target selection uses a bottom sheet modal on mobile",
+    "steps": [
+      "On mobile viewport, trigger a Freeze action card",
+      "Verify the target selector slides up from the bottom as a sheet",
+      "Verify players are listed as tap-targets with avatars"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Multi-deck indicator badge shows '2 decks in play' when deck_count=2",
+    "steps": [
+      "Open a game with deck_count=2",
+      "Verify a badge near the deck area reads '2 decks in play'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Score counter animates incrementally when round score is banked",
+    "steps": [
+      "Bank a round score of 35",
+      "Observe the cumulative score display",
+      "Verify the number increments visually over ~500ms rather than snapping"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Busting shows a bust animation distinct from normal card draw",
+    "steps": [
+      "Force a bust in a test game",
+      "Verify the bust card is highlighted with a red/shake animation",
+      "Verify the player's hand visually indicates the busted state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Flip 7 triggers a celebration animation with fanfare SFX",
+    "steps": [
+      "Trigger a Flip 7 in a test game with sound enabled",
+      "Verify a celebratory animation (confetti or pulse) plays",
+      "Verify the fanfare sound effect plays once"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Leaderboard page is styled with ranked medals for top 3",
+    "steps": [
+      "Navigate to /leaderboard",
+      "Verify the top 3 rows display gold, silver, bronze medal icons",
+      "Verify subsequent rows show numeric rank"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Profile page shows achievement grid with rarity-tinted borders",
+    "steps": [
+      "Navigate to /profile",
+      "Verify achievements render as a grid",
+      "Verify common=gray, rare=blue, epic=purple, legendary=gold border tints"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Landing page uses the DaisyUI dark theme by default with orange accent",
+    "steps": [
+      "Navigate to / as a fresh visitor",
+      "Inspect document.documentElement.dataset.theme",
+      "Verify it is 'dark'",
+      "Verify primary accent color is the themed orange/red"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Theme switching updates the data-theme attribute without a full reload",
+    "steps": [
+      "Sign in and navigate to profile settings",
+      "Change theme from dark to light",
+      "Verify document.documentElement.dataset.theme updates to 'light' without a page refresh"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Card back design is consistent and shows a Flip7 logo or pattern",
+    "steps": [
+      "Open a game with an undealt card visible",
+      "Verify the card-back uses a branded pattern",
+      "Verify it is legible at 80x120px"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Lobby presence dots indicate connected (green) vs disconnected (gray)",
+    "steps": [
+      "Open a casual lobby with 3 players",
+      "Disconnect one player",
+      "Verify the disconnected player's dot turns gray",
+      "Reconnect and verify the dot returns to green"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stimulus card_flip_controller toggles .flipped class to reveal a card",
+    "steps": [
+      "Inspect card_flip_controller in DevTools",
+      "Trigger a card draw",
+      "Verify the controller adds .flipped to the target .card element",
+      "Verify the CSS transition begins"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stimulus timer_controller counts down from turn_expires_at timestamp",
+    "steps": [
+      "Start a game with a turn timer",
+      "Verify the timer_controller computes remaining seconds from turn_expires_at - now",
+      "Verify the displayed countdown updates every second"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stimulus action_target_controller presents valid targets when an action card is drawn",
+    "steps": [
+      "Trigger a Freeze draw",
+      "Verify the controller mounts the target selector UI",
+      "Verify clicking a target POSTs /games/:id/moves/target with target_id"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stimulus matchmaking_controller shows expanding Elo range indicator",
+    "steps": [
+      "Enter the ranked queue",
+      "Verify matchmaking_controller polls or subscribes for window updates",
+      "Verify the UI shows the current Elo window (±50, ±100, etc.)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stimulus lobby_controller updates presence list on broadcast",
+    "steps": [
+      "Open a casual lobby",
+      "Have a second player join",
+      "Verify lobby_controller receives the turbo_stream append and updates the DOM"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Mode constraint: ranked games must have exactly 2 players and no bots",
+    "steps": [
+      "Attempt to create a ranked game with 3 players",
+      "Verify the server rejects it",
+      "Attempt to add a bot to a ranked game",
+      "Verify the server rejects it"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Rails controller responses during gameplay use format.turbo_stream",
+    "steps": [
+      "POST /games/:id/moves/hit with Accept: text/vnd.turbo-stream.html",
+      "Verify the response Content-Type is text/vnd.turbo-stream.html",
+      "Verify the body is a turbo-stream document"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Non-matching user cannot view another player's hidden information in request params",
+    "steps": [
+      "Subscribe to a game's GameChannel as user A",
+      "Inspect the payload for user B's hand",
+      "Verify user B's hand is visible only as open information, not hidden state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Logged-out user redirected from /profile to the landing page",
+    "steps": [
+      "As a guest, GET /profile",
+      "Verify 302 to /"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User avatar falls back to a placeholder when avatar_url is nil",
+    "steps": [
+      "Create a user with avatar_url=nil",
+      "Render /profile/:id",
+      "Verify a placeholder silhouette is shown instead of a broken image"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Solo game does NOT award Elo updates",
+    "steps": [
+      "Win a solo game",
+      "Verify elo_rating is unchanged",
+      "Verify no ranked_wins or ranked_losses increment"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Match history distinguishes solo, casual, and ranked modes",
+    "steps": [
+      "Play one game in each mode",
+      "Navigate to /stats/history",
+      "Verify each entry shows its mode label"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "round_state persists across requests and survives optimistic lock retries",
+    "steps": [
+      "Persist a round_state with a known hand",
+      "Trigger a stale write followed by a retry",
+      "Verify the final round_state equals the expected merged state"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "cumulative_scores jsonb correctly keys by user_id string",
+    "steps": [
+      "Complete a round and update cumulative_scores",
+      "Verify the jsonb keys are the user_id values",
+      "Verify serialization round-trips correctly"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "turn_number increments monotonically across the life of a game",
+    "steps": [
+      "Record turn_number before each action across 10 turns",
+      "Verify it strictly increases by 1 each turn"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Reconnection flow full end-to-end with state_sync payload and resume of turn",
+    "steps": [
+      "Sign in user A and user B and start a ranked game",
+      "Wait until user A's turn with a few cards already in their hand",
+      "Abruptly terminate user A's WebSocket connection",
+      "Verify PlayerDisconnectJob is enqueued for user A with a 30-second delay",
+      "Within 15 seconds, have user A reopen /game/:id",
+      "Verify GameChannel resubscribes",
+      "Verify a state_sync message is received containing the current rendered game HTML",
+      "Verify user A's hand is displayed correctly, including any cards drawn before disconnect",
+      "Verify the turn timer shows the remaining time based on the original turn_expires_at",
+      "Verify user A can take their turn and the game proceeds normally",
+      "Verify the PlayerDisconnectJob no-ops on fire because user A is reconnected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Disconnect forfeit end-to-end flow in a ranked duel",
+    "steps": [
+      "Sign in user A (Elo 1000) and user B (Elo 1000)",
+      "Start a ranked game",
+      "Record both users' starting Elo and match counts",
+      "Disconnect user A",
+      "Wait 31 seconds",
+      "Verify PlayerDisconnectJob fires and transitions the game to completed",
+      "Verify winner_id equals user B",
+      "Verify user B's elo_rating increased and ranked_wins incremented",
+      "Verify user A's elo_rating decreased and ranked_losses incremented",
+      "Verify a MatchResult row is created for each with correct elo_before/after/change",
+      "Verify user B's results screen renders with 'Opponent forfeited'"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive casual multiplayer end-to-end: create, join, lobby, play, complete",
+    "steps": [
+      "Sign in three users A (host), B, and C",
+      "As A, navigate to /play/casual and click 'Create Game'",
+      "Verify a 4-char room code is generated and shown",
+      "As B, navigate to /join and enter the code",
+      "Verify B appears in A's lobby in real-time via LobbyChannel",
+      "As C, navigate to /join/:code directly",
+      "Verify C joins the lobby and all three see each other",
+      "As A, click 'Add Bot' and choose balanced strategy",
+      "Verify a bot row appears with is_bot=true",
+      "As A, click 'Start Game'",
+      "Verify all clients transition to /game/:id and the initial deal is rendered",
+      "Play multiple rounds until a player reaches 200",
+      "Verify the game transitions to 'completed' and the results screen renders for all four seats",
+      "Verify match_results rows exist for all non-bot players",
+      "Verify Elo is NOT updated (casual mode)",
+      "Verify all three users see a 'Rematch' button"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive achievement end-to-end: Flip 7 + extra_life + notification",
+    "steps": [
+      "Sign in a fresh user with 0 achievements",
+      "Start a solo game",
+      "Force the deck so the player draws a Second Chance early",
+      "Force subsequent draws of 6 unique number cards",
+      "On the 7th draw, force a unique number card to trigger Flip 7",
+      "Verify round ends with flip7_first unlocking",
+      "Verify extra_life also unlocks because Second Chance was unused",
+      "Verify +15 Flip 7 bonus is applied to the round score",
+      "Verify two UserAchievement rows are created",
+      "Verify two 'notification' broadcasts are sent over the user's channel",
+      "Verify the browser renders two stacked toasts with the achievement icons and names",
+      "Verify the flip7_first achievement appears on the profile page after the game ends"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive scoring end-to-end with ×2, +N, and Flip 7 bonus combined",
+    "steps": [
+      "Start a solo game",
+      "Force the player to build a hand containing 7 unique number cards summing to 40",
+      "Ensure the hand also contains a ×2 modifier",
+      "Ensure the hand also contains a +6 modifier",
+      "Trigger the Flip 7 detection on the 7th card",
+      "Call GameEngine.score_round",
+      "Verify number_sum = 40",
+      "Verify after ×2 number_sum becomes 80",
+      "Verify +6 is then added, making 86",
+      "Verify +15 Flip 7 bonus is added, making 101",
+      "Verify the player's round_score equals 101",
+      "Verify cumulative_scores is updated by 101"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive action card chain: Freeze then Flip Three in the same round",
+    "steps": [
+      "Start a game with 3 players A, B, C",
+      "Force A to draw a Freeze targeting B",
+      "Verify B is marked 'stayed' and their current score is banked",
+      "Continue round; force C to draw a Flip Three targeting A",
+      "Force the three draws to be unique safe numbers for A",
+      "Verify A's hand expands by 3 cards and A survives",
+      "Continue the round until all players are stayed or busted",
+      "Call GameEngine.score_round",
+      "Verify each player's round_score is computed correctly based on their final hand",
+      "Verify the broadcast sequence includes freeze, flip_three_start, three draws, and round_end"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive game-end tiebreak end-to-end with stay_order as tiebreaker",
+    "steps": [
+      "Start a 4-player game",
+      "Seed cumulative_scores: A=190, B=190, C=100, D=100",
+      "Play a round where A and B both finish with exactly 200 cumulative",
+      "Ensure B stays before A in stay_order",
+      "Verify check_game_end returns true",
+      "Verify the game transitions to 'completed'",
+      "Verify winner_id equals B (earliest Stay tiebreaker)",
+      "Verify match_results placements are [B=1, A=2, C=3 or 4, D=3 or 4]",
+      "Verify the results screen shows tiebreak info",
+      "Verify B's games_won increments"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive multi-deck end-to-end with 12 players and 2 decks",
+    "steps": [
+      "Sign in 12 test users",
+      "Have the host create a casual game and have all 12 join",
+      "Verify deck_count auto-calculates to 2",
+      "Verify the multi-deck badge appears in the lobby",
+      "Start the game",
+      "Verify the deck jsonb contains 188 cards total",
+      "Play at least one full round",
+      "Force a scenario where a player draws two 5 cards from different decks",
+      "Verify bust detection fires regardless of deck origin",
+      "Verify the round scoring proceeds normally",
+      "Verify between rounds the deck fully reshuffles to 188 fresh cards"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive solo speed_run achievement end-to-end in 5 rounds",
+    "steps": [
+      "Sign in a test user",
+      "Start a solo game against 1 conservative bot",
+      "Engineer (via deterministic deck seed) that the user scores 40+ each round",
+      "Play round 1: user scores 45 (cumulative 45)",
+      "Play round 2: user scores 45 (cumulative 90)",
+      "Play round 3: user scores 45 (cumulative 135)",
+      "Play round 4: user scores 45 (cumulative 180)",
+      "Play round 5: user scores 25 (cumulative 205, game ends)",
+      "Verify game status transitions to 'completed' with winner_id=user",
+      "Verify speed_run achievement unlocks (≤5 rounds)",
+      "Verify the toast notification is broadcast",
+      "Verify speed_run appears in the user's profile"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive rematch end-to-end from results screen",
+    "steps": [
+      "Complete a 3-player casual game",
+      "Verify the results screen shows a 'Rematch' button to all non-bot players",
+      "Player A clicks 'Rematch'",
+      "Verify POST /games/:id/rematch is issued",
+      "Verify a new Game row is created with same mode and player list",
+      "Verify new Game.rematch_of equals the prior game id",
+      "Verify all original players are automatically seated in the new game",
+      "Verify bots from the prior game carry over",
+      "Verify all players are redirected to the new /game/:id",
+      "Verify the new game's status is 'in_progress' and round 1 has been dealt"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive friend challenge duel end-to-end",
+    "steps": [
+      "Sign in users A and B, both with elo_rating=1000 and 5+ casual games played",
+      "As A, navigate to /friends and send a friend request to B",
+      "As B, accept the friend request",
+      "Verify the friendship row is accepted",
+      "As A, click 'Challenge to Duel' on B's friend row",
+      "Verify POST /friends/:id/challenge creates a new ranked Game",
+      "Verify B receives an invite notification via Action Cable",
+      "As B, accept the invite and join the game",
+      "Verify both users redirect to /game/:id",
+      "Play the ranked duel to completion",
+      "Verify Elo updates correctly for both players",
+      "Verify ranked_wins/ranked_losses increment appropriately"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive Flip Three with mid-sequence Second Chance save end-to-end",
+    "steps": [
+      "Start a 2-player test game",
+      "Seed player B with hand containing a 4 and a Second Chance",
+      "Force player A to draw a Flip Three targeting B",
+      "Stub the next three deck cards to be 1, 4, 7 (card index 2 would bust)",
+      "Verify the first draw appends 1 to B's hand",
+      "Verify the second draw is detected as a duplicate 4",
+      "Verify the Second Chance is consumed and the duplicate 4 is discarded",
+      "Verify has_second_chance resets to false",
+      "Verify the third draw appends 7 to B's hand",
+      "Verify pending_flip_three resets to { target_id: nil, remaining: 0 }",
+      "Verify B's hand contains 1, 4 (original), 7, and no Second Chance",
+      "Verify threes_company and second_chance_saver achievements both unlock"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive turn timeout end-to-end in a ranked duel",
+    "steps": [
+      "Sign in users A and B and start a ranked game",
+      "Wait until user A's turn",
+      "Record the turn_expires_at timestamp broadcast to clients",
+      "Verify user A's client shows a countdown from 10 seconds",
+      "Do not act for 11 seconds",
+      "Verify TurnTimeoutJob fires",
+      "Verify the job calls GameEngine.timeout_turn(game, turn_number)",
+      "Verify turn_number matches the current game state",
+      "Verify user A's status transitions to 'stayed' and their score is banked",
+      "Verify the broadcast includes a 'timeout' event to both clients",
+      "Verify turn advances to user B",
+      "Verify turn_number increments by 1"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive ranked Elo update end-to-end with K-factor transition",
+    "steps": [
+      "Sign in user A with elo_rating=1000 and games_played=19 (one game away from provisional exit)",
+      "Sign in user B with elo_rating=1050 and games_played=25",
+      "Start a ranked duel via matchmaking (within ±100 window at 10s)",
+      "Play the game to completion with user A winning",
+      "Verify user A's K-factor was 48 (provisional) for this game",
+      "Compute expected_A = 1/(1+10^((1050-1000)/400)) = ~0.428",
+      "Verify user A's new rating = 1000 + 48 * (1 - 0.428) = ~1027",
+      "Verify user A's games_played becomes 20",
+      "Verify for the NEXT ranked game, K-factor transitions to 32",
+      "Verify user B's elo decreased with K=32",
+      "Verify ranked_wins for A and ranked_losses for B increment",
+      "Verify match_results rows contain elo_before, elo_after, elo_change"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive profile page end-to-end: stats, achievements, match history",
+    "steps": [
+      "Seed a user with 25 match_results across solo, casual, and ranked modes",
+      "Seed 5 achievements unlocked including one tiered chain and one anti",
+      "Sign in as that user and navigate to /profile",
+      "Verify the page shows elo_rating, games_played, games_won, total_flip7s, and highest_round_score",
+      "Verify the achievement grid displays all 5 unlocked with correct rarity borders",
+      "Verify the tiered achievement shows current progress",
+      "Verify the match history preview renders the 5 most recent results",
+      "Verify the 'Full history' link routes to /stats/history",
+      "Verify the page is responsive on 375px and 1280px viewports",
+      "Verify avatar is shown from avatar_url"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive leaderboard end-to-end with pagination and current-user highlight",
+    "steps": [
+      "Seed 50 users with elo_rating from 1000 to 2000",
+      "Sign in as a user ranked #27",
+      "Navigate to /leaderboard",
+      "Verify the top 20 are displayed sorted by Elo descending",
+      "Verify the current user's row (#27) is highlighted or anchored in view",
+      "Verify top 3 rows display medal icons",
+      "Click page 2",
+      "Verify users ranked 21-40 display",
+      "Verify Elo, games_played, and win rate columns are present",
+      "Verify clicking a user row navigates to /profile/:id"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive interactive rules tutorial end-to-end walkthrough",
+    "steps": [
+      "Navigate to /rules as a new user",
+      "Verify an onboarding hero explains the goal (reach 200 points)",
+      "Click Next and verify a step explaining deck composition with visual card examples",
+      "Click Next and verify a step on Hit vs Stay mechanics",
+      "Click Next and verify a step on bust (duplicate number)",
+      "Click Next and verify a step on Freeze",
+      "Click Next and verify a step on Flip Three",
+      "Click Next and verify a step on Second Chance",
+      "Click Next and verify a step on modifiers (×2 and +N)",
+      "Click Next and verify a step on Flip 7 and the +15 bonus",
+      "Click Next and verify a step on scoring order of operations",
+      "Click Finish and verify a CTA to '/play/solo'",
+      "Verify Back navigation works from any step"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive PWA install end-to-end on mobile",
+    "steps": [
+      "Open / in a mobile Chrome emulator",
+      "Verify manifest.json links in <head>",
+      "Verify the service worker registers and begins caching shell assets",
+      "Wait for the beforeinstallprompt event",
+      "Verify the app surfaces a custom 'Add to Home Screen' prompt",
+      "Accept the install",
+      "Verify the app installs to the home screen with the correct icon and short_name",
+      "Launch the installed app",
+      "Verify it opens in standalone display mode",
+      "Verify offline navigation to previously cached routes still renders"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive matchmaking cancel-and-rejoin end-to-end",
+    "steps": [
+      "Sign in user A with qualifying games",
+      "Click 'Find Match' and verify queue entry",
+      "Wait 5 seconds",
+      "Click 'Cancel'",
+      "Verify DELETE /matchmaking/queue removes the user from Redis",
+      "Verify matchmaking_controller returns UI to idle state",
+      "Click 'Find Match' again",
+      "Verify a new queue entry is added",
+      "Verify the expanding window timer resets to 0",
+      "Pair with an opponent and verify the duel starts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive statistics dashboard end-to-end renders all widgets",
+    "steps": [
+      "Seed a user with 30 match_results across modes and varying Elo",
+      "Navigate to /stats",
+      "Verify win rate widget shows percentages for solo, casual, and ranked separately",
+      "Verify card frequency widget lists top 5 most-drawn values",
+      "Verify 'most busted on' widget shows top 3",
+      "Verify Elo trend chart renders with at least 20 data points",
+      "Verify round score distribution histogram shows all defined buckets",
+      "Verify total Flip 7s counter matches seeded data",
+      "Verify best single-round score matches seeded data",
+      "Verify pagination link to full history works"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Landing page hero uses orange/red accent consistent with DaisyUI theme",
+    "steps": [
+      "Navigate to /",
+      "Screenshot the hero",
+      "Verify primary buttons use the DaisyUI primary color",
+      "Verify text contrast meets WCAG AA on the dark background"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Friends list renders avatars in a compact grid with status badges",
+    "steps": [
+      "Navigate to /friends with 5 friends and 2 pending requests",
+      "Screenshot",
+      "Verify each friend row shows avatar, name, and online/offline badge",
+      "Verify pending requests are in a separate section"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Game header shows current round and turn indicator clearly",
+    "steps": [
+      "Open a game at round 3 on player B's turn",
+      "Verify the header reads 'Round 3' prominently",
+      "Verify player B's avatar/name has a glow or highlight indicating active turn"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Matchmaking queue UI shows expanding range indicator visually",
+    "steps": [
+      "Enter the ranked queue",
+      "Verify a band or gauge widens over time as the Elo window expands",
+      "Verify the current window is labeled in text (e.g., '±100 Elo')"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Results screen displays final standings with placement medals and Elo deltas",
+    "steps": [
+      "Complete a ranked duel",
+      "Verify the results screen shows winner with a gold medal",
+      "Verify Elo delta is shown with + or - sign",
+      "Verify cumulative scores for all rounds are listed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Sidekiq dashboard is NOT publicly accessible in production",
+    "steps": [
+      "GET /sidekiq without auth",
+      "Verify 401 or 404 response",
+      "Verify mounting requires admin credentials"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Hit action with a modifier card adds the modifier to the hand without ending the turn",
+    "steps": [
+      "Force a player to draw a +4 modifier",
+      "Verify round_state.player_hands[self].modifiers includes +4",
+      "Verify the player can continue their turn (hit or stay)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "A ×2 modifier drawn twice in a hand only doubles once (no stacking)",
+    "steps": [
+      "Give a hand two ×2 modifiers",
+      "Call score_round",
+      "Verify number_sum is doubled exactly once, not quadrupled"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "A player's hand shows Second Chance indicator icon when held",
+    "steps": [
+      "Give a player a Second Chance",
+      "Render /game/:id",
+      "Verify a shield or heart icon is visible on the player's hand"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Error states use red text and prevent form submission",
+    "steps": [
+      "Submit an invalid join code on /join",
+      "Verify an error flash styled in the DaisyUI error color",
+      "Verify the submit button is re-enabled after error"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "CSRF protection via omniauth-rails_csrf_protection is active on OmniAuth POST",
+    "steps": [
+      "Inspect Gemfile and verify omniauth-rails_csrf_protection is listed",
+      "Attempt a GET to /users/auth/google_oauth2 and verify it is rejected (POST required)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Devise routes are mounted for the User model",
+    "steps": [
+      "GET /users/sign_in and /users/sign_out",
+      "Verify both routes respond (redirects are acceptable)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Phlex view components are used for key game partials",
+    "steps": [
+      "Inspect app/views or app/components",
+      "Verify at least HandComponent, CardComponent, and LobbyComponent are Phlex classes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "All game mutations go through GameEngine service, not inline controller logic",
+    "steps": [
+      "Grep controllers for direct manipulation of round_state",
+      "Verify all state changes delegate to GameEngine.* methods"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Test suite includes request specs for the Games and Moves controllers",
+    "steps": [
+      "Run rspec spec/requests/games_spec.rb and spec/requests/moves_spec.rb",
+      "Verify both exist and the full suite passes"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Test suite includes exhaustive GameEngine specs for all critical paths",
+    "steps": [
+      "Run rspec spec/services/game_engine_spec.rb",
+      "Verify specs cover number draws, action cards, modifiers, Flip 7, bust, Second Chance save, scoring order, tiebreak, and turn timeout"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "System tests use Capybara + Playwright for critical user flows",
+    "steps": [
+      "Run rspec spec/system",
+      "Verify at least join-game, play-round, and complete-game flows are covered"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "All broadcasts during gameplay use Turbo Streams to avoid dual-path state divergence",
+    "steps": [
+      "Inspect broadcast calls in the codebase",
+      "Verify they use turbo_stream_from or Turbo::StreamsChannel.broadcast_*",
+      "Verify no concurrent JSON-based state updates exist for the same game events"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "total_flip7s on users increments each time the user achieves Flip 7",
+    "steps": [
+      "Have a user achieve Flip 7 twice across two games",
+      "Verify users.total_flip7s increased by 2"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Bot strategies respect deck knowledge (known played cards)",
+    "steps": [
+      "Stub deck with 3 remaining cards: [5, 5, 7]",
+      "Give bot a hand with a 5",
+      "Call BotBrain.decide for optimal strategy",
+      "Verify it calculates bust probability of 2/3 and decides to stay"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Achievements table is seeded with exactly 32 rows on app boot",
+    "steps": [
+      "Run db:seed in a fresh test database",
+      "Query achievements.count",
+      "Verify 32 rows exist (20 regular + 12 anti)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Seeded achievements have correct categories and rarities",
+    "steps": [
+      "Query achievements grouped by category",
+      "Verify flip7, risk, score, strategic, special, anti categories exist",
+      "Verify rarities common, rare, epic, legendary are used"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Tiered achievement parent_key chain links flip7_first → flip7_5 → flip7_10 → flip7_25 → flip7_50 → flip7_100",
+    "steps": [
+      "Query achievements for flip7 category",
+      "Verify flip7_5.parent_key = flip7_first",
+      "Verify flip7_10.parent_key = flip7_5",
+      "Verify chain continues through flip7_100"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "AchievementEvaluator does not re-unlock achievements already unlocked",
+    "steps": [
+      "Seed user_achievements with flip7_first already unlocked",
+      "Have the user achieve another Flip 7",
+      "Verify flip7_first remains unchanged (unlocked_at does not update)",
+      "Verify progress on flip7_5 advances instead"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Anti-achievements are flagged with is_anti=true and visually distinguished",
+    "steps": [
+      "Query achievements where is_anti=true",
+      "Verify exactly 12 rows",
+      "Navigate to /profile and verify anti-achievements render in a separate 'Shame' section"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Anti-achievements render with a distinct darker or greyed visual treatment",
+    "steps": [
+      "Unlock an anti-achievement",
+      "View it on /profile",
+      "Verify its card uses a muted palette distinct from regular achievements"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Settings environment variables are loaded from Rails credentials or ENV",
+    "steps": [
+      "Inspect config/initializers/omniauth.rb",
+      "Verify GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are read from ENV",
+      "Verify the app boots with these set"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Action Cable uses Redis adapter in production",
+    "steps": [
+      "Inspect config/cable.yml",
+      "Verify production uses adapter: redis with url from REDIS_URL"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Sidekiq backend uses the same Redis instance as Action Cable",
+    "steps": [
+      "Inspect config/initializers/sidekiq.rb",
+      "Verify Sidekiq.configure_server and _client use ENV['REDIS_URL']"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Game view eager loads game_players and user associations to avoid N+1",
+    "steps": [
+      "Enable query logging for GET /game/:id",
+      "Verify only one query is issued to load game_players with users",
+      "Verify no per-player user queries"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Mobile Hit/Stay buttons remain bottom-anchored when keyboard opens",
+    "steps": [
+      "On mobile emulation, open a game view",
+      "Focus an input field if present",
+      "Verify the Hit/Stay buttons remain visible and tappable above the virtual keyboard"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Large hand (8+ cards) on mobile becomes horizontally scrollable with snap",
+    "steps": [
+      "Build a player hand with 8 cards",
+      "On 375px viewport, verify the cards are in a horizontal scroll container",
+      "Verify scroll-snap-type centers cards on swipe"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Public profile respects privacy: email is never shown, only name and stats",
+    "steps": [
+      "Navigate to /profile/:id for another user",
+      "Verify email field is absent from the rendered HTML",
+      "Verify only name, avatar, stats, and achievements are exposed"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can search for another user by name in /friends to send a request",
+    "steps": [
+      "Navigate to /friends",
+      "Type a partial name into the search box",
+      "Verify matching users are returned",
+      "Click 'Add Friend' and verify a friendship row is created with status=pending"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Reverse index on friendships supports fast 'friends who added me' lookups",
+    "steps": [
+      "Inspect the schema for friendships",
+      "Verify an index exists on [friend_id, user_id]"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Friendships pending requests show Accept and Decline buttons side-by-side",
+    "steps": [
+      "Navigate to /friends with one pending request",
+      "Verify Accept (primary) and Decline (secondary) buttons are rendered together",
+      "Verify clicking Accept refreshes the list via Turbo Stream"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Solo game uses guest session for progress isolation (no writes to users)",
+    "steps": [
+      "Play a solo game as a guest",
+      "Verify no users row is created",
+      "Verify game_players rows allow anonymous identity (nullable user_id or guest placeholder)",
+      "Verify no achievements are created"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Signing in mid-solo-session does NOT retroactively save the current game",
+    "steps": [
+      "Start a solo game as a guest",
+      "Play 2 rounds",
+      "Sign in with Google mid-session",
+      "Verify the current game's results are not written to match_results",
+      "Verify a banner informs the user that progress starts from the next game"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Application respects WEB_CONCURRENCY and RAILS_MAX_THREADS env vars",
+    "steps": [
+      "Inspect config/puma.rb",
+      "Verify it reads ENV['WEB_CONCURRENCY'] and ENV['RAILS_MAX_THREADS']"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Rails serves static files in production when RAILS_SERVE_STATIC_FILES is true",
+    "steps": [
+      "Set RAILS_SERVE_STATIC_FILES=true in production env",
+      "Request /assets/application.css",
+      "Verify the static file is served with a 200 response"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Game over screen includes a share button for social posting",
+    "steps": [
+      "Complete a game",
+      "Verify a 'Share' button is present on the results screen",
+      "Clicking Share opens the browser's native share sheet or copies a link"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Leaderboard query is performant with seeded 10k users (under 200ms)",
+    "steps": [
+      "Seed 10,000 users with random elo_rating",
+      "Measure the response time of GET /leaderboard",
+      "Verify it returns in under 200ms"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Database indexes exist on commonly queried columns",
+    "steps": [
+      "Inspect schema.rb",
+      "Verify indexes on games.status, games.mode, room_code (partial), match_results [user_id, created_at] and [mode, created_at]"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Room code join enforces case insensitivity",
+    "steps": [
+      "Create a room with code 'ABCD'",
+      "Navigate to /join and enter 'abcd'",
+      "Verify the join succeeds"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Game spectator view is NOT exposed (no URL reveals in-progress games to non-players)",
+    "steps": [
+      "Create an in-progress casual game",
+      "As a non-participant, GET /game/:id",
+      "Verify the request is rejected or returns a spectator-disabled message",
+      "Verify no private round_state is leaked in the HTML"
+    ],
+    "passes": false
+  },
+  {
+    "category": "style",
+    "description": "Toasts stack vertically with a maximum of 3 visible at once",
+    "steps": [
+      "Trigger 5 notifications in rapid succession",
+      "Verify at most 3 toasts are visible",
+      "Verify additional toasts queue and appear as earlier ones dismiss"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Turn timer visualization is purely client-side; server does not push countdown updates",
+    "steps": [
+      "Open a game and observe WebSocket traffic during a turn",
+      "Verify no per-second countdown messages are broadcast",
+      "Verify timer_controller computes countdown from the broadcast turn_expires_at"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive cross-mode stats: playing solo, casual, and ranked updates stats correctly",
+    "steps": [
+      "Sign in a fresh user with zeroed stats",
+      "Play and win 1 solo game against a bot",
+      "Verify games_played=1, games_won=1, elo_rating unchanged",
+      "Play and win 1 casual game",
+      "Verify games_played=2, games_won=2, elo_rating unchanged",
+      "Play 5 casual games total to unlock ranked",
+      "Verify ranked is unlocked on /play/ranked",
+      "Play and win 1 ranked game against a lower-Elo opponent",
+      "Verify games_played=6, games_won=6, ranked_wins=1",
+      "Verify elo_rating increased",
+      "Navigate to /stats and verify win rate by mode shows 100%/100%/100%",
+      "Verify Elo trend chart shows 1 data point at the new rating"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive initial deal with action card interruption end-to-end",
+    "steps": [
+      "Create a solo game with 3 players A, B, C",
+      "Stub the deck order so the initial deal draws: number 3 (to A), Freeze (to B), number 5 (would go to C)",
+      "Call GameEngine.start_round",
+      "Verify A is dealt the 3",
+      "Verify B is dealt the Freeze",
+      "Verify the Freeze immediately resolves (B chooses target — in bot case, targets leader A)",
+      "Verify A becomes 'stayed' with a round score of 3",
+      "Verify the deal continues by dealing the 5 to C",
+      "Verify round_state.deal_phase transitions to false after C is dealt",
+      "Verify the normal turn loop begins with the next active player"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Comprehensive end-to-end verification that Elo uses exact formula with 400-base",
+    "steps": [
+      "Seed user A at 1200 and user B at 1400",
+      "Compute expected_A = 1 / (1 + 10^((1400-1200)/400)) = 0.240",
+      "Have A win the ranked match",
+      "With K=32 (non-provisional), verify delta = 32 * (1 - 0.240) = 24.3",
+      "Verify A's new rating = 1224 (rounded to integer)",
+      "Verify B's delta = 32 * (0 - 0.760) = -24.3",
+      "Verify B's new rating = 1376",
+      "Verify the sum of changes is approximately zero",
+      "Verify match_results elo_change fields reflect these deltas",
+      "Verify leaderboard reflects updated ranks"
+    ],
+    "passes": false
+  }
+]

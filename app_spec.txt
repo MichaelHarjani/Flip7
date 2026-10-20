@@ -24,7 +24,9 @@ Flip7 is a push-your-luck card game designed by Eric Olsen, published by The Op 
 
 **Multi-Deck Scaling:** A single deck of 94 cards is used for games of up to 10 players. For every 10 players beyond the first 10, an additional deck is shuffled in (11–20 players = 2 decks / 188 cards, 21–30 = 3 decks / 282 cards, etc.). With multiple decks, duplicate number cards from different decks ARE in play — bust detection still triggers when a player's hand contains two cards of the same value, regardless of which deck they came from.
 
-**Full Reshuffle Between Rounds:** At the start of every round, the entire deck (or multi-deck) is freshly shuffled. No cards carry over from the previous round.
+**Deck Carries Over Between Rounds (official rule):** The deck is shuffled once at the start of the game. At the end of each round, every card in front of players goes to the discard pile and the remaining deck carries into the next round, so card counting matters. **House rule:** if fewer than max(10, 2 × players) cards remain when a round starts, the discard pile is shuffled back in before dealing. If the deck runs out mid-round, the discard pile (never cards in front of players) is reshuffled into a new deck.
+
+**Rotating Dealer:** The deal — and the first turn — start one seat further round the table each round.
 
 **Number Cards (79 per deck):** Pyramid distribution — each number N (0–12) has exactly N copies in the deck.
 
@@ -72,9 +74,9 @@ Flip7 is a push-your-luck card game designed by Eric Olsen, published by The Op 
 
 **Freeze:** The drawer chooses any active player (including themselves) to immediately Stay. The target banks their current score.
 
-**Flip Three:** The drawer chooses any active player to draw three consecutive cards. Each card resolves normally — the target can bust mid-sequence. A held Second Chance can save them from one bust.
+**Flip Three:** The drawer chooses any active player to draw three consecutive cards. Each card resolves normally — the target can bust mid-sequence, and stops early on a bust or Flip 7. A held Second Chance can save them from one bust. Per the official rules, a Freeze or Flip Three revealed during the three draws is set aside and resolved (by the target) only after all three are flipped, and is discarded if the target busted or Flip 7'd.
 
-**Second Chance:** Passive — used automatically when the player would bust. If a player draws a Second Chance while already holding one, the old one is discarded. Self-targeting is always valid.
+**Second Chance:** Passive — used automatically when the player would bust (the duplicate and the Second Chance are both discarded). If a player draws a Second Chance while already holding one, the old one is discarded. Self-targeting is always valid. *(House rule — the official rules make the player give the extra one to another active player.)*
 
 ### 1.4 Scoring
 
@@ -357,6 +359,7 @@ Key insight from the original simulation: optimal strategy is NOT a simple thres
 - Freeze targeting (self and others)
 - Flip Three full sequence (including mid-sequence bust)
 - Flip Three with Second Chance save mid-sequence
+- Freeze / Flip Three revealed during a Flip Three are deferred until after the three draws
 - Round end conditions (all stayed, all busted, Flip 7)
 - Game end (200+ points, tiebreaking)
 - Turn timeout behavior
@@ -364,7 +367,7 @@ Key insight from the original simulation: optimal strategy is NOT a simple thres
 - Optimistic locking conflict resolution
 - Deck depletion edge case (deck runs out mid-round)
 - Multi-deck generation (correct card counts)
-- Full reshuffle between rounds (deck is fresh each round)
+- Deck carries over between rounds; low-deck reshuffle at round start; mid-round reshuffle of discards
 - Multi-deck bust detection (duplicates from different decks still bust)
 
 ---

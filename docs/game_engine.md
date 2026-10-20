@@ -12,7 +12,10 @@ All game logic is server-authoritative. No game state is computed client-side. T
 
 ```ruby
 class GameEngine
-  # Start a new round: build fresh deck(s) based on player count, shuffle, deal initial cards
+  # Start a new round. Round 1 builds and shuffles the deck(s) (one per 10
+  # players); later rounds discard the previous round's cards and carry the
+  # deck over, shuffling discards back in if it is low. Deals from the
+  # rotating dealer seat.
   def self.start_round(game)
 
   # Player chooses to Hit
@@ -36,6 +39,9 @@ class GameEngine
   # Handle turn timeout (auto-stay)
   def self.timeout_turn(game, turn_number)
 
+  # Tie-broken winner: highest total, then earliest Stay in the final round
+  def self.winner_id(game)
+
   private
 
   # Validate that it's the player's turn
@@ -51,6 +57,26 @@ class GameEngine
   def self.bust_probability(hand, remaining_deck)
 end
 ```
+
+## Round Lifecycle: `GameFlow`
+
+`GameEngine` resolves single actions; `app/services/game_flow.rb` decides
+what happens around them. Every caller (MovesController, BotTurnJob, game
+creation, matchmaking) runs `GameFlow.after_move(game)` after an engine call:
+
+- If the round has ended, it is scored once (`score_round`), appended to
+  `games.round_history` (scores, busts, Flip 7 winner, hands), human player
+  stats are updated, and `round_state["round_over"]` is set.
+- If someone has reached 200, `GameFinalizer.finalize` records placements
+  (and Elo for ranked) and completes the game.
+- Otherwise the round waits for `GameFlow.next_round(game, round)` —
+  `POST /games/:id/moves/next_round`, sent by the Next Round button or the
+  round summary's auto-advance timer. The round number guard makes repeat
+  requests from several players harmless.
+
+Action cards revealed during a Flip Three are queued in
+`round_state["deferred_actions"]` and become `pending_action` one at a time
+after the three draws (`continue_pending_work`).
 
 ## State Machine (AASM)
 
@@ -193,6 +219,14 @@ end
 - **Balanced bots:** Freeze whoever has the most to lose, Flip Three the closest competitor
 - **Aggressive bots:** May self-target Flip Three to chase Flip 7, Freeze trailing players to prevent comeback
 - **Optimal bots:** Calculate expected value change for each possible target
+
+### Situational overrides (all strategies share the endgame guard)
+
+Layered on top of the thresholds in `BotBrain#decide`:
+
+1. **Endgame guard:** stay whenever banking this round reaches 200.
+2. **Flip 7 chase** (balanced/aggressive): at six unique numbers, hit if bust risk ≤ 45%.
+3. **Comeback** (balanced/aggressive): 50+ points behind the leader, tolerate +10% bust risk.
 
 ### Bot Turn Delay
 

@@ -215,6 +215,15 @@ RSpec.describe GameEngine do
       expect(first_deal["user_id"]).to eq(users[1].id)
     end
 
+    it "adds a deck for every 10 players (11 players → 2 decks)" do
+      game, _users = build_game(player_count: 11)
+      described_class.start_round(game)
+      game.reload
+      expect(game.deck_count).to eq(2)
+      expect(game.deck.size + game.discard_pile.size + count_cards_in_hands(game) +
+        (game.round_state["pending_action"] ? 1 : 0) + Array(game.round_state["deferred_actions"]).size).to eq(188)
+    end
+
     it "multi-deck start_round yields 188 total cards (deck + hands)" do
       game, users = build_game(player_count: 3, deck_count: 2)
       deterministic_deck = [number_card(2), number_card(4), number_card(6)] +

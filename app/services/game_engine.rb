@@ -39,7 +39,9 @@ class GameEngine
     raise InvalidActionError, "no seated players" if players.empty?
 
     if (game.current_round || 0).zero?
-      deck = build_shuffled_deck(game.deck_count || 1)
+      # One 94-card deck per 10 players (app_spec.txt §1.1; formula from the f7 build).
+      game.deck_count = [game.deck_count || 1, decks_for(players.size)].max
+      deck = build_shuffled_deck(game.deck_count)
       game.discard_pile = []
     else
       discard_round_cards(game)
@@ -368,6 +370,10 @@ class GameEngine
   # from a reshuffled deck (deck + discards).
   RESHUFFLE_MIN_CARDS = 10
   RESHUFFLE_CARDS_PER_PLAYER = 2
+
+  def self.decks_for(player_count)
+    ((player_count - 1) / 10) + 1
+  end
 
   def self.reshuffle_threshold(player_count)
     [RESHUFFLE_MIN_CARDS, RESHUFFLE_CARDS_PER_PLAYER * player_count].max

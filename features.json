@@ -232,7 +232,7 @@
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p2-solo-game-flow", "p1-tailwind-daisyui"],
     "status": "pending",
-    "notes": ""
+    "notes": "Card deal-in, bust shake and glow animations ported from flip7; a true flip animation is still pending."
   },
   {
     "id": "p2-mobile-responsive-board",
@@ -246,8 +246,8 @@
     ],
     "related_docs": ["docs/frontend.md"],
     "prerequisites": ["p2-card-flip-animation"],
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Merged from flip7 UI: single-column seats + sticky action bar; checked at 390px in Chromium."
   },
   {
     "id": "p3-achievement-seed",
@@ -347,7 +347,7 @@
     "related_docs": ["docs/realtime.md"],
     "prerequisites": ["p4-action-cable-setup", "p4-sidekiq-setup", "p2-game-models"],
     "status": "pending",
-    "notes": ""
+    "notes": "State sync is now covered by Turbo stream refreshes (p4-live-broadcasts); disconnect handling still pending."
   },
   {
     "id": "p4-room-code-casual",
@@ -381,8 +381,8 @@
     ],
     "related_docs": ["docs/realtime.md", "docs/frontend.md"],
     "prerequisites": ["p4-room-code-casual", "p4-action-cable-setup"],
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Lobby with live player list (GamePlayer commits broadcast a refresh), join button, copy-invite link, host-only Start."
   },
   {
     "id": "p4-live-broadcasts",
@@ -397,8 +397,8 @@
     ],
     "related_docs": ["docs/realtime.md", "docs/game_engine.md"],
     "prerequisites": ["p4-game-channel", "p2-solo-game-flow"],
-    "status": "pending",
-    "notes": ""
+    "status": "done",
+    "notes": "Game broadcasts_refreshes + turbo_refreshes_with morph; verified with two browser sessions."
   },
   {
     "id": "p4-turn-timer",
@@ -608,5 +608,83 @@
     "prerequisites": ["p4-sidekiq-setup", "p1-tailwind-daisyui"],
     "status": "pending",
     "notes": ""
+  },
+  {
+    "id": "merge-round-lifecycle",
+    "slug": "merge-round-lifecycle",
+    "title": "Round lifecycle: rounds end, games finish (GameFlow)",
+    "description": "Round lifecycle: rounds end, games finish (GameFlow) — merged from the earlier flip7 / f7 builds.",
+    "related_files": [
+      "app/services/game_flow.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": [],
+    "status": "done",
+    "notes": "Merged on branch merge-all-versions (2026-10-20)."
+  },
+  {
+    "id": "merge-official-rules",
+    "slug": "merge-official-rules",
+    "title": "Deck carry-over, rotating dealer, tie-break, Flip Three deferral, multi-deck scaling",
+    "description": "Deck carry-over, rotating dealer, tie-break, Flip Three deferral, multi-deck scaling — merged from the earlier flip7 / f7 builds.",
+    "related_files": [
+      "app/services/game_engine.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": [],
+    "status": "done",
+    "notes": "Merged on branch merge-all-versions (2026-10-20)."
+  },
+  {
+    "id": "merge-game-board",
+    "slug": "merge-game-board",
+    "title": "Game board, target picker, round summary, game over, keyboard shortcuts",
+    "description": "Game board, target picker, round summary, game over, keyboard shortcuts — merged from the earlier flip7 / f7 builds.",
+    "related_files": [
+      "app/views/games/_board.html.erb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": [],
+    "status": "done",
+    "notes": "Merged on branch merge-all-versions (2026-10-20)."
+  },
+  {
+    "id": "merge-pass-and-play",
+    "slug": "merge-pass-and-play",
+    "title": "Pass & play (local) mode",
+    "description": "Pass & play (local) mode — merged from the earlier flip7 / f7 builds.",
+    "related_files": [
+      "app/controllers/games_controller.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": [],
+    "status": "done",
+    "notes": "Merged on branch merge-all-versions (2026-10-20)."
+  },
+  {
+    "id": "merge-bot-overrides",
+    "slug": "merge-bot-overrides",
+    "title": "Bot endgame guard, Flip 7 chase, comeback pressure",
+    "description": "Bot endgame guard, Flip 7 chase, comeback pressure — merged from the earlier flip7 / f7 builds.",
+    "related_files": [
+      "app/services/bot_brain.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": [],
+    "status": "done",
+    "notes": "Merged on branch merge-all-versions (2026-10-20)."
+  },
+  {
+    "id": "merge-ranked-start",
+    "slug": "merge-ranked-start",
+    "title": "Ranked games start on match; queue page polls and runs matchmaking",
+    "description": "Ranked games start on match; queue page polls and runs matchmaking — merged from the earlier flip7 / f7 builds.",
+    "related_files": [
+      "app/jobs/matchmaking_worker_job.rb"
+    ],
+    "related_docs": ["docs/game_engine.md"],
+    "prerequisites": [],
+    "status": "done",
+    "notes": "Merged on branch merge-all-versions (2026-10-20)."
   }
 ]
