@@ -167,18 +167,42 @@ RSpec.describe GameEngine do
       end
     end
 
-    it "full reshuffle: starting a second round rebuilds a 94-card deck" do
+    it "carries the deck into round 2 and discards round 1's cards (no rebuild)" do
       game, users = build_game(player_count: 2)
       deterministic_deck = [number_card(2), number_card(4)] + Array.new(92) { number_card(0) }
       allow(described_class).to receive(:build_shuffled_deck).and_return(deterministic_deck)
       described_class.start_round(game)
-      # Drain the deck artificially to simulate mid-round and then restart.
-      game.update!(deck: [])
+      deck_after_round_one = game.reload.deck.size
       described_class.start_round(game)
       game.reload
-      # After reshuffle + initial deal, deck + cards in hands should equal 94 again.
-      expect(game.deck.size + count_cards_in_hands(game)).to eq(94)
+      expect(described_class).to have_received(:build_shuffled_deck).once
       expect(game.current_round).to eq(2)
+      expect(game.deck.size).to eq(deck_after_round_one - 2)
+      expect(game.discard_pile).to contain_exactly(number_card(2), number_card(4))
+      expect(game.deck.size + game.discard_pile.size + count_cards_in_hands(game)).to eq(94)
+    end
+
+    it "reshuffles the discard pile into a new deck when the deck runs out" do
+      game, users = build_game(player_count: 2)
+      seed_round!(game, users, deck: [])
+      game.update!(discard_pile: [number_card(9)])
+      described_class.hit(game, users[0].id)
+      game.reload
+      expect(game.round_state["player_hands"][users[0].id.to_s]["number_cards"]).to eq([9])
+      expect(game.discard_pile).to eq([])
+      expect(game.round_state["events"].map { |e| e["type"] }).to include("deck_reshuffled")
+    end
+
+    it "rotates who is dealt to first and who acts first each round" do
+      game, users = build_game(player_count: 3)
+      game.update!(current_round: 1, deck: Array.new(30) { |i| number_card(i % 12 + 1) })
+      game.update!(round_state: { "player_hands" => {} })
+      described_class.start_round(game)
+      game.reload
+      expect(game.current_round).to eq(2)
+      expect(game.current_turn_player_index).to eq(1)
+      first_deal = game.round_state["events"].find { |e| e["type"] == "initial_deal" }
+      expect(first_deal["user_id"]).to eq(users[1].id)
     end
 
     it "multi-deck start_round yields 188 total cards (deck + hands)" do
@@ -296,18 +320,55 @@ RSpec.describe GameEngine do
       expect(game.round_state["player_hands"][users[0].id.to_s]["has_second_chance"]).to be(true)
     end
 
-    it "replacing an existing Second Chance when drawing a second one" do
-      game, users = build_game(player_count: 2)
+    it "a second Second Chance must be given to another active player" do
+      game, users = build_game(player_count: 3)
       hands = {
         users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
-        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false }
+        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false },
+        users[2].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false }
       }
       seed_round!(game, users, hands: hands, deck: [action_card("second_chance")])
       described_class.hit(game, users[0].id)
       game.reload
-      expect(game.round_state["player_hands"][users[0].id.to_s]["has_second_chance"]).to be(true)
-      events = game.round_state["events"]
-      expect(events.map { |e| e["type"] }).to include("second_chance_replaced")
+      expect(game.round_state["pending_action"]).to eq("type" => "second_chance", "drawer_id" => users[0].id)
+      expect(game.current_turn_player_index).to eq(0)
+
+      described_class.resolve_action(game, users[0].id, "second_chance", users[2].id)
+      game.reload
+      expect(game.round_state["player_hands"][users[2].id.to_s]["has_second_chance"]).to be(true)
+      expect(game.round_state["pending_action"]).to be_nil
+      expect(game.current_turn_player_index).to eq(1)
+    end
+
+    it "rejects giving a surplus Second Chance to yourself or a holder" do
+      game, users = build_game(player_count: 3)
+      hands = {
+        users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
+        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
+        users[2].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false }
+      }
+      seed_round!(game, users, hands: hands, deck: [action_card("second_chance")])
+      described_class.hit(game, users[0].id)
+      expect {
+        described_class.resolve_action(game.reload, users[0].id, "second_chance", users[0].id)
+      }.to raise_error(GameEngine::InvalidActionError)
+      expect {
+        described_class.resolve_action(game.reload, users[0].id, "second_chance", users[1].id)
+      }.to raise_error(GameEngine::InvalidActionError)
+    end
+
+    it "discards a surplus Second Chance when nobody can receive it" do
+      game, users = build_game(player_count: 2)
+      hands = {
+        users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true },
+        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => true }
+      }
+      seed_round!(game, users, hands: hands, deck: [action_card("second_chance")])
+      described_class.hit(game, users[0].id)
+      game.reload
+      expect(game.round_state["pending_action"]).to be_nil
+      expect(game.discard_pile).to eq([action_card("second_chance")])
+      expect(game.round_state["events"].map { |e| e["type"] }).to include("second_chance_discarded")
     end
 
     it "sets pending_action when drawing a Freeze, without advancing turn" do
@@ -776,6 +837,26 @@ RSpec.describe GameEngine do
       expect(scores[users[1].id.to_s]).to eq(8)
       expect(game.cumulative_scores[users[0].id.to_s]).to eq(5)
       expect(game.cumulative_scores[users[1].id.to_s]).to eq(8)
+    end
+  end
+
+  # ────────────────────────────────────────────────────────────────
+  # winner_id
+  # ────────────────────────────────────────────────────────────────
+  describe ".winner_id" do
+    it "picks the highest cumulative score" do
+      game, users = build_game(player_count: 3)
+      game.update!(cumulative_scores: { users[0].id.to_s => 150, users[1].id.to_s => 212, users[2].id.to_s => 205 })
+      expect(described_class.winner_id(game)).to eq(users[1].id)
+    end
+
+    it "breaks a tie in favour of whoever stayed earliest in the final round" do
+      game, users = build_game(player_count: 3)
+      game.update!(
+        cumulative_scores: { users[0].id.to_s => 210, users[1].id.to_s => 210, users[2].id.to_s => 90 },
+        round_state: { "stay_order" => [users[2].id, users[1].id, users[0].id] }
+      )
+      expect(described_class.winner_id(game)).to eq(users[1].id)
     end
   end
 end

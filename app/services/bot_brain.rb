@@ -9,7 +9,9 @@
 #   - conservative/balanced: target the leading active player
 #   - aggressive: may self-target Flip Three to chase Flip 7,
 #                 freezes a trailing player to prevent comeback
-#   - Second Chance is self-only → returns nil
+#   - surplus Second Chance (bot already holds one): give it to the
+#     trailing eligible opponent — the least threatening beneficiary.
+#     Returns nil when nobody can receive it.
 #
 # Duck-typed: @game only needs to respond to #round_state, #deck, and
 # #cumulative_scores. This makes it cheap to test with doubles and lets
@@ -50,11 +52,15 @@ class BotBrain
     :hit
   end
 
-  # Returns target user_id for Freeze / Flip Three, or nil for Second Chance
-  # (self-only). action_type can be a Symbol or String.
+  # Returns target user_id for Freeze / Flip Three / a surplus Second
+  # Chance, or nil when no legal target exists. action_type can be a
+  # Symbol or String.
   def choose_action_target(action_type)
     type = action_type.to_s
-    return nil if type == "second_chance"
+    if type == "second_chance"
+      recipients = GameEngine.second_chance_recipient_ids(round_state, @player_id).map { |uid| cast_id(uid) }
+      return active_trailing_id(recipients)
+    end
 
     active = active_opponent_ids
     leader_id = active_leader_id(active)

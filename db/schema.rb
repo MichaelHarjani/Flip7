@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_14_103601) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,12 +52,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_103601) do
     t.integer "current_turn_player_index"
     t.jsonb "deck", default: [], null: false
     t.integer "deck_count", default: 1, null: false
+    t.jsonb "discard_pile", default: [], null: false
     t.integer "lock_version", default: 0, null: false
     t.integer "max_players"
     t.integer "min_players", default: 2, null: false
     t.string "mode", null: false
     t.integer "rematch_of"
     t.string "room_code", limit: 4
+    t.jsonb "round_history", default: [], null: false
     t.jsonb "round_state", default: {}, null: false
     t.string "status", default: "waiting", null: false
     t.datetime "turn_expires_at"
@@ -65,7 +67,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_14_103601) do
     t.datetime "updated_at", null: false
     t.integer "winner_id"
     t.index ["mode"], name: "index_games_on_mode"
-    t.index ["room_code"], name: "index_games_on_room_code", unique: true, where: "((status)::text = ANY ((ARRAY['waiting'::character varying, 'in_progress'::character varying])::text[]))"
+    t.index ["room_code"], name: "index_games_on_room_code", unique: true, where: "((status)::text = ANY (ARRAY[('waiting'::character varying)::text, ('in_progress'::character varying)::text]))"
     t.index ["status"], name: "index_games_on_status"
   end
 

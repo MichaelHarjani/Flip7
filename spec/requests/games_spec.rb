@@ -96,6 +96,9 @@ RSpec.describe "Games (solo flow)", type: :request do
 
   describe "GET /games/:id when in_progress (solo)" do
     it "renders the real game board with hands, scores, and Hit/Stay buttons when it's the human's turn" do
+      # Plain number cards only, so no action card pauses the initial deal.
+      allow(GameEngine).to receive(:build_shuffled_deck)
+        .and_return(Array.new(94) { |i| { "type" => "number", "value" => (i % 12) + 1 } })
       sign_in user
       post "/games", params: {
         game: {

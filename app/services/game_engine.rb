@@ -23,16 +23,28 @@ class GameEngine
   # Public API
   # ────────────────────────────────────────────────────────────────
 
-  # Start a new round: build fresh deck(s) based on player count, shuffle,
-  # deal initial cards one per seat, and set the turn to the first active
+  # Start a new round: deal initial cards one per seat, starting with the
+  # seat after the rotating dealer, and set the turn to the first active
   # player. Action cards dealt during the initial deal resolve immediately;
-  # if one requires targeting (Freeze / Flip Three), dealing pauses and a
-  # pending_action is recorded for the caller to resolve via resolve_action.
+  # if one requires targeting (Freeze / Flip Three / passing a Second
+  # Chance), dealing pauses and a pending_action is recorded for the caller
+  # to resolve via resolve_action.
+  #
+  # Per the official rules the deck is NOT rebuilt between rounds: the
+  # previous round's cards go to the discard pile and the remaining deck
+  # carries over (so card counting matters). The discard pile is reshuffled
+  # only when the deck runs out. A fresh deck is built for round 1.
   def self.start_round(game)
     players = ordered_player_ids(game)
     raise InvalidActionError, "no seated players" if players.empty?
 
-    deck = build_shuffled_deck(game.deck_count || 1)
+    if (game.current_round || 0).zero?
+      deck = build_shuffled_deck(game.deck_count || 1)
+      game.discard_pile = []
+    else
+      discard_round_cards(game)
+      deck = game.deck || []
+    end
 
     round_state = {
       "player_hands"        => players.each_with_object({}) { |pid, h| h[pid.to_s] = empty_hand },
@@ -130,10 +142,18 @@ class GameEngine
 
     case action_type
     when "freeze"
+      discard!(game, action_card_hash("freeze"))
       mark_stayed(round_state, target_id)
       push_event(round_state, { "type" => "freeze_applied", "drawer_id" => user_id, "target_id" => target_id })
     when "flip_three"
+      discard!(game, action_card_hash("flip_three"))
       apply_flip_three(game, user_id, target_id)
+    when "second_chance"
+      unless second_chance_recipient_ids(round_state, user_id).include?(target_id.to_s)
+        raise InvalidActionError, "Second Chance must go to another active player without one"
+      end
+      round_state["player_hands"][target_id.to_s]["has_second_chance"] = true
+      push_event(round_state, { "type" => "second_chance_given", "drawer_id" => user_id, "target_id" => target_id })
     else
       raise InvalidActionError, "unknown action: #{action_type}"
     end
@@ -194,6 +214,21 @@ class GameEngine
   # Is the game over? Any player reached 200+ cumulative.
   def self.check_game_end(game)
     (game.cumulative_scores || {}).values.any? { |v| v.to_i >= WINNING_SCORE }
+  end
+
+  # The winner once check_game_end is true: highest cumulative score; ties
+  # go to whoever Stayed earliest in the final round, then to the lowest
+  # seat. Returns a user id (Integer).
+  def self.winner_id(game)
+    cumulative = game.cumulative_scores || {}
+    return nil if cumulative.empty?
+    top = cumulative.values.map(&:to_i).max
+    tied = cumulative.select { |_uid, score| score.to_i == top }.keys.map(&:to_i)
+    return tied.first if tied.size == 1
+
+    stay_order = Array((game.round_state || {})["stay_order"]).map(&:to_i)
+    seats = ordered_player_ids(game)
+    tied.min_by { |uid| [stay_order.index(uid) || Float::INFINITY, seats.index(uid) || Float::INFINITY] }
   end
 
   # Auto-stay on turn timeout. Guards on turn_number matching so stale jobs
@@ -288,10 +323,61 @@ class GameEngine
 
   def self.draw_top_card(game)
     deck = game.deck || []
-    return nil if deck.empty?
+    if deck.empty?
+      discard = game.discard_pile || []
+      return nil if discard.empty?
+      # Cards still in front of players stay put; only the discard pile is
+      # reshuffled into a new draw pile.
+      deck = discard.shuffle
+      game.discard_pile = []
+      push_event(game.round_state, { "type" => "deck_reshuffled", "size" => deck.size }) if game.round_state
+    end
     card = deck.shift
     game.deck = deck
     card
+  end
+
+  def self.discard!(game, card)
+    game.discard_pile = (game.discard_pile || []) + [card]
+  end
+
+  def self.action_card_hash(name)
+    { "type" => "action", "action" => name }
+  end
+
+  # Move every card left in front of players at the end of a round to the
+  # discard pile. Busted duplicates, spent action cards, and used Second
+  # Chances were already discarded as they resolved.
+  def self.discard_round_cards(game)
+    hands = (game.round_state || {})["player_hands"] || {}
+    cards = []
+    hands.each_value do |hand|
+      Array(hand["number_cards"]).each { |v| cards << { "type" => "number", "value" => v } }
+      Array(hand["modifiers"]).each do |m|
+        cards << { "type" => "modifier", "modifier" => m["modifier"], "value" => m["value"] }
+      end
+      cards << action_card_hash("second_chance") if hand["has_second_chance"]
+    end
+    game.discard_pile = (game.discard_pile || []) + cards
+  end
+
+  # Active players (other than the drawer) who do not already hold a
+  # Second Chance — the legal recipients of a surplus Second Chance.
+  def self.second_chance_recipient_ids(round_state, drawer_id)
+    statuses = round_state["player_statuses"] || {}
+    hands = round_state["player_hands"] || {}
+    statuses.filter_map do |uid, status|
+      next if uid.to_s == drawer_id.to_s
+      next unless status == "active"
+      next if hands.dig(uid, "has_second_chance")
+      uid.to_s
+    end
+  end
+
+  # Seats rotate each round: round 1 starts at seat 0, round 2 at seat 1, …
+  def self.round_start_offset(game, player_count)
+    return 0 if player_count.zero?
+    ([game.current_round.to_i, 1].max - 1) % player_count
   end
 
   def self.current_turn_user_id(game)
@@ -317,15 +403,9 @@ class GameEngine
 
     while rs["deal_phase"]
       cursor = rs["deal_cursor"].to_i
-      if cursor >= players.size
-        rs["deal_phase"] = false
-        rs["deal_cursor"] = 0
-        game.round_state = rs
-        game.save!
-        return
-      end
+      break if cursor >= players.size
 
-      target_user_id = players[cursor]
+      target_user_id = players[(cursor + round_start_offset(game, players.size)) % players.size]
       card = draw_top_card(game)
       break if card.nil? # defensively stop if deck is somehow empty
 
@@ -369,9 +449,12 @@ class GameEngine
         if hand["has_second_chance"]
           hand["has_second_chance"] = false
           push_event(rs, { "type" => "second_chance_used", "user_id" => user_id, "value" => value })
-          # Duplicate card is discarded (not added to hand).
+          # Both the duplicate and the spent Second Chance are discarded.
+          discard!(game, card)
+          discard!(game, action_card_hash("second_chance"))
           return [false, !initial_deal]
         else
+          discard!(game, card)
           rs["player_statuses"][uid] = "busted"
           push_event(rs, { "type" => "busted", "user_id" => user_id, "value" => value })
           return [true, !initial_deal]
@@ -395,8 +478,18 @@ class GameEngine
     when "action"
       case card["action"]
       when "second_chance"
+        # A player may hold only one Second Chance. A second one must be
+        # given to another active player who has none; if nobody qualifies
+        # it is discarded.
         if hand["has_second_chance"]
-          push_event(rs, { "type" => "second_chance_replaced", "user_id" => user_id })
+          if second_chance_recipient_ids(rs, user_id).any?
+            rs["pending_action"] = { "type" => "second_chance", "drawer_id" => user_id }
+            push_event(rs, { "type" => "action_pending", "drawer_id" => user_id, "action" => "second_chance" })
+            return [false, false]
+          end
+          discard!(game, card)
+          push_event(rs, { "type" => "second_chance_discarded", "user_id" => user_id })
+          return [false, !initial_deal]
         end
         hand["has_second_chance"] = true
         push_event(rs, { "type" => "second_chance_gained", "user_id" => user_id })
@@ -479,8 +572,10 @@ class GameEngine
   def self.first_active_index(game)
     players = ordered_player_ids(game)
     rs = game.round_state
-    players.each_with_index do |pid, idx|
-      return idx if rs["player_statuses"][pid.to_s] == "active"
+    offset = round_start_offset(game, players.size)
+    players.size.times do |i|
+      idx = (offset + i) % players.size
+      return idx if rs["player_statuses"][players[idx].to_s] == "active"
     end
     nil
   end
