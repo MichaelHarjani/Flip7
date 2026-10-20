@@ -1,0 +1,26 @@
+<div class="hero min-h-screen bg-base-200">
+  <div class="hero-content text-center">
+    <div class="max-w-md w-full">
+      <h1 class="text-4xl font-bold">Pass &amp; Play</h1>
+      <p class="py-4">Everyone shares this device and takes turns. Name each player — leave extra rows empty.</p>
+
+      <%= form_with url: games_path, local: true, class: "flex flex-col gap-3" do %>
+        <%= hidden_field_tag "game[mode]", "local" %>
+        <% 8.times do |i| %>
+          <%= text_field_tag "game[player_names][]", (i.zero? ? current_user.name : nil),
+                placeholder: "Player #{i + 1}#{' (optional)' if i > 1}", maxlength: 20,
+                class: "input input-bordered w-full", aria: { label: "Player #{i + 1} name" } %>
+        <% end %>
+
+        <label class="form-control">
+          <span class="label">Add bots (optional)</span>
+          <%= select_tag "game[bot_count]", options_for_select((0..4).map { |i| [i, i] }, 0), class: "select select-bordered w-full" %>
+        </label>
+
+        <%= submit_tag "Start game", class: "btn btn-primary btn-lg" %>
+      <% end %>
+
+      <%= link_to "Cancel", root_path, class: "btn btn-ghost btn-sm mt-2" %>
+    </div>
+  </div>
+</div>

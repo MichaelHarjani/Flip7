@@ -11,7 +11,7 @@ class Game < ApplicationRecord
   belongs_to :winner, class_name: "User", optional: true
   belongs_to :rematch_source, class_name: "Game", foreign_key: :rematch_of, optional: true
 
-  validates :mode, presence: true, inclusion: { in: %w[solo casual ranked] }
+  validates :mode, presence: true, inclusion: { in: %w[solo casual ranked local] }
   validates :min_players, numericality: { greater_than_or_equal_to: 2 }
 
   aasm column: :status do

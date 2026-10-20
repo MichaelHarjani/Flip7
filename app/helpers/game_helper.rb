@@ -96,7 +96,12 @@ module GameHelper
     when "stayed"             then "#{name.(event["user_id"])} stayed"
     when "flip7"              then "#{name.(event["user_id"])} flipped 7! +15"
     when "freeze_applied"     then "#{name.(event["drawer_id"])} froze #{name.(event["target_id"])}"
-    when "flip_three_start"   then "#{name.(event["drawer_id"])} hit #{name.(event["target_id"])} with Flip Three"
+    when "flip_three_start"
+      if event["drawer_id"].to_s == event["target_id"].to_s
+        "#{name.(event["drawer_id"])} took a Flip Three"
+      else
+        "#{name.(event["drawer_id"])} hit #{name.(event["target_id"])} with Flip Three"
+      end
     when "second_chance_used" then "#{name.(event["user_id"])}'s Second Chance saved them"
     when "second_chance_given" then "#{name.(event["drawer_id"])} gave a Second Chance to #{name.(event["target_id"])}"
     when "deck_reshuffled"    then "Discard pile reshuffled into the deck"

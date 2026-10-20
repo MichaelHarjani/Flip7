@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   get "/play/casual", to: "games#new", defaults: { mode: "casual" }
   # Solo (vs bots) flow
   get "/play/solo", to: "games#new", defaults: { mode: "solo" }
+  get "/play/local", to: "games#new", defaults: { mode: "local" }
   # Ranked duel flow
   get "/play/ranked", to: "matchmaking#new", as: :play_ranked
   resource :matchmaking_queue,

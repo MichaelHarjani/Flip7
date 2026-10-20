@@ -64,7 +64,10 @@ class GameFlow
   end
 
   def self.update_player_stats(game, round_scores, flip7_winner)
-    humans = game.game_players.includes(:user).reject(&:is_bot).map(&:user)
+    humans = game.game_players.includes(:user).order(:seat_position).reject(&:is_bot).map(&:user)
+    # Pass-and-play guests are throwaway users; only the device owner's
+    # profile stats count.
+    humans = humans.first(1) if game.mode == "local"
     humans.each do |user|
       score = round_scores[user.id.to_s].to_i
       user.update!(

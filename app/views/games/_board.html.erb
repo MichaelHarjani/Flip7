@@ -38,7 +38,8 @@
           <% end %>
         </div>
 
-        <% log = board.recent_events.filter_map { |e| describe_event(e, board) } %>
+        <% log = board.recent_events(8).filter_map { |e| describe_event(e, board) } %>
+        <% log = log.last(4) %>
         <% if log.any? %>
           <div id="event-log" class="text-center text-xs opacity-60 space-x-2">
             <% log.each do |line| %><span><%= line %></span><% end %>
@@ -47,7 +48,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <% board.seats.each do |seat| %>
-            <%= render "games/seat", seat: seat, game: game %>
+            <%= render "games/seat", seat: seat, game: game, pass_and_play: board.controlled_user_ids.size > 1 %>
           <% end %>
         </div>
       <% end %>

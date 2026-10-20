@@ -1,4 +1,4 @@
-<%# Locals: seat (GameBoard::Seat), game %>
+<%# Locals: seat (GameBoard::Seat), game, pass_and_play %>
 <%
   frame = if seat.current && seat.me then "border-primary/60 bg-primary/5 player-glow-active"
           elsif seat.current then "border-warning/50 bg-warning/5"
@@ -10,7 +10,7 @@
 <div id="seat-<%= seat.user_id %>" class="rounded-xl border bg-base-100 p-4 transition-all duration-300 <%= frame %>">
   <div class="flex items-center justify-between gap-2 mb-2">
     <div class="flex items-center gap-2 min-w-0">
-      <% if seat.me %><span class="badge badge-primary badge-sm">You</span><% end %>
+      <% if seat.me && !pass_and_play %><span class="badge badge-primary badge-sm">You</span><% end %>
       <% if seat.bot %><span class="badge badge-ghost badge-sm">Bot</span><% end %>
       <span class="font-semibold truncate"><%= seat.name %></span>
       <% if seat.frozen %><span class="badge badge-info badge-sm">❄ Frozen</span><% end %>

@@ -1,7 +1,9 @@
-<% content_for :title, @mode == "solo" ? "Play Solo" : "Create Casual Game" %>
+<% content_for :title, { "solo" => "Play Solo", "local" => "Pass & Play" }.fetch(@mode, "Create Casual Game") %>
 
 <% if @mode == "solo" %>
   <%= render "solo_form" %>
+<% elsif @mode == "local" %>
+  <%= render "local_form" %>
 <% else %>
   <%= render "casual_form" %>
 <% end %>

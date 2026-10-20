@@ -14,6 +14,8 @@ class GamesController < ApplicationController
     mode = params.dig(:game, :mode) || "casual"
     if mode == "solo"
       create_solo_game
+    elsif mode == "local"
+      create_local_game
     else
       create_casual_game
     end
@@ -63,10 +65,16 @@ class GamesController < ApplicationController
 
   private
 
-  # Seats the viewer may act for on this device.
+  # Seats the viewer may act for on this device: themselves, or — for the
+  # owner of a pass-and-play game — every human seat.
   def controlled_user_ids
     return [] unless user_signed_in?
-    @game.game_players.exists?(user_id: current_user.id) ? [current_user.id] : []
+    return [] unless @game.game_players.exists?(user_id: current_user.id)
+    if @game.mode == "local" && @game.game_players.order(:seat_position).first&.user_id == current_user.id
+      @game.game_players.where(is_bot: false).order(:seat_position).pluck(:user_id)
+    else
+      [current_user.id]
+    end
   end
 
   def set_game
@@ -141,6 +149,46 @@ class GamesController < ApplicationController
     @game ||= Game.new(mode: "solo")
     flash.now[:alert] = "Could not start solo game: #{e.message}"
     render :new, status: :unprocessable_entity
+  end
+
+  # Pass-and-play (from the earlier flip7 build): several people share this
+  # device. Seat 0 is the signed-in owner; the other named seats get
+  # throwaway guest users so the engine can key them like anyone else.
+  def create_local_game
+    names = Array(params.dig(:game, :player_names)).map { |n| n.to_s.strip.first(20) }.reject(&:blank?).first(8)
+    names[0] ||= current_user.name.presence || "Player 1"
+    bot_count = params.dig(:game, :bot_count).to_i.clamp(0, 4)
+
+    if names.size + bot_count < 2
+      @mode = "local"
+      @game = Game.new(mode: "local")
+      flash.now[:alert] = "Add at least one more player or a bot"
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    @game = Game.new(mode: "local", min_players: 2, max_players: names.size + bot_count)
+    Game.transaction do
+      @game.save!
+      @game.game_players.create!(user: current_user, seat_position: 0, display_name: names[0])
+      names.drop(1).each_with_index do |name, i|
+        guest = User.create!(email: "local-#{SecureRandom.hex(6)}@flip7.local", password: SecureRandom.hex(16), name: name)
+        @game.game_players.create!(user: guest, seat_position: i + 1, display_name: name)
+      end
+      (BOT_NAMES - names).sample(bot_count).each_with_index do |bot_name, i|
+        strategy = BotBrain::STRATEGIES.sample
+        @game.game_players.create!(
+          user: find_or_create_bot_user(strategy: strategy),
+          seat_position: names.size + i, is_bot: true, bot_strategy: strategy, display_name: bot_name
+        )
+      end
+      @game.start!
+      GameEngine.start_round(@game)
+      GameFlow.after_move(@game)
+    end
+
+    BotTurnJob.perform_later(@game.id) if bot_count.positive?
+    redirect_to @game
   end
 
   def find_or_create_bot_user(strategy:)
