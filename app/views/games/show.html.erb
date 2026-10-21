@@ -1,6 +1,12 @@
 <% content_for :title, @game.in_progress? ? "Flip 7 — Round #{@game.current_round}" : "Flip 7" %>
-<%# Live updates: every engine save broadcasts a refresh; the page morphs in place. %>
-<%= turbo_stream_from @game %>
+<%# Live updates: every engine save broadcasts a refresh; the page morphs in place.
+    Permanent so a morph doesn't unsubscribe/resubscribe (broadcasts sent in
+    that gap were lost). Polling covers anything that still slips through
+    while we're waiting on someone else. %>
+<%= turbo_stream_from @game, id: "game_stream", data: { turbo_permanent: true } %>
+<% if @game.waiting? || (@game.in_progress? && !@board.round_over? && !@board.my_turn? && !@board.my_pending_choice?) %>
+  <div data-controller="poll" data-poll-interval-value="3000"></div>
+<% end %>
 
 <% if @game.waiting? %>
   <%= render "games/lobby", game: @game, board: @board %>
