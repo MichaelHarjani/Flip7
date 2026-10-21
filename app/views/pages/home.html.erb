@@ -20,6 +20,8 @@
         <%= link_to "My Profile", my_profile_path, class: "btn btn-outline btn-sm mt-2" %>
         <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-ghost btn-sm" %>
       <% else %>
+        <%= button_to "Play as guest", guest_session_path, class: "btn btn-primary btn-outline w-full mb-3" %>
+        <%= link_to "Sign in with email", new_user_session_path, class: "btn btn-ghost btn-sm w-full mb-3" %>
         <%= button_to "Sign in with Google",
             user_google_oauth2_omniauth_authorize_path,
             method: :post,
