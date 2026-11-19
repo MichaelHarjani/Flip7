@@ -22,9 +22,9 @@ Flip7 is a push-your-luck card game designed by Eric Olsen, published by The Op 
 
 ### 1.1 The Deck (94 cards per deck)
 
-**Multi-Deck Scaling:** A single deck of 94 cards is used for games of up to 10 players. For every 10 players beyond the first 10, an additional deck is shuffled in (11–20 players = 2 decks / 188 cards, 21–30 = 3 decks / 282 cards, etc.). With multiple decks, duplicate number cards from different decks ARE in play — bust detection still triggers when a player's hand contains two cards of the same value, regardless of which deck they came from.
+**Multi-Deck Scaling (house rule):** A single deck of 94 cards is used for games of up to 10 players. *(The official rules only recommend a second deck for more than 18 players; this app adds decks sooner so big tables don't run dry.)* For every 10 players beyond the first 10, an additional deck is shuffled in (11–20 players = 2 decks / 188 cards, 21–30 = 3 decks / 282 cards, etc.). With multiple decks, duplicate number cards from different decks ARE in play — bust detection still triggers when a player's hand contains two cards of the same value, regardless of which deck they came from.
 
-**Deck Carries Over Between Rounds (official rule):** The deck is shuffled once at the start of the game. At the end of each round, every card in front of players goes to the discard pile and the remaining deck carries into the next round, so card counting matters. **House rule:** if fewer than max(10, 2 × players) cards remain when a round starts, the discard pile is shuffled back in before dealing. If the deck runs out mid-round, the discard pile (never cards in front of players) is reshuffled into a new deck.
+**Deck Carries Over Between Rounds (official rule):** The deck is shuffled once at the start of the game. At the end of each round, every card in front of players goes to the discard pile and the remaining deck carries into the next round, so card counting matters. **House rule:** if fewer than max(10, 2 × players) cards remain when a round starts, the discard pile is shuffled back in before dealing. If the deck runs out mid-round, the discard pile (never cards in front of players) is reshuffled into a new deck. Cards in front of players include busting duplicates and played Freeze / Flip Three cards — they stay on the table until the round ends.
 
 **Rotating Dealer:** The deal — and the first turn — start one seat further round the table each round.
 
@@ -60,7 +60,7 @@ Flip7 is a push-your-luck card game designed by Eric Olsen, published by The Op 
 1. **Initial Deal:** One card is dealt face-up to each player in turn order. If an action card is dealt during the initial deal, it resolves immediately before dealing continues — a player may start the round with 0, 1, or multiple cards depending on what they draw.
 2. **Turn Order:** Starting from the player left of the dealer, proceeding clockwise. Each active player chooses:
    - **Hit** — Draw one card from the deck
-   - **Stay** — Bank current score, become inactive for the round
+   - **Stay** — Bank current score, become inactive for the round. Only allowed with at least one card in front of you (a held Second Chance counts); a player left with no cards after the deal must Hit.
 3. **Card Resolution on Hit:**
    - **Number card (unique):** Added to hand, play continues
    - **Number card (duplicate):** Player busts — scores 0 for the round, unless they hold a Second Chance
@@ -68,7 +68,7 @@ Flip7 is a push-your-luck card game designed by Eric Olsen, published by The Op 
    - **Modifier card:** Added to hand, affects scoring
 4. **Round End Conditions:**
    - All players have Stayed or Busted
-   - A player achieves **Flip 7** (7 unique number cards) — round ends immediately, that player earns +15 bonus points
+   - A player achieves **Flip 7** (7 unique number cards) — round ends immediately (even mid-deal: nobody else is dealt a card), that player earns +15 bonus points. Every player who hasn't busted scores their cards.
 
 ### 1.3 Action Card Resolution
 
@@ -87,11 +87,11 @@ Order of operations for a single round:
 4. If Flip 7 achieved: `round_score = round_score + 15`
 5. If busted: `round_score = 0`
 
-The ×2 modifier doubles only the number card sum — NOT +N modifiers or the Flip 7 bonus.
+The ×2 modifier doubles only the number card sum — NOT +N modifiers or the Flip 7 bonus. With multiple decks a player can hold two ×2 cards; the sum is still doubled once.
 
 ### 1.5 Game End
 
-First player to reach **200 cumulative points** wins. The round in which a player reaches 200 completes fully — if multiple players reach 200 in the same round, the highest cumulative score wins. Ties are broken by who Stayed earliest in the final round.
+First player to reach **200 cumulative points** wins. The round in which a player reaches 200 completes fully — if multiple players reach 200 in the same round, the highest cumulative score wins. *House rule (the official rules don't cover ties):* ties are broken by who Stayed earliest in the final round, then by lowest seat.
 
 ---
 

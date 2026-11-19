@@ -46,6 +46,10 @@ RSpec.describe BotTurnJob, type: :job do
     rs["deal_phase"] = false
     # Make all players active so that hit/stay don't no-op
     rs["player_statuses"].each_key { |k| rs["player_statuses"][k] = "active" }
+    # Give anyone left empty-handed by the random deal a card, so Stay is legal.
+    rs["player_hands"].each_value do |hand|
+      hand["number_cards"] = [5] unless GameEngine.cards_in_front?(hand)
+    end
     game.round_state = rs
     game.current_turn_player_index = seat_position
     game.save!

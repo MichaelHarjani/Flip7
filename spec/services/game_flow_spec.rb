@@ -33,7 +33,7 @@ RSpec.describe GameFlow do
     # A drawn Freeze / Flip Three / surplus Second Chance is in limbo until resolved.
     # Freezes / Flip Threes revealed during a Flip Three wait in deferred_actions.
     game.deck.size + game.discard_pile.size + in_hands + (rs["pending_action"] ? 1 : 0) +
-      Array(rs["deferred_actions"]).size
+      Array(rs["deferred_actions"]).size + Array(rs["table_cards"]).size
   end
 
   describe ".after_move" do

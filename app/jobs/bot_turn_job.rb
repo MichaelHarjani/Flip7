@@ -63,6 +63,9 @@ class BotTurnJob < ApplicationJob
     end
 
     decision = brain.decide
+    # Rules: you may only Stay with a card in front of you.
+    hand = (game.round_state["player_hands"] || {})[bot_player.user_id.to_s]
+    decision = :hit unless GameEngine.cards_in_front?(hand)
     if decision == :hit
       GameEngine.hit(game, bot_player.user_id)
       # If hitting raised a pending action, resolve immediately.

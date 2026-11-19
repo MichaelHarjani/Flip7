@@ -70,7 +70,7 @@
             <% end %>
             <%= button_to stay_game_moves_path(game), params: { as_user_id: acting.user_id },
                   class: "btn btn-neutral btn-lg w-full btn-press", form_class: "w-full",
-                  disabled: acting.cards.empty?,
+                  disabled: acting.cards.empty? && !acting.second_chance,
                   data: { keyboard_target: "stayBtn" } do %>
               Stay <span class="text-xs font-normal opacity-60">(S)</span>
             <% end %>

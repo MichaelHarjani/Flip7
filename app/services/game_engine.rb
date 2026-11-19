@@ -59,6 +59,7 @@ class GameEngine
       "player_statuses"     => players.each_with_object({}) { |pid, h| h[pid.to_s] = "active" },
       "player_scores"       => players.each_with_object({}) { |pid, h| h[pid.to_s] = 0 },
       "stay_order"          => [],
+      "table_cards"         => [],
       "deal_phase"          => true,
       "deal_cursor"         => 0,
       "pending_action"      => nil,
@@ -120,6 +121,10 @@ class GameEngine
 
     raise InvalidActionError, "pending action must be resolved first" if round_state["pending_action"]
     raise InvalidActionError, "deal phase not complete" if round_state["deal_phase"]
+    # Official rule: "You may Stay as long as you have a card in front of you."
+    unless cards_in_front?(round_state["player_hands"][user_id.to_s])
+      raise InvalidActionError, "you have no cards in front of you, so you must Hit"
+    end
 
     mark_stayed(round_state, user_id)
     push_event(round_state, { "type" => "stayed", "user_id" => user_id })
@@ -150,12 +155,13 @@ class GameEngine
 
     case action_type
     when "freeze"
-      discard!(game, action_card_hash("freeze"))
+      # Played action cards sit in front of the target until the round ends.
+      set_in_front!(game, action_card_hash("freeze"))
       mark_stayed(round_state, target_id)
       round_state["frozen_ids"] = Array(round_state["frozen_ids"]) | [target_id.to_i]
       push_event(round_state, { "type" => "freeze_applied", "drawer_id" => user_id, "target_id" => target_id })
     when "flip_three"
-      discard!(game, action_card_hash("flip_three"))
+      set_in_front!(game, action_card_hash("flip_three"))
       apply_flip_three(game, user_id, target_id)
     else
       raise InvalidActionError, "unknown action: #{action_type}"
@@ -244,7 +250,18 @@ class GameEngine
     current_user_id = current_turn_user_id(game)
     return { events: [], game: game, stale: true } if current_user_id.nil?
 
+    # A player with nothing in front of them can't Stay, so they draw instead.
+    hand = (game.round_state["player_hands"] || {})[current_user_id.to_s]
+    return hit(game, current_user_id) unless cards_in_front?(hand)
+
     stay(game, current_user_id)
+  end
+
+  # Does this hand have at least one card in front of the player? A held
+  # Second Chance counts — it sits face up in front of them.
+  def self.cards_in_front?(hand)
+    return false if hand.nil?
+    Array(hand["number_cards"]).any? || Array(hand["modifiers"]).any? || !!hand["has_second_chance"]
   end
 
   # ────────────────────────────────────────────────────────────────
@@ -350,12 +367,22 @@ class GameEngine
     { "type" => "action", "action" => name }
   end
 
+  # Cards that are on the table for the rest of the round but not part of a
+  # scoring hand: busting duplicates and played Freeze / Flip Three cards.
+  # Per the rules they stay in front of players (never reshuffled mid-round)
+  # and go to the discard pile when the round ends.
+  def self.set_in_front!(game, card)
+    rs = game.round_state
+    rs["table_cards"] = Array(rs["table_cards"]) + [card]
+  end
+
   # Move every card left in front of players at the end of a round to the
-  # discard pile. Busted duplicates, spent action cards, and used Second
-  # Chances were already discarded as they resolved.
+  # discard pile: hands, busting duplicates and played action cards. Used
+  # Second Chances (and their duplicates) were discarded as they resolved.
   def self.discard_round_cards(game)
-    hands = (game.round_state || {})["player_hands"] || {}
-    cards = []
+    rs = game.round_state || {}
+    hands = rs["player_hands"] || {}
+    cards = Array(rs["table_cards"]).dup
     hands.each_value do |hand|
       Array(hand["number_cards"]).each { |v| cards << { "type" => "number", "value" => v } }
       Array(hand["modifiers"]).each do |m|
@@ -407,6 +434,10 @@ class GameEngine
     rs = game.round_state
 
     while rs["deal_phase"]
+      # A Flip Three dealt during the deal can produce a Flip 7, which ends
+      # the round immediately — nobody else is dealt a card.
+      break if rs["flip7_winner_id"]
+
       cursor = rs["deal_cursor"].to_i
       break if cursor >= players.size
 
@@ -463,7 +494,9 @@ class GameEngine
           discard!(game, action_card_hash("second_chance"))
           return [false, !initial_deal]
         else
-          discard!(game, card)
+          # The busting card stays in front of the player until the round
+          # ends, so a mid-round reshuffle can't put it back in the deck.
+          set_in_front!(game, card)
           rs["player_statuses"][uid] = "busted"
           (rs["busted_with"] ||= {})[uid] = value
           push_event(rs, { "type" => "busted", "user_id" => user_id, "value" => value })

@@ -33,6 +33,10 @@ RSpec.describe "Moves", type: :request do
     rs["pending_action"] = nil
     rs["deal_phase"] = false
     rs["player_statuses"][user.id.to_s] = "active"
+    # A random opening deal can leave a player with no cards (dealt an action
+    # card they played on someone else); they'd then be unable to Stay.
+    hand = rs["player_hands"][user.id.to_s]
+    hand["number_cards"] = [5] unless GameEngine.cards_in_front?(hand)
     game.round_state = rs
     game.current_turn_player_index = human_idx
     game.save!

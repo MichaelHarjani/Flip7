@@ -57,6 +57,14 @@ RSpec.describe GameEngine do
     )
   end
 
+  # Hands where every player has one (different) number card in front of
+  # them, so they're allowed to Stay.
+  def one_card_hands(users)
+    users.each_with_index.to_h do |u, i|
+      [u.id.to_s, { "number_cards" => [i + 1], "modifiers" => [], "has_second_chance" => false }]
+    end
+  end
+
   # ────────────────────────────────────────────────────────────────
   # Deck generation
   # ────────────────────────────────────────────────────────────────
@@ -268,7 +276,8 @@ RSpec.describe GameEngine do
         total += hand["modifiers"].size
         total += 1 if hand["has_second_chance"]
       end
-      total
+      # Busting duplicates and played Freeze / Flip Three cards stay on the table.
+      total + Array(game.round_state["table_cards"]).size
     end
   end
 
@@ -393,7 +402,7 @@ RSpec.describe GameEngine do
   describe ".stay" do
     it "marks the player as stayed and appends them to stay_order" do
       game, users = build_game(player_count: 2)
-      seed_round!(game, users, deck: [number_card(4)])
+      seed_round!(game, users, hands: one_card_hands(users), deck: [number_card(4)])
       described_class.stay(game, users[0].id)
       game.reload
       expect(game.round_state["player_statuses"][users[0].id.to_s]).to eq("stayed")
@@ -402,7 +411,7 @@ RSpec.describe GameEngine do
 
     it "advances the turn to the next active player" do
       game, users = build_game(player_count: 3)
-      seed_round!(game, users)
+      seed_round!(game, users, hands: one_card_hands(users))
       described_class.stay(game, users[0].id)
       game.reload
       expect(game.current_turn_player_index).to eq(1)
@@ -419,7 +428,7 @@ RSpec.describe GameEngine do
 
     it "stay_order accumulates multiple stayers in the order they acted" do
       game, users = build_game(player_count: 3)
-      seed_round!(game, users)
+      seed_round!(game, users, hands: one_card_hands(users))
       described_class.stay(game, users[0].id)
       described_class.stay(game, users[1].id)
       game.reload
@@ -782,11 +791,21 @@ RSpec.describe GameEngine do
   describe ".timeout_turn" do
     it "auto-stays the current player when turn_number matches" do
       game, users = build_game(player_count: 2)
-      seed_round!(game, users)
+      seed_round!(game, users, hands: one_card_hands(users))
       game.update!(turn_number: 5)
       described_class.timeout_turn(game, 5)
       game.reload
       expect(game.round_state["player_statuses"][users[0].id.to_s]).to eq("stayed")
+    end
+
+    it "auto-hits instead when the player has no cards in front of them" do
+      game, users = build_game(player_count: 2)
+      seed_round!(game, users, deck: [number_card(6)])
+      game.update!(turn_number: 5)
+      described_class.timeout_turn(game, 5)
+      game.reload
+      expect(game.round_state["player_hands"][users[0].id.to_s]["number_cards"]).to eq([6])
+      expect(game.round_state["player_statuses"][users[0].id.to_s]).to eq("active")
     end
 
     it "is a no-op if turn_number has already advanced (stale job guard)" do
@@ -889,6 +908,88 @@ RSpec.describe GameEngine do
       expect(game.round_state["deal_phase"]).to be(false)
       expect(game.round_state["player_hands"][users[1].id.to_s]["number_cards"]).to eq([9])
       expect(game.round_state["player_statuses"][users[0].id.to_s]).to eq("stayed")
+    end
+  end
+
+  # ────────────────────────────────────────────────────────────────
+  # Official-rule edge cases (Ruleset Edition 3.1)
+  # ────────────────────────────────────────────────────────────────
+  describe "official rule edge cases" do
+    it "refuses to let a player Stay with no cards in front of them" do
+      game, users = build_game(player_count: 2)
+      seed_round!(game, users)
+      expect {
+        described_class.stay(game, users[0].id)
+      }.to raise_error(GameEngine::InvalidActionError, /must Hit/)
+    end
+
+    it "lets a player whose only card is a Second Chance Stay" do
+      game, users = build_game(player_count: 2)
+      hands = one_card_hands(users)
+      hands[users[0].id.to_s] = { "number_cards" => [], "modifiers" => [], "has_second_chance" => true }
+      seed_round!(game, users, hands: hands)
+      described_class.stay(game, users[0].id)
+      expect(game.reload.round_state["player_statuses"][users[0].id.to_s]).to eq("stayed")
+    end
+
+    it "ends the round at once when a Flip Three in the opening deal makes a Flip 7" do
+      game, users = build_game(player_count: 3)
+      hands = {
+        users[0].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false },
+        users[1].id.to_s => { "number_cards" => [], "modifiers" => [], "has_second_chance" => false },
+        users[2].id.to_s => { "number_cards" => [1, 2, 3, 4, 5, 6], "modifiers" => [], "has_second_chance" => false }
+      }
+      seed_round!(game, users, hands: hands, deal_phase: true,
+                  deck: [action_card("flip_three"), number_card(7), number_card(8), number_card(9), number_card(10)])
+      described_class.send(:perform_initial_deal, game)
+      described_class.resolve_action(game.reload, users[0].id, "flip_three", users[2].id)
+      game.reload
+
+      rs = game.round_state
+      expect(rs["flip7_winner_id"]).to eq(users[2].id)
+      expect(rs["deal_phase"]).to be(false)
+      # Nobody else was dealt a card after the Flip 7.
+      expect(rs["player_hands"][users[1].id.to_s]["number_cards"]).to eq([])
+      expect(game.deck).to eq([number_card(8), number_card(9), number_card(10)])
+      expect(described_class.check_round_end(game)).to be(true)
+    end
+
+    it "keeps a busting card in front of the player until the round ends" do
+      game, users = build_game(player_count: 2)
+      hands = one_card_hands(users) # users[0] holds a 1
+      seed_round!(game, users, hands: hands, deck: [number_card(1)])
+      described_class.hit(game, users[0].id)
+      game.reload
+      expect(game.round_state["player_statuses"][users[0].id.to_s]).to eq("busted")
+      expect(game.discard_pile).not_to include(number_card(1))
+      expect(game.round_state["table_cards"]).to eq([number_card(1)])
+    end
+
+    it "keeps a played Freeze in front of players, then discards it when the round ends" do
+      game, users = build_game(player_count: 2)
+      seed_round!(game, users, hands: one_card_hands(users),
+                  deck: [action_card("freeze")] + Array.new(30) { number_card(12) })
+      described_class.hit(game, users[0].id)
+      described_class.resolve_action(game.reload, users[0].id, "freeze", users[1].id)
+      game.reload
+      expect(game.discard_pile).not_to include(action_card("freeze"))
+      expect(game.round_state["table_cards"]).to eq([action_card("freeze")])
+
+      game.update!(current_round: 1)
+      described_class.start_round(game)
+      expect(game.reload.discard_pile).to include(action_card("freeze"))
+    end
+
+    it "never reshuffles cards still in front of players into a mid-round deck" do
+      game, users = build_game(player_count: 2)
+      seed_round!(game, users, hands: one_card_hands(users), deck: [number_card(1)])
+      described_class.hit(game, users[0].id) # busts on the 1; deck now empty
+      game.reload
+      expect(game.deck).to eq([])
+      expect(game.discard_pile).to eq([])
+      expect {
+        described_class.hit(game, users[1].id)
+      }.to raise_error(GameEngine::InvalidActionError, /deck is empty/)
     end
   end
 end

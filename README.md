@@ -28,7 +28,7 @@ left untouched):
   `docs/acceptance_checklist.json` (pass flags reset — re-verify against
   this app).
 
-The rules as implemented are in `app_spec.txt` §1 (official rules plus two
+The rules as implemented are in `app_spec.txt` §1 (official rules plus four
 marked house rules).
 
 ## Local development
